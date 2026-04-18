@@ -3,6 +3,7 @@
 ![Status](https://img.shields.io/badge/status-active-brightblue)
 
 ![DBML](./doc/src/assets/dbml.png)
+<a href="https://github.com/huydo862003/Fck-AI-Slop#plan"><img src="https://img.shields.io/badge/human%20slop-90EE90"></a>
 
 A (second & likely not the last 🐱) rewrite of the DBML parser that tries to apply the past experiences with the noobie `@dbml/parse` package.
 
