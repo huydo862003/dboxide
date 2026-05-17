@@ -37,7 +37,7 @@
             const path_to_root = "../../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../../searchindex-66129c8e.js";
+            window.path_to_searchindex_js = "../../../searchindex-b3e9b242.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../../toc-1770bef2.js"></script>
@@ -346,11 +346,11 @@ fn check_types(db: &amp;dyn Db, input: SourceText) -&gt; TypeCheckResult {
 </ul>
 <h2 id="comparison-reactive-vs-traditional"><a class="header" href="#comparison-reactive-vs-traditional">Comparison: Reactive vs Traditional</a></h2>
 <p>Traditional approach:</p>
-<pre><code>File change → Reparse entire project → Recheck all types → Update all diagnostics
+<pre><code>File change -&gt; Reparse entire project -&gt; Recheck all types -&gt; Update all diagnostics
 </code></pre>
 <p>Salsa approach:</p>
-<pre><code>File change → Mark queries as potentially stale
-User requests diagnostics → Salsa recomputes only affected queries → Return result
+<pre><code>File change -&gt; Mark queries as potentially stale
+User requests diagnostics -&gt; Salsa recomputes only affected queries -&gt; Return result
 </code></pre>
 <p>The Salsa approach is faster because:</p>
 <ul>

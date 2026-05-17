@@ -37,7 +37,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-66129c8e.js";
+            window.path_to_searchindex_js = "../searchindex-b3e9b242.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-1770bef2.js"></script>
@@ -248,7 +248,7 @@
 <li>Avoid blind serialization of internal types, which implicitly couples public clients to private implementation details<sup><a href="#1">1</a></sup>.</li>
 <li>Enforce opaque API boundaries (such as between analysis and IDE layers) to enable radical internal refactoring without breaking consumers<sup><a href="#1">1</a></sup>.</li>
 <li>Codify architectural laws (like “core layers are I/O free”) to permanently guarantee non-functional requirements such as speed and deterministic testing<sup><a href="#1">1</a></sup>.</li>
-<li>Order function arguments by stability (context → data) to align code structure with mental models (“setting” → “actors”) and reduce cognitive load during scanning<sup><a href="#1">1</a></sup>.</li>
+<li>Order function arguments by stability (context -&gt; data) to align code structure with mental models (“setting” -&gt; “actors”) and reduce cognitive load during scanning<sup><a href="#1">1</a></sup>.</li>
 <li>Use distinct types to segregate unverified external input (like “dirty” OS strings) from validated internal data, preventing logic errors from crossing trust boundaries<sup><a href="#1">1</a></sup>.</li>
 <li>Enforce invariants via “construction &amp; retrieval” (private fields with public getters) rather than “mutation” (setters), ensuring objects never enter invalid states<sup><a href="#1">1</a></sup>.</li>
 <li>Encode assumptions into the type system (such as non-nullable types) to force callers to handle edge cases explicitly, preserving context at the call site<sup><a href="#1">1</a></sup>.</li>
@@ -258,7 +258,7 @@
 <h3 id="implementation-patterns"><a class="header" href="#implementation-patterns">Implementation Patterns</a></h3>
 <ol>
 <li>Prioritize imperative clarity over functional brevity, where code should maximize “work per line” rather than minimizing line count via complex indirections<sup><a href="#1">1</a></sup>.</li>
-<li>Use spatial operators (like <code>&lt;</code> or <code>&lt;=</code>) that map intuitively to the mental number line (<code>0→∞</code>), avoiding the mental effort required to “flip” comparisons<sup><a href="#1">1</a></sup>.</li>
+<li>Use spatial operators (like <code>&lt;</code> or <code>&lt;=</code>) that map intuitively to the mental number line (<code>0-&gt;infinity</code>), avoiding the mental effort required to “flip” comparisons<sup><a href="#1">1</a></sup>.</li>
 <li>Prefer syntax that supports left-to-right reading (such as explicit type ascription), which reduces the “context window” required to understand a statement by declaring intent up-front<sup><a href="#1">1</a></sup>.</li>
 <li>Use blocks <code>{ ... }</code> to isolate temporary state, preventing variable pollution while retaining access to the parent context<sup><a href="#1">1</a></sup>.</li>
 <li>Push resource allocation (memory and I/O) up to the call site (like passing a buffer in) to make performance costs visible and controllable by the caller<sup><a href="#1">1</a></sup>.</li>

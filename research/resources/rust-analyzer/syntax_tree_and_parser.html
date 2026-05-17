@@ -37,7 +37,7 @@
             const path_to_root = "../../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../../searchindex-66129c8e.js";
+            window.path_to_searchindex_js = "../../../searchindex-b3e9b242.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../../toc-1770bef2.js"></script>
@@ -197,7 +197,7 @@
 </ul>
 <h2 id="design-goals"><a class="header" href="#design-goals">Design Goals</a></h2>
 <ul>
-<li>Lossless: Everything is preserved—whitespace, comments, even invalid tokens.</li>
+<li>Lossless: Everything is preserved - whitespace, comments, even invalid tokens.</li>
 <li>Semantic-less: Pure structure with no type checking or name resolution.</li>
 <li>Context-free: Trees are simple values that don’t depend on external context.</li>
 <li>Resilient: Always produce a tree, even from broken code (nodes may be partial).</li>
@@ -208,12 +208,12 @@
 <h2 id="the-three-layer-syntax-tree"><a class="header" href="#the-three-layer-syntax-tree">The Three-Layer Syntax Tree</a></h2>
 <p>The core idea is a “Red-Green Tree” (borrowed from Roslyn), where three layers balance memory usage against API convenience.</p>
 <ul>
-<li><em>Semi-transient</em>: Trees don’t live in memory permanently—they get lowered to a compact form but can be rebuilt when needed.</li>
+<li><em>Semi-transient</em>: Trees don’t live in memory permanently - they get lowered to a compact form but can be rebuilt when needed.</li>
 </ul>
 <h3 id="layer-1-greennode-the-storage"><a class="header" href="#layer-1-greennode-the-storage">Layer 1: GreenNode (The Storage)</a></h3>
 <ul>
 <li>
-<p>GreenNode is where the actual data lives—it’s purely functional, immutable, and persistent with arbitrary arity.</p>
+<p>GreenNode is where the actual data lives - it’s purely functional, immutable, and persistent with arbitrary arity.</p>
 </li>
 <li>
 <p>Conceptual (unoptimized) example from <code>rust-analyzer</code>:</p>
@@ -247,7 +247,7 @@ struct Token {
 <li>
 <p>Some things to note:</p>
 <ul>
-<li>There’s just one generic node structure—nodes are untyped with a runtime tag.</li>
+<li>There’s just one generic node structure - nodes are untyped with a runtime tag.</li>
 <li>The original text comes from combining all the children’s text.</li>
 <li>Finding a specific child means scanning through siblings linearly.</li>
 <li>Modifying the tree gets more expensive with height (due to path copying).</li>
@@ -264,7 +264,7 @@ struct Token {
 <ul>
 <li>Dynamically sized type (DST): Everything in one heap allocation instead of splitting the node and its children into separate allocations.</li>
 <li>Tagged pointers: A single pointer where the last bit indicates whether it’s a <code>Node</code> or <code>Token</code> (cheaper than <code>Arc&lt;Either&lt;Node, Token&gt;&gt;</code>).</li>
-<li>Interning: Tokens get reused—<code>1 + 1</code> only stores one <code>1</code> token that’s shared. Returns <code>Arc&lt;Node&gt;</code> so trees are self-contained.</li>
+<li>Interning: Tokens get reused - <code>1 + 1</code> only stores one <code>1</code> token that’s shared. Returns <code>Arc&lt;Node&gt;</code> so trees are self-contained.</li>
 <li><code>TextSize</code>: Just a newtyped <code>u32</code> for tracking text length.</li>
 <li><code>SmolStr</code>: Small strings like <code>fn</code> or <code>if</code> live on the stack inline, no heap allocation needed.
 <ul>
@@ -306,7 +306,7 @@ struct Token {
 <ul>
 <li>Children live in a dynamic list with trivia mixed in.</li>
 <li>You have to scan through siblings (<strong>O(N)</strong>) to find what you want.</li>
-<li>Very memory efficient—missing nodes cost nothing.</li>
+<li>Very memory efficient - missing nodes cost nothing.</li>
 </ul>
 </li>
 <li>Fixed slots (Roslyn/Swift):
@@ -437,14 +437,14 @@ impl PartialEq for SyntaxNode {
 <ul>
 <li>Atomic avoidance: Use <code>Rc</code> (non-atomic) instead of <code>Arc</code> for parent pointers since traversals are single-threaded anyway, avoiding atomic overhead.</li>
 <li>Thread movement: Can’t send <code>SyntaxNode</code> across threads directly, so you send lightweight coordinates like <code>(GreenNode, TextRange)</code> instead. The receiving thread rebuilds the node from those coordinates.</li>
-<li>Transient trees: Instead of keeping full trees in memory, <code>rust-analyzer</code> just stores <code>(FileId, TextRange)</code> and reparses when needed—trading CPU time for memory.</li>
-<li>Root-only <code>Arc</code>: Only the root holds an <code>Arc&lt;GreenNode&gt;</code> as the tree’s memory anchor. Descendants use raw pointers (fast) plus an <code>Rc</code> to their parent (safe). Since each child’s <code>Rc</code> keeps its parent alive all the way up to the root, the raw pointers never dangle. This means you only pay for atomic operations once at the root—the rest is just cheap <code>Rc</code> bumps.</li>
+<li>Transient trees: Instead of keeping full trees in memory, <code>rust-analyzer</code> just stores <code>(FileId, TextRange)</code> and reparses when needed - trading CPU time for memory.</li>
+<li>Root-only <code>Arc</code>: Only the root holds an <code>Arc&lt;GreenNode&gt;</code> as the tree’s memory anchor. Descendants use raw pointers (fast) plus an <code>Rc</code> to their parent (safe). Since each child’s <code>Rc</code> keeps its parent alive all the way up to the root, the raw pointers never dangle. This means you only pay for atomic operations once at the root - the rest is just cheap <code>Rc</code> bumps.</li>
 <li>Object pooling: Keep a thread-local “free list” of node objects for reuse instead of calling <code>malloc</code> constantly. The pool only needs to match traversal depth (not tree size), so a few dozen slots can handle huge trees. This lets you return “owned” nodes cheaply (just a pointer move) which are nicer to work with than references.</li>
 </ul>
 <h4 id="alternative-designs-1"><a class="header" href="#alternative-designs-1">Alternative Designs</a></h4>
 <h5 id="memoized-rednodes"><a class="header" href="#memoized-rednodes">Memoized RedNodes</a></h5>
 <ul>
-<li>Memoized nodes (C#/Swift): Heavy <code>Arc</code> objects that permanently cache everything—offset, parent, children. You get true pointer equality (super fast comparison) but it doubles memory since the whole tree is duplicated in the “Red” layer. C# tries to claw back memory with weak references.</li>
+<li>Memoized nodes (C#/Swift): Heavy <code>Arc</code> objects that permanently cache everything - offset, parent, children. You get true pointer equality (super fast comparison) but it doubles memory since the whole tree is duplicated in the “Red” layer. C# tries to claw back memory with weak references.</li>
 <li>Cursor approach (<code>rust-analyzer</code>): Lightweight views that calculate positions on demand. Memory scales with traversal depth, not tree size.</li>
 </ul>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -568,7 +568,7 @@ impl HasName for StructDef {
 <h4 id="alternative-designs-2"><a class="header" href="#alternative-designs-2">Alternative Designs</a></h4>
 <h5 id="semantic-full-ast"><a class="header" href="#semantic-full-ast">Semantic Full AST</a></h5>
 <ul>
-<li>IntelliJ’s PSI is a “rich” AST that abstracts away where code came from—a <code>PsiMethod</code> looks the same whether it’s from source (<code>.java</code>) or compiled (<code>.jar</code>), hiding all that complexity.</li>
+<li>IntelliJ’s PSI is a “rich” AST that abstracts away where code came from - a <code>PsiMethod</code> looks the same whether it’s from source (<code>.java</code>) or compiled (<code>.jar</code>), hiding all that complexity.</li>
 <li>Attached semantics: Nodes have methods like <code>resolve()</code> or <code>getSuperClass()</code> built in, so you can query semantics directly on the tree.</li>
 <li>Memory optimization: Start as a lightweight “stub” (just serialized metadata) and only inflates to a full AST when you actually open the file.</li>
 </ul>
@@ -612,7 +612,7 @@ impl GreenNodeBuilder {
 <p>There are two kinds of input: source text (full of trivia like whitespace and comments) and macro token trees (just structural tokens, no trivia).</p>
 </li>
 <li>
-<p>Input and output tokens don’t match 1-to-1. The parser uses abstract callbacks—<code>TokenSource</code> for reading input and <code>TreeSink</code> for writing output. An intermediary layer handles the mismatches, like stripping whitespace or merging <code>&gt;</code> + <code>&gt;</code> into <code>&gt;&gt;</code>.</p>
+<p>Input and output tokens don’t match 1-to-1. The parser uses abstract callbacks - <code>TokenSource</code> for reading input and <code>TreeSink</code> for writing output. An intermediary layer handles the mismatches, like stripping whitespace or merging <code>&gt;</code> + <code>&gt;</code> into <code>&gt;&gt;</code>.</p>
 </li>
 <li>
 <p>The parser interface (from <code>rust-analyzer</code>):</p>
@@ -670,13 +670,13 @@ pub fn parse(
 </ul>
 <h3 id="whitespace--comments"><a class="header" href="#whitespace--comments">Whitespace &amp; Comments</a></h3>
 <ul>
-<li>The core parser works with a “clean” token stream—no whitespace or comments to worry about.</li>
+<li>The core parser works with a “clean” token stream - no whitespace or comments to worry about.</li>
 <li>But trivia isn’t thrown away. The <code>TreeSink</code> layer re-inserts it into the final tree as nodes get built.</li>
-<li>Comments don’t just get dumped linearly—they’re attached heuristically to their semantic parents. Like a comment right before a function becomes a child of that <code>FnDef</code> node.</li>
+<li>Comments don’t just get dumped linearly - they’re attached heuristically to their semantic parents. Like a comment right before a function becomes a child of that <code>FnDef</code> node.</li>
 </ul>
 <h3 id="incremental-reparse"><a class="header" href="#incremental-reparse">Incremental Reparse</a></h3>
 <ul>
-<li>Green trees make modifications cheap—you can “patch” by swapping a single node pointer with a freshly parsed subtree. No external state needed.</li>
+<li>Green trees make modifications cheap - you can “patch” by swapping a single node pointer with a freshly parsed subtree. No external state needed.</li>
 <li>Block heuristic: Edits get isolated to the smallest <code>{}</code> block that contains them. This works because the parser keeps braces balanced even in broken code, giving you stable anchor points.</li>
 </ul>
 <details>

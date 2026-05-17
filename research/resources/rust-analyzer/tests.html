@@ -37,7 +37,7 @@
             const path_to_root = "../../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../../searchindex-66129c8e.js";
+            window.path_to_searchindex_js = "../../../searchindex-b3e9b242.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../../toc-1770bef2.js"></script>
@@ -353,7 +353,7 @@ fn main() {
 "#,
     );
 }</code></pre>
-<p>This fixture creates a workspace with three crates (<code>utils</code> → <code>core</code> → <code>app</code>) with proper dependency relationships.</p>
+<p>This fixture creates a workspace with three crates (<code>utils</code> -&gt; <code>core</code> -&gt; <code>app</code>) with proper dependency relationships.</p>
 <h2 id="fixture-system-architecture"><a class="header" href="#fixture-system-architecture">Fixture System Architecture</a></h2>
 <pre class="mermaid">%%{init: {'theme':'neutral', 'themeVariables': {'fontSize':'16px'}}}%%
 flowchart LR
@@ -428,13 +428,13 @@ stateDiagram-v2
 <p>The minicore system only includes explicitly requested components. If your test fails with “cannot find type” errors:</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>//- minicore: sized, fn, iterator, option  // ← Add missing flags
+</span>//- minicore: sized, fn, iterator, option  // &lt;- Add missing flags
 <span class="boring">}</span></code></pre>
 <h3 id="2-start-with-sized"><a class="header" href="#2-start-with-sized">2. Start with <code>sized</code></a></h3>
 <p>When stuck with mysterious type errors, add <code>sized</code> to minicore flags. Many operations implicitly require the <code>Sized</code> trait:</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>//- minicore: sized  // ← Add this first when debugging
+</span>//- minicore: sized  // &lt;- Add this first when debugging
 <span class="boring">}</span></code></pre>
 <h3 id="3-use-semantic-highlighting-for-debugging"><a class="header" href="#3-use-semantic-highlighting-for-debugging">3. Use Semantic Highlighting for Debugging</a></h3>
 <p>If code looks wrong in the test, check its syntax highlighting. Incorrect highlighting often indicates:</p>

@@ -37,7 +37,7 @@
             const path_to_root = "../../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../../searchindex-66129c8e.js";
+            window.path_to_searchindex_js = "../../../searchindex-b3e9b242.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../../toc-1770bef2.js"></script>
@@ -359,7 +359,7 @@
 </li>
 <li>Encapsulated “joins”:
 <ul>
-<li>Pure ECS requires you to manually query multiple tables to piece together information (e.g., get parent module ID → look up module data → find visibility).</li>
+<li>Pure ECS requires you to manually query multiple tables to piece together information (e.g., get parent module ID -&gt; look up module data -&gt; find visibility).</li>
 <li>The <code>hir</code> crate abstracts these complex multi-step database lookups into single, coherent methods.</li>
 </ul>
 </li>
@@ -441,7 +441,7 @@
 </ul>
 <h2 id="macro-crates"><a class="header" href="#macro-crates">Macro Crates</a></h2>
 <ul>
-<li>Core abstraction (<code>tt</code>): Macros are defined purely as <code>TokenTree</code> → <code>TokenTree</code> transforms, isolated from other compiler parts. The <code>tt</code> crate defines this structure (single tokens or delimited sequences).</li>
+<li>Core abstraction (<code>tt</code>): Macros are defined purely as <code>TokenTree</code> -&gt; <code>TokenTree</code> transforms, isolated from other compiler parts. The <code>tt</code> crate defines this structure (single tokens or delimited sequences).</li>
 <li>Declarative macros (<code>mbe</code>): The <code>mbe</code> crate implements “Macros By Example” (<code>macro_rules!</code>). It handles parsing, expansion, and the translation between the IDE’s syntax trees and the raw token trees.</li>
 <li>Procedural Macros: Proc-macros run in a separate process to isolate the IDE from user code crashes.
 <ul>
@@ -477,7 +477,7 @@
 <li><code>rust-analyzer</code> avoids new stability guarantees to move fast.</li>
 <li>The internal <code>ide</code> API is explicitly unstable.</li>
 <li>Stability is only guaranteed at the <strong>LSP</strong> level (managed by the protocol) and <strong>input</strong> level (Rust language/Cargo).</li>
-<li>De-facto stability: <code>rust-project.json</code> became stable implicitly by virtue of having users — a lesson to explicitly mark APIs as unstable/opt-in before release.</li>
+<li>De-facto stability: <code>rust-project.json</code> became stable implicitly by virtue of having users - a lesson to explicitly mark APIs as unstable/opt-in before release.</li>
 </ul>
 <h3 id="code-generation"><a class="header" href="#code-generation">Code Generation</a></h3>
 <ul>
