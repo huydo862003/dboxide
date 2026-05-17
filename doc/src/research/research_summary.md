@@ -57,7 +57,7 @@
 1. Avoid blind serialization of internal types, which implicitly couples public clients to private implementation details<sup>[1](#1)</sup>.
 2. Enforce opaque API boundaries (such as between analysis and IDE layers) to enable radical internal refactoring without breaking consumers<sup>[1](#1)</sup>.
 3. Codify architectural laws (like "core layers are I/O free") to permanently guarantee non-functional requirements such as speed and deterministic testing<sup>[1](#1)</sup>.
-4. Order function arguments by stability (context → data) to align code structure with mental models ("setting" → "actors") and reduce cognitive load during scanning<sup>[1](#1)</sup>.
+4. Order function arguments by stability (context -> data) to align code structure with mental models ("setting" -> "actors") and reduce cognitive load during scanning<sup>[1](#1)</sup>.
 5. Use distinct types to segregate unverified external input (like "dirty" OS strings) from validated internal data, preventing logic errors from crossing trust boundaries<sup>[1](#1)</sup>.
 6. Enforce invariants via "construction & retrieval" (private fields with public getters) rather than "mutation" (setters), ensuring objects never enter invalid states<sup>[1](#1)</sup>.
 7. Encode assumptions into the type system (such as non-nullable types) to force callers to handle edge cases explicitly, preserving context at the call site<sup>[1](#1)</sup>.
@@ -67,7 +67,7 @@
 ### Implementation Patterns
 
 1. Prioritize imperative clarity over functional brevity, where code should maximize "work per line" rather than minimizing line count via complex indirections<sup>[1](#1)</sup>.
-2. Use spatial operators (like `<` or `<=`) that map intuitively to the mental number line (`0→∞`), avoiding the mental effort required to "flip" comparisons<sup>[1](#1)</sup>.
+2. Use spatial operators (like `<` or `<=`) that map intuitively to the mental number line (`0->infinity`), avoiding the mental effort required to "flip" comparisons<sup>[1](#1)</sup>.
 3. Prefer syntax that supports left-to-right reading (such as explicit type ascription), which reduces the "context window" required to understand a statement by declaring intent up-front<sup>[1](#1)</sup>.
 4. Use blocks `{ ... }` to isolate temporary state, preventing variable pollution while retaining access to the parent context<sup>[1](#1)</sup>.
 5. Push resource allocation (memory and I/O) up to the call site (like passing a buffer in) to make performance costs visible and controllable by the caller<sup>[1](#1)</sup>.

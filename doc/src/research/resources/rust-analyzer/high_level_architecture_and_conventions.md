@@ -115,7 +115,7 @@ Based on [`libsyntax-2.0`](../libsyntax/SUMMARY.md).
     - In pure ECS, logic lives in external systems (e.g. `db.function_visibility(id)`).
     - The `hir` crate inverts this to an object-oriented style (`func.visibility(db)`), making the API discoverable via IDE autocomplete.
   - Encapsulated "joins":
-    - Pure ECS requires you to manually query multiple tables to piece together information (e.g., get parent module ID → look up module data → find visibility).
+    - Pure ECS requires you to manually query multiple tables to piece together information (e.g., get parent module ID -> look up module data -> find visibility).
     - The `hir` crate abstracts these complex multi-step database lookups into single, coherent methods.
   - Semantic types:
     - ECS deals with efficient storage (raw `u32` IDs).
@@ -172,7 +172,7 @@ Based on [`libsyntax-2.0`](../libsyntax/SUMMARY.md).
 
 ## Macro Crates
 
-- Core abstraction (`tt`): Macros are defined purely as `TokenTree` → `TokenTree` transforms, isolated from other compiler parts. The `tt` crate defines this structure (single tokens or delimited sequences).
+- Core abstraction (`tt`): Macros are defined purely as `TokenTree` -> `TokenTree` transforms, isolated from other compiler parts. The `tt` crate defines this structure (single tokens or delimited sequences).
 - Declarative macros (`mbe`): The `mbe` crate implements "Macros By Example" (`macro_rules!`). It handles parsing, expansion, and the translation between the IDE's syntax trees and the raw token trees.
 - Procedural Macros: Proc-macros run in a separate process to isolate the IDE from user code crashes.
   - Server (`proc-macro-srv`): Load the dynamic libraries (built by Cargo) and executes the macros.
@@ -204,7 +204,7 @@ Based on [`libsyntax-2.0`](../libsyntax/SUMMARY.md).
 * `rust-analyzer` avoids new stability guarantees to move fast.
 * The internal `ide` API is explicitly unstable.
 * Stability is only guaranteed at the **LSP** level (managed by the protocol) and **input** level (Rust language/Cargo).
-* De-facto stability: `rust-project.json` became stable implicitly by virtue of having users — a lesson to explicitly mark APIs as unstable/opt-in before release.
+* De-facto stability: `rust-project.json` became stable implicitly by virtue of having users - a lesson to explicitly mark APIs as unstable/opt-in before release.
 
 ### Code Generation
 

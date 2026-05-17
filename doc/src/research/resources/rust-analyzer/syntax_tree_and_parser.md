@@ -13,7 +13,7 @@ Commit link: [2020-01-09](https://github.com/rust-lang/rust-analyzer/tree/cf5bdf
 
 ## Design Goals
 
-- Lossless: Everything is preserved—whitespace, comments, even invalid tokens.
+- Lossless: Everything is preserved - whitespace, comments, even invalid tokens.
 - Semantic-less: Pure structure with no type checking or name resolution.
 - Context-free: Trees are simple values that don't depend on external context.
 - Resilient: Always produce a tree, even from broken code (nodes may be partial).
@@ -25,11 +25,11 @@ Commit link: [2020-01-09](https://github.com/rust-lang/rust-analyzer/tree/cf5bdf
 
 The core idea is a "Red-Green Tree" (borrowed from Roslyn), where three layers balance memory usage against API convenience.
 
-- _Semi-transient_: Trees don't live in memory permanently—they get lowered to a compact form but can be rebuilt when needed.
+- _Semi-transient_: Trees don't live in memory permanently - they get lowered to a compact form but can be rebuilt when needed.
 
 ### Layer 1: GreenNode (The Storage)
 
-- GreenNode is where the actual data lives—it's purely functional, immutable, and persistent with arbitrary arity.
+- GreenNode is where the actual data lives - it's purely functional, immutable, and persistent with arbitrary arity.
 - Conceptual (unoptimized) example from `rust-analyzer`:
 
   ```rust
@@ -57,7 +57,7 @@ The core idea is a "Red-Green Tree" (borrowed from Roslyn), where three layers b
 
 - A `Token` is a leaf node, while `Node` represents interior nodes.
 - Some things to note:
-  - There's just one generic node structure—nodes are untyped with a runtime tag.
+  - There's just one generic node structure - nodes are untyped with a runtime tag.
   - The original text comes from combining all the children's text.
   - Finding a specific child means scanning through siblings linearly.
   - Modifying the tree gets more expensive with height (due to path copying).
@@ -75,7 +75,7 @@ The following optimizations are mostly attributed to [CAD97](https://github.com/
 
 - Dynamically sized type (DST): Everything in one heap allocation instead of splitting the node and its children into separate allocations.
 - Tagged pointers: A single pointer where the last bit indicates whether it's a `Node` or `Token` (cheaper than `Arc<Either<Node, Token>>`).
-- Interning: Tokens get reused—`1 + 1` only stores one `1` token that's shared. Returns `Arc<Node>` so trees are self-contained.
+- Interning: Tokens get reused - `1 + 1` only stores one `1` token that's shared. Returns `Arc<Node>` so trees are self-contained.
 - `TextSize`: Just a newtyped `u32` for tracking text length.
 - `SmolStr`: Small strings like `fn` or `if` live on the stack inline, no heap allocation needed.
   - Note: The text suggests moving this data directly into the interned token allocation in the future.
@@ -101,7 +101,7 @@ The following optimizations are mostly attributed to [CAD97](https://github.com/
 - Linear can (IntelliJ/Rowan):
   - Children live in a dynamic list with trivia mixed in.
   - You have to scan through siblings (**O(N)**) to find what you want.
-  - Very memory efficient—missing nodes cost nothing.
+  - Very memory efficient - missing nodes cost nothing.
 - Fixed slots (Roslyn/Swift):
   - Every possible child gets a fixed slot in the grammar.
   - Direct **O(1)** access by index.
@@ -203,15 +203,15 @@ let new_tree_root = builder.apply();
 
 - Atomic avoidance: Use `Rc` (non-atomic) instead of `Arc` for parent pointers since traversals are single-threaded anyway, avoiding atomic overhead.
 - Thread movement: Can't send `SyntaxNode` across threads directly, so you send lightweight coordinates like `(GreenNode, TextRange)` instead. The receiving thread rebuilds the node from those coordinates.
-- Transient trees: Instead of keeping full trees in memory, `rust-analyzer` just stores `(FileId, TextRange)` and reparses when needed—trading CPU time for memory.
-- Root-only `Arc`: Only the root holds an `Arc<GreenNode>` as the tree's memory anchor. Descendants use raw pointers (fast) plus an `Rc` to their parent (safe). Since each child's `Rc` keeps its parent alive all the way up to the root, the raw pointers never dangle. This means you only pay for atomic operations once at the root—the rest is just cheap `Rc` bumps.
+- Transient trees: Instead of keeping full trees in memory, `rust-analyzer` just stores `(FileId, TextRange)` and reparses when needed - trading CPU time for memory.
+- Root-only `Arc`: Only the root holds an `Arc<GreenNode>` as the tree's memory anchor. Descendants use raw pointers (fast) plus an `Rc` to their parent (safe). Since each child's `Rc` keeps its parent alive all the way up to the root, the raw pointers never dangle. This means you only pay for atomic operations once at the root - the rest is just cheap `Rc` bumps.
 - Object pooling: Keep a thread-local "free list" of node objects for reuse instead of calling `malloc` constantly. The pool only needs to match traversal depth (not tree size), so a few dozen slots can handle huge trees. This lets you return "owned" nodes cheaply (just a pointer move) which are nicer to work with than references.
 
 #### Alternative Designs
 
 ##### Memoized RedNodes
 
-- Memoized nodes (C#/Swift): Heavy `Arc` objects that permanently cache everything—offset, parent, children. You get true pointer equality (super fast comparison) but it doubles memory since the whole tree is duplicated in the "Red" layer. C# tries to claw back memory with weak references.
+- Memoized nodes (C#/Swift): Heavy `Arc` objects that permanently cache everything - offset, parent, children. You get true pointer equality (super fast comparison) but it doubles memory since the whole tree is duplicated in the "Red" layer. C# tries to claw back memory with weak references.
 - Cursor approach (`rust-analyzer`): Lightweight views that calculate positions on demand. Memory scales with traversal depth, not tree size.
 
 ```rust
@@ -321,7 +321,7 @@ struct SyntaxData {
 
 ##### Semantic Full AST
 
-- IntelliJ's PSI is a "rich" AST that abstracts away where code came from—a `PsiMethod` looks the same whether it's from source (`.java`) or compiled (`.jar`), hiding all that complexity.
+- IntelliJ's PSI is a "rich" AST that abstracts away where code came from - a `PsiMethod` looks the same whether it's from source (`.java`) or compiled (`.jar`), hiding all that complexity.
 - Attached semantics: Nodes have methods like `resolve()` or `getSuperClass()` built in, so you can query semantics directly on the tree.
 - Memory optimization: Start as a lightweight "stub" (just serialized metadata) and only inflates to a full AST when you actually open the file.
 
@@ -353,7 +353,7 @@ struct SyntaxData {
   ```
 
 - There are two kinds of input: source text (full of trivia like whitespace and comments) and macro token trees (just structural tokens, no trivia).
-- Input and output tokens don't match 1-to-1. The parser uses abstract callbacks—`TokenSource` for reading input and `TreeSink` for writing output. An intermediary layer handles the mismatches, like stripping whitespace or merging `>` + `>` into `>>`.
+- Input and output tokens don't match 1-to-1. The parser uses abstract callbacks - `TokenSource` for reading input and `TreeSink` for writing output. An intermediary layer handles the mismatches, like stripping whitespace or merging `>` + `>` into `>>`.
 - The parser interface (from `rust-analyzer`):
 
   ```rust
@@ -403,13 +403,13 @@ struct SyntaxData {
 
 ### Whitespace & Comments
 
-- The core parser works with a "clean" token stream—no whitespace or comments to worry about.
+- The core parser works with a "clean" token stream - no whitespace or comments to worry about.
 - But trivia isn't thrown away. The `TreeSink` layer re-inserts it into the final tree as nodes get built.
-- Comments don't just get dumped linearly—they're attached heuristically to their semantic parents. Like a comment right before a function becomes a child of that `FnDef` node.
+- Comments don't just get dumped linearly - they're attached heuristically to their semantic parents. Like a comment right before a function becomes a child of that `FnDef` node.
 
 ### Incremental Reparse
 
-- Green trees make modifications cheap—you can "patch" by swapping a single node pointer with a freshly parsed subtree. No external state needed.
+- Green trees make modifications cheap - you can "patch" by swapping a single node pointer with a freshly parsed subtree. No external state needed.
 - Block heuristic: Edits get isolated to the smallest `{}` block that contains them. This works because the parser keeps braces balanced even in broken code, giving you stable anchor points.
 
 <details>

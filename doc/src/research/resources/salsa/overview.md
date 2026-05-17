@@ -183,13 +183,13 @@ Benefits:
 
 Traditional approach:
 ```
-File change → Reparse entire project → Recheck all types → Update all diagnostics
+File change -> Reparse entire project -> Recheck all types -> Update all diagnostics
 ```
 
 Salsa approach:
 ```
-File change → Mark queries as potentially stale
-User requests diagnostics → Salsa recomputes only affected queries → Return result
+File change -> Mark queries as potentially stale
+User requests diagnostics -> Salsa recomputes only affected queries -> Return result
 ```
 
 The Salsa approach is faster because:

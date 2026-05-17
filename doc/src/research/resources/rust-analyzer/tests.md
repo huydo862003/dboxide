@@ -198,7 +198,7 @@ fn main() {
 }
 ```
 
-This fixture creates a workspace with three crates (`utils` → `core` → `app`) with proper dependency relationships.
+This fixture creates a workspace with three crates (`utils` -> `core` -> `app`) with proper dependency relationships.
 
 ## Fixture System Architecture
 
@@ -286,7 +286,7 @@ stateDiagram-v2
 The minicore system only includes explicitly requested components. If your test fails with "cannot find type" errors:
 
 ```rust
-//- minicore: sized, fn, iterator, option  // ← Add missing flags
+//- minicore: sized, fn, iterator, option  // <- Add missing flags
 ```
 
 ### 2. Start with `sized`
@@ -294,7 +294,7 @@ The minicore system only includes explicitly requested components. If your test 
 When stuck with mysterious type errors, add `sized` to minicore flags. Many operations implicitly require the `Sized` trait:
 
 ```rust
-//- minicore: sized  // ← Add this first when debugging
+//- minicore: sized  // <- Add this first when debugging
 ```
 
 ### 3. Use Semantic Highlighting for Debugging

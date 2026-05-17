@@ -670,7 +670,7 @@ apply_changes(&context, |item| {
   - Always use `<` or `<=` comparisons.
   - Avoid `>` or `>=`.
 - Rationale:
-  - Spatial intuition: Corresponds to the real number line where values increase from left to right (`0→∞`).
+  - Spatial intuition: Corresponds to the real number line where values increase from left to right (`0->infinity`).
   - Visual ordering: `lo <= x && x <= hi` visually places `x` in the middle, whereas `x >= lo` forces a mental "flip."
 
 ### If-let
@@ -735,7 +735,7 @@ Ok(_) => {}  // <--- Block style breaks the visual rhythm
 - Exception: Create a function if you need early returns (`return`) or error propagation (`?`).
 
 - Local helpers: Place nested helper functions at the end of the enclosing function.
-  - Structure: Main logic → `return result;` → `fn helper() { ... }`.
+  - Structure: Main logic -> `return result;` -> `fn helper() { ... }`.
   - Limit: Do not nest more than 1 level deep.
 
 ### Helper Variables
