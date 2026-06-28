@@ -10,6 +10,8 @@
       - [Coding Conventions](./research/resources/rust-analyzer/coding_conventions.md)
       - [Syntax Tree & Parser](./research/resources/rust-analyzer/syntax_tree_and_parser.md)
       - [Writing Tests](./research/resources/rust-analyzer/tests.md)
+    - [`rustc Development Guide`](./research/resources/rustc/SUMMARY.md)
+      - [Incremental Compilation](./research/resources/rustc/incremental_compilation.md)
     - [`libsyntax`](./research/resources/libsyntax/SUMMARY.md)
     - [`salsa`](./research/resources/salsa/SUMMARY.md)
       - [Overview](./research/resources/salsa/overview.md)
