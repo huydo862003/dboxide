@@ -37,7 +37,7 @@
             const path_to_root = "../../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../../searchindex-75b536ab.js";
+            window.path_to_searchindex_js = "../../../searchindex-494e72ef.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../../toc-838e2ecf.js"></script>
@@ -214,6 +214,97 @@
 </blockquote>
 </li>
 </ol>
+<h2 id="stable-identifiers-bridging-the-gap-between-sessions"><a class="header" href="#stable-identifiers-bridging-the-gap-between-sessions">Stable Identifiers: Bridging the Gap Between Sessions</a></h2>
+<p>The <strong>ID instability problem</strong> (challenge 2 above) is the primary one.</p>
+<p><strong>Example</strong>: Imagine a file with two functions, <code>foo</code> and <code>bar</code>.</p>
+<ol>
+<li>In <strong>session 1</strong>, these two functions are assigned <code>DefId(0)</code> and <code>DefId(1)</code> accordingly.</li>
+<li>The compiler caches the result of <code>type_of(DefId(1))</code> as <code>i32</code>.</li>
+<li>In <strong>session 2</strong>, the user inserts a new function before <code>foo</code>, so the counter shifts: <code>foo</code> becomes <code>DefId(1)</code> and <code>bar</code> becomes <code>DefId(2)</code>.</li>
+</ol>
+<p><strong>Outcome</strong>: The cached entry for <code>DefId(1)</code> now points to <code>foo</code>, not <code>bar</code> - the persisted result is silently wrong.</p>
+<p><strong>Solution</strong>:</p>
+<ul>
+<li>The compiler <strong>should never persist</strong> <strong>numeric IDs</strong> directly.</li>
+<li>Instead, the compiler uses <strong>stable identifiers</strong> derived from the hierarchical structure of the source code rather than from a global counter.
+<blockquote>
+<p>I recall that in AML, FQN (fully qualified name) is used for this purpose.</p>
+</blockquote>
+</li>
+</ul>
+<p>Concretely, in <code>rustc</code>:</p>
+<ul>
+<li>Instead of <code>DefId</code>s, <code>DefPath</code>s, which are based on the path to the identified item, are used instead.
+<ul>
+<li><strong><code>DefPath</code></strong>: A path-based representation of a definition (e.g. <code>std::collections::HashMap</code>).</li>
+<li>Adding a new function in the middle of a file does not change the <code>DefPath</code> of existing definitions, so cached data keyed by <code>DefPath</code> remains valid.</li>
+</ul>
+</li>
+<li><strong><code>DefPathHash</code></strong>: A 128-bit hash of the <code>DefPath</code>. It is <code>Copy</code> and cheap to compare, making it the practical unit of stable identity stored on disk.
+<ul>
+<li>On the next compilation session, the compiler deserializes cached data keyed by <code>DefPathHash</code> and maps it back to the current session’s <code>DefId</code> values via a hash table lookup. This way, the cached results remain usable despite arbitrary source changes.</li>
+</ul>
+</li>
+<li><strong><code>HirId</code></strong>: Some HIRs do not have a <code>DefIf</code>. <code>rustc</code> works around this by pairing a <code>DefPath</code> with a <code>LocalId</code> for local identifiers within an owning item, so they remain stable even if the item moves in the file.</li>
+</ul>
+<h2 id="fingerprints-and-stablehash-change-detection-from-disk-without-full-deserialization"><a class="header" href="#fingerprints-and-stablehash-change-detection-from-disk-without-full-deserialization"><code>Fingerprints</code> and <code>StableHash</code>: Change Detection from Disk Without Full Deserialization</a></h2>
+<p>Red-green marking requires knowing <strong>whether a query result has changed since the previous session</strong> (backdating). Doing this naively has two problems:</p>
+<ol>
+<li><strong>Loading old results just to compare them is wasteful</strong>.
+<ul>
+<li>The new result is already computed in memory: Loading the old one from disk also pollutes interners with data that will likely never be used again.
+-&gt; Deserializing the old one just to throw it away after comparison is extra work.</li>
+<li>Deserialization touches interners: structures that deduplicate strings, paths, and symbols by storing them in a shared pool.
+-&gt; Unnecessarily bloat the interners.
+-&gt; Loading stale data from a previous session fills those pools with entries that belong to the old session and will almost certainly never be referenced again, wasting memory.</li>
+</ul>
+</li>
+<li><strong>Not every result should be stored on disk</strong>.
+<ul>
+<li>If a query result comes from an upstream crate compiled separately, it is already encoded in that crate’s compiled artifact.</li>
+<li>Caching it again in the local incremental store is redundant, as the next session can read it from the crate directly.</li>
+<li>Storing it twice wastes both disk space and the time spent serializing and deserializing it.</li>
+</ul>
+</li>
+</ol>
+<p><strong>Solution</strong>: The compiler avoids both problems with <strong>Fingerprints</strong>.</p>
+<ul>
+<li><strong>Fingerprint</strong>: a 128-bit hash computed over each query result.</li>
+<li>Idea:
+<ul>
+<li>Instead of storing the full result, <strong>only its fingerprint is stored alongside the dependency graph</strong>.
+-&gt; Since fingerprints are just bytes, loading the full set is cheap.</li>
+<li>When red-green marking needs to check if a result changed, it compares the <strong>already-loaded previous fingerprint</strong> against <strong>the fingerprint of the newly computed result</strong>. No old result needs to be deserialized.</li>
+<li>NOTE: The hashing must be done in a <strong>stable way</strong>: anything that could shift between sessions (e.g. a <code>DefId</code>) is replaced with its stable equivalent (e.g. the corresponding <code>DefPath</code>) before hashing. This is what the <code>StableHash</code> infrastructure provides, ensuring fingerprints from two different sessions are still comparable.</li>
+</ul>
+</li>
+</ul>
+<p>This approach has two known trade-offs:</p>
+<ol>
+<li><strong>Hash collisions</strong>: Two different results could produce the same fingerprint, causing the system to miss an update. The risk is mitigated by using a high-quality hash function with a 128-bit output, making collisions negligible in practice.
+<blockquote>
+<p>Remark: So <code>rustc</code> just accepts wrong compilation?</p>
+</blockquote>
+</li>
+<li><strong>Fingerprint computation is expensive</strong>: It is the primary reason incremental compilation can be <em>slower</em> than non-incremental compilation - a high-quality hash function is required, and all identifiers must be mapped to their stable equivalents during hashing.</li>
+</ol>
+<h2 id="two-depgraphs-old-and-new"><a class="header" href="#two-depgraphs-old-and-new">Two DepGraphs: Old and New</a></h2>
+<p>Dependency tracking involves two graphs at once: the one built during the previous session (loaded from disk, immutable) and the one being built for the current session.</p>
+<p>When a query is invoked, the compiler first tries to mark the corresponding node green in the <strong>old graph</strong>. The mapping from a current query key to a node in the old graph is done via fingerprints: each dep-node is identified by a fingerprint of its query key. Since fingerprints are stable across sessions, computing one in the current session lets the compiler locate the matching node in the old graph. If no node with that fingerprint exists, the query key refers to something that did not exist in the previous session.</p>
+<p>Once a node is successfully marked green, it is <strong>copied from the old graph into the new graph</strong>, along with its edges. This copy step is necessary because the normal dependency tracking system can only record edges by actually running a query, but running the query is exactly what we want to avoid when the result is already cached.</p>
+<p>At the end of the session:</p>
+<ul>
+<li>Unchanged nodes have been copied from the old graph into the new one.</li>
+<li>Changed nodes have been added to the new graph by the tracking system as their queries were re-executed.</li>
+</ul>
+<p>The new graph is then serialized to disk alongside the query result cache, ready to serve as the old graph in the next session.</p>
+<h2 id="cache-promotion"><a class="header" href="#cache-promotion">Cache Promotion</a></h2>
+<p>The system has a subtle property: if all inputs of a dep-node are green, the node itself can be marked green without loading its cached result from disk. Applied transitively, this means intermediate results are often never loaded. Consider:</p>
+<pre><code>input(A) &lt;-- intermediate_query(B) &lt;-- leaf_query(C)
+</code></pre>
+<p>If <code>leaf_query(C)</code> is needed, the compiler loads its result from cache. <code>intermediate_query(B)</code> is never loaded. When the compiler writes the new result cache at the end of the session, only in-memory results are written, so <code>intermediate_query(B)</code> goes missing from the new cache.</p>
+<p>The next session that actually needs <code>intermediate_query(B)</code> will have to recompute it, even though a valid cached result existed just before.</p>
+<p>To prevent the result cache from silently shrinking, the compiler performs <strong>cache promotion</strong>: before writing the new cache, it walks all green dep-nodes and ensures their query results are loaded into memory, so they are included in the serialized output.</p>
 
                     </main>
 
