@@ -38,10 +38,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-b3e9b242.js";
+            window.path_to_searchindex_js = "searchindex-9369f68a.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-1770bef2.js"></script>
+        <script src="toc-838e2ecf.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -2702,6 +2702,15 @@ fn main() {
 <li><strong>Minimal reproduction</strong>: Tests include only what’s necessary to trigger behavior.</li>
 <li><strong>Co-located tests</strong>: Tests live near implementation for easy discovery.</li>
 </ol>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="rustc-development-guide"><a class="header" href="#rustc-development-guide">Rustc Development Guide</a></h1>
+<p>Basically the <a href="#rust-analyzer">rust-analyzer</a> has covered most of AST design &amp; query-based compilation. However, it (seems to) only cover incrementalism inside a process. What if I want incrementalism to survive across recompilations? Rustc as a compiler would really want this, so it covers the following:</p>
+<ul>
+<li><a href="#incremental-compilation-in-detail">Incremental Compilation in Detail</a></li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="incremental-compilation-in-detail"><a class="header" href="#incremental-compilation-in-detail">Incremental Compilation in Detail</a></h1>
+<p>Link: https://rustc-dev-guide.rust-lang.org/queries/incremental-compilation-in-detail.html</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="libsyntax"><a class="header" href="#libsyntax"><code>libsyntax</code></a></h1>
 <ul>
