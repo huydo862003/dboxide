@@ -38,7 +38,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-9369f68a.js";
+            window.path_to_searchindex_js = "searchindex-75b536ab.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-838e2ecf.js"></script>
@@ -2706,11 +2706,41 @@ fn main() {
 <h1 id="rustc-development-guide"><a class="header" href="#rustc-development-guide">Rustc Development Guide</a></h1>
 <p>Basically the <a href="#rust-analyzer">rust-analyzer</a> has covered most of AST design &amp; query-based compilation. However, it (seems to) only cover incrementalism inside a process. What if I want incrementalism to survive across recompilations? Rustc as a compiler would really want this, so it covers the following:</p>
 <ul>
-<li><a href="#incremental-compilation-in-detail">Incremental Compilation in Detail</a></li>
+<li><a href="#incremental-compilation-in-detail---persistent-incremental-compilation">Incremental Compilation in Detail</a></li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
-<h1 id="incremental-compilation-in-detail"><a class="header" href="#incremental-compilation-in-detail">Incremental Compilation in Detail</a></h1>
+<h1 id="incremental-compilation-in-detail---persistent-incremental-compilation"><a class="header" href="#incremental-compilation-in-detail---persistent-incremental-compilation">Incremental Compilation in Detail - Persistent Incremental Compilation</a></h1>
 <p>Link: https://rustc-dev-guide.rust-lang.org/queries/incremental-compilation-in-detail.html</p>
+<p>They remark that:</p>
+<blockquote>
+<p><strong>The incremental compilation scheme</strong> is, in essence, a <strong>surprisingly simple extension</strong> to the overall <strong>query system</strong>. It relies on the fact that:</p>
+<ol>
+<li>Queries are pure function - given the same inputs, a query will always yield the same result, and</li>
+<li>The query model structures compilation in an acyclic graph that makes dependencies between individual computations explicit.</li>
+</ol>
+</blockquote>
+<p>They briefly discuss the <strong>red-green algorithm</strong> for incremental query system here: https://rustc-dev-guide.rust-lang.org/queries/incremental-compilation-in-detail.html#improving-accuracy-the-red-green-algorithm.</p>
+<p>However, I want to focus on <strong>persistence</strong> of incremental computation here. <strong>Persistence</strong> means saving the query result cache to disk so it survives across compiler invocations. Without it, incremental compilation only helps within a single compiler process - once the process exits, <strong>all cached results are gone</strong> and the next build starts from scratch. Persistence is what makes incremental compilation <strong>useful in practice</strong>: the next <code>cargo build</code> can read the cache from disk and <strong>skip recomputing queries whose inputs have not changed</strong>.</p>
+<h2 id="persistence-challenges"><a class="header" href="#persistence-challenges">Persistence Challenges</a></h2>
+<p>The sections above describe the underlying algorithm, however, another thing need to be addressed: <strong>Persistence across compilation</strong>.</p>
+<ul>
+<li>The compiler process exits when it finishes - taking the query context and its result cache with it. -&gt; Another compilation round will have to compute from scratch.</li>
+<li>To make incremental compilation useful across sessions, that data must be persisted to disk, which introduces a whole new set of challenges:</li>
+</ul>
+<p><strong>Persistence</strong> introduces further challenges:</p>
+<ol>
+<li>The query result cache lives on disk, so it is not readily available for change comparison when the next session starts.</li>
+<li>A subsequent session starts with a new version of the code that may have arbitrary changes applied. All kinds of IDs and indices generated from a global sequential counter (e.g. <code>NodeId</code>, <code>DefId</code>) might have shifted, <strong>making the persisted results not immediately usable because the same numeric ID might now refer to a completely different thing</strong>.
+<blockquote>
+<p>Remark: I think this is the primary problem.</p>
+</blockquote>
+</li>
+<li><strong>Persisting to disk is not free</strong>, so <strong>not every piece of information should be cached between sessions</strong>.
+<blockquote>
+<p>It’s desirable that <strong>fixed-sized, plain-old-data is preferred over complex structures</strong> that require an expensive serialization and deserialization step.</p>
+</blockquote>
+</li>
+</ol>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="libsyntax"><a class="header" href="#libsyntax"><code>libsyntax</code></a></h1>
 <ul>
