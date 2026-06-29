@@ -53,7 +53,7 @@ Concretely, in `rustc`:
   - Adding a new function in the middle of a file does not change the `DefPath` of existing definitions, so cached data keyed by `DefPath` remains valid.
 - **`DefPathHash`**: A 128-bit hash of the `DefPath`. It is `Copy` and cheap to compare, making it the practical unit of stable identity stored on disk.
   - On the next compilation session, the compiler deserializes cached data keyed by `DefPathHash` and maps it back to the current session's `DefId` values via a hash table lookup. This way, the cached results remain usable despite arbitrary source changes.
-- **`HirId`**: Some HIRs do not have a `DefIf`. `rustc` works around this by pairing a `DefPath` with a `LocalId` for local identifiers within an owning item, so they remain stable even if the item moves in the file.
+- **`HirId`**: Not every HIR node is a definition-level item, so a `DefId` alone is not enough to identify sub-items within one owner. `HirId` pairs a `DefPath` with a `LocalId` that identifies something locally within its owner, so internal identifiers remain stable even if the owning item moves in the file.
 
 ## `Fingerprints` and `StableHash`: Change Detection from Disk Without Full Deserialization
 
