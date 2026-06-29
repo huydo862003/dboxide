@@ -38,7 +38,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-494e72ef.js";
+            window.path_to_searchindex_js = "searchindex-3e637a72.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-838e2ecf.js"></script>
@@ -2707,6 +2707,9 @@ fn main() {
 <p>Basically the <a href="#rust-analyzer">rust-analyzer</a> has covered most of AST design &amp; query-based compilation. However, it (seems to) only cover incrementalism inside a process. What if I want incrementalism to survive across recompilations? Rustc as a compiler would really want this, so it covers the following:</p>
 <ul>
 <li><a href="#incremental-compilation-in-detail---persistent-incremental-compilation">Incremental Compilation in Detail</a></li>
+<li><a href="research/resources/rustc/cache_persistence.html">Cache Persistence</a></li>
+<li><a href="research/resources/rustc/stable_hash.html">StableHash Infrastructure</a></li>
+<li><a href="research/resources/rustc/glossary.html">Glossary</a></li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="incremental-compilation-in-detail---persistent-incremental-compilation"><a class="header" href="#incremental-compilation-in-detail---persistent-incremental-compilation">Incremental Compilation in Detail - Persistent Incremental Compilation</a></h1>
@@ -2772,7 +2775,7 @@ fn main() {
 <li>On the next compilation session, the compiler deserializes cached data keyed by <code>DefPathHash</code> and maps it back to the current session’s <code>DefId</code> values via a hash table lookup. This way, the cached results remain usable despite arbitrary source changes.</li>
 </ul>
 </li>
-<li><strong><code>HirId</code></strong>: Some HIRs do not have a <code>DefIf</code>. <code>rustc</code> works around this by pairing a <code>DefPath</code> with a <code>LocalId</code> for local identifiers within an owning item, so they remain stable even if the item moves in the file.</li>
+<li><strong><code>HirId</code></strong>: Not every HIR node is a definition-level item, so a <code>DefId</code> alone is not enough to identify sub-items within one owner. <code>HirId</code> pairs a <code>DefPath</code> with a <code>LocalId</code> that identifies something locally within its owner, so internal identifiers remain stable even if the owning item moves in the file.</li>
 </ul>
 <h2 id="fingerprints-and-stablehash-change-detection-from-disk-without-full-deserialization"><a class="header" href="#fingerprints-and-stablehash-change-detection-from-disk-without-full-deserialization"><code>Fingerprints</code> and <code>StableHash</code>: Change Detection from Disk Without Full Deserialization</a></h2>
 <p>Red-green marking requires knowing <strong>whether a query result has changed since the previous session</strong> (backdating). Doing this naively has two problems:</p>
