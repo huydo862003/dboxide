@@ -56,6 +56,22 @@ The context also carries a `StableHashControls` struct (currently just `hash_spa
 
 This is used when producing fingerprints that should not change just because line numbers shifted.
 
+## The `StableHasher` Algorithm
+
+`StableHasher` wraps `SipHasher128`, which is SipHash 1-3 with a 128-bit output. It is initialized with a fixed key of `(0, 0)` so the output is deterministic across processes and platforms:
+
+```rust
+StableHasher { state: SipHasher128::new_with_keys(0, 0) }
+```
+
+SipHash was chosen because it is fast (designed for short keys), has good collision resistance for non-cryptographic use, and was already the algorithm behind Rust's standard `HashMap` (so it was well-understood). The 128-bit output reduces collision probability to negligible levels for fingerprinting. Rustc explicitly accepts that a collision would produce an incorrect incremental result and treats it as an acceptable risk given the 2^128 output space.
+
+## Enum Discriminant Stability
+
+For enums, `StableHash` impls hash the discriminant index first, then the variant fields. This means that inserting a new variant in the middle of an enum shifts all following discriminants, invalidating fingerprints for every value of those variants.
+
+Rustc is careful about this. The practical rule is: new variants go at the end, or the enum uses explicit discriminant values so insertion does not shift existing ones.
+
 ## Connection to Fingerprints
 
 [`graph.rs:160-167`](https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_middle/src/dep_graph/graph.rs#L160-L167), [`graph.rs:483-489`](https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_middle/src/dep_graph/graph.rs#L483-L489)
