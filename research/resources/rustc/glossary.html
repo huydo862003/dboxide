@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Goals - dboxide</title>
+        <title>Glossary - dboxide</title>
 
 
         <!-- Custom HTML head -->
@@ -12,20 +12,20 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="favicon-de23e50b.svg">
-        <link rel="shortcut icon" href="favicon-8114d1fc.png">
-        <link rel="stylesheet" href="css/variables-8adf115d.css">
-        <link rel="stylesheet" href="css/general-2459343d.css">
-        <link rel="stylesheet" href="css/chrome-ae938929.css">
-        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+        <link rel="icon" href="../../../favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="../../../favicon-8114d1fc.png">
+        <link rel="stylesheet" href="../../../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../../../css/general-2459343d.css">
+        <link rel="stylesheet" href="../../../css/chrome-ae938929.css">
+        <link rel="stylesheet" href="../../../css/print-9e4910d8.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+        <link rel="stylesheet" href="../../../fonts/fonts-9644e21d.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
-        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
-        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../../../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../../../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../../../ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
 
@@ -34,13 +34,13 @@
 
         <!-- Provide site root and default themes to javascript -->
         <script>
-            const path_to_root = "";
+            const path_to_root = "../../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-bc14f50f.js";
+            window.path_to_searchindex_js = "../../../searchindex-bc14f50f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-70032468.js"></script>
+        <script src="../../../toc-70032468.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -107,7 +107,7 @@
             <!-- populated by js -->
             <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
             <noscript>
-                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+                <iframe class="sidebar-iframe-outer" src="../../../toc.html"></iframe>
             </noscript>
             <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -142,7 +142,7 @@
                     <h1 class="menu-title">dboxide</h1>
 
                     <div class="right-buttons">
-                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                        <a href="../../../print.html" title="Print this book" aria-label="Print this book">
                             <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
                         </a>
                         <a href="https://github.com/hdnax/dboxide/tree/main/doc" title="Git repository" aria-label="Git repository">
@@ -182,55 +182,43 @@
 
                 <div id="mdbook-content" class="content">
                     <main>
-                        <h1 id="goals"><a class="header" href="#goals">Goals</a></h1>
-<p>This document outlines the primary goals for <code>dboxide</code>. These goals are divided into two main categories: <strong>Project Goals</strong>, which focus on the tangible outcomes of the project, and <strong>Learning Goals</strong>, which focus on the practical techniques and concepts to be explored during development.</p>
-<h2 id="project-goals"><a class="header" href="#project-goals">Project Goals</a></h2>
-<p>These goals are about building a high-quality, feature-rich, and performant DBML parser and associated tooling.</p>
+                        <h1 id="glossary"><a class="header" href="#glossary">Glossary</a></h1>
+<p>Rustc-specific terms used across the rustc research docs.</p>
+<h2 id="cgu-codegen-unit"><a class="header" href="#cgu-codegen-unit">CGU (Codegen Unit)</a></h2>
+<p>A partition of a crate’s code that is compiled independently by the backend (LLVM). <code>rustc</code> splits a crate into CGUs to enable parallel compilation and incremental reuse. Each CGU maps to a set of symbols (functions, statics) and produces its own artifact files.</p>
+<h2 id="defid"><a class="header" href="#defid">DefId</a></h2>
+<p>A numeric identifier for a definition (function, struct, trait, etc.) within a specific compilation session. <code>DefId</code> values are session-local - the same definition may get a different <code>DefId</code> in the next session if the source changes. They must never be persisted directly to disk.</p>
+<h2 id="defpath"><a class="header" href="#defpath">DefPath</a></h2>
+<p>A path-based, stable representation of a definition - e.g. <code>std::collections::HashMap</code>. Unlike <code>DefId</code>, <code>DefPath</code> is derived from the source structure and does not shift when unrelated code is added or removed.</p>
+<h2 id="defpathhash"><a class="header" href="#defpathhash">DefPathHash</a></h2>
+<p>A 128-bit hash of a <code>DefPath</code>. It is <code>Copy</code>, cheap to compare, and stable across sessions. This is the practical unit of identity used when persisting anything keyed by definition to disk. On load, the compiler maps <code>DefPathHash</code> back to the current session’s <code>DefId</code> via a hash table lookup.</p>
+<h2 id="depnode"><a class="header" href="#depnode">DepNode</a></h2>
+<p>A node in the dependency graph. Represents one unit of computation (a query invocation). Each <code>DepNode</code> carries a <code>DepKind</code> (which query) and a key fingerprint (which input). Edges between nodes encode “this computation read the result of that computation”.</p>
+<h2 id="fingerprint"><a class="header" href="#fingerprint">Fingerprint</a></h2>
+<p>A 128-bit hash (<code>u64, u64</code>) produced by <code>StableHasher</code>. Used in two roles per dep node:</p>
 <ul>
-<li><strong>Resilient and high-quality parser:</strong> Create a parser that can gracefully handle syntax errors, provide meaningful error messages, and produce a lossless syntax tree. This is crucial for a good developer experience.</li>
-<li><strong>Language server implementation:</strong> Build a functional language server for DBML that provides features like:
-<ul>
-<li>Autocompletion</li>
-<li>Go to definition</li>
-<li>Find references</li>
-<li>Real-time diagnostics</li>
+<li><strong>Key fingerprint</strong>: identifies which node this is (a stable hash of the query key, e.g. a <code>DefPathHash</code>).</li>
+<li><strong>Value fingerprint</strong>: a hash of the query’s return value, used for change detection across sessions.</li>
 </ul>
-</li>
-<li><strong>Performance:</strong> The parser should be significantly faster than previous implementations, leveraging the performance benefits of Rust.</li>
-<li><strong>SQL dialect awareness:</strong> The parser should be able to understand and handle different SQL dialects, making it more versatile.</li>
-<li><strong>Modularity and extensibility:</strong> Design the parser and its components in a way that is easy to maintain, extend, and reuse.</li>
-</ul>
-<h2 id="learning-goals"><a class="header" href="#learning-goals">Learning Goals</a></h2>
-<p>This project is also an opportunity to learn and apply modern compiler construction techniques. The focus is on understanding the “how” and “why” behind these techniques.</p>
-<ul>
-<li><strong>Lexing and parsing techniques:</strong>
-<ul>
-<li><strong>Token representation:</strong> Investigate the ideal way to represent syntax tokens, including their position, kind, and value.</li>
-<li><strong>Lossless syntax trees:</strong> Learn how to build and work with lossless syntax trees that preserve all source information, including whitespace and comments.</li>
-<li><strong>Resilient parsing:</strong> Master techniques for error recovery and resilience in parsers.</li>
-<li><strong>Incremental parsing and red-green trees:</strong> Understand and implement incremental parsing using red-green trees to efficiently re-parse only the changed parts of a file.</li>
-</ul>
-</li>
-<li><strong>Query-based compilation:</strong>
-<ul>
-<li><strong>Salsa framework:</strong> Learn how to use the <code>salsa</code> framework to build a query-based compiler architecture.</li>
-<li><strong>Incremental computation:</strong> Understand how query-based systems enable incremental computation, where only the necessary computations are re-run when the input changes.</li>
-<li><strong>Parallelism:</strong> Explore opportunities for parallelizing the compilation process to improve performance.</li>
-</ul>
-</li>
-<li><strong>Type-driven validation:</strong> Learn to apply the “Parse, don’t validate” principle to create a more robust and type-safe parser.</li>
-<li><strong>Effective testing strategies:</strong> Learn how to write effective and maintainable unit and integration tests for a compiler.</li>
-</ul>
+<h2 id="hirid"><a class="header" href="#hirid">HirId</a></h2>
+<p>An identifier for a HIR node that is not a definition-level item. Conceptually a pair of <code>(DefPath, LocalId)</code> - the <code>DefPath</code> identifies the owning item, and the <code>LocalId</code> identifies something within it. Stable across sessions as long as the owning item’s path does not change.</p>
+<h2 id="svh-stable-version-hash"><a class="header" href="#svh-stable-version-hash">SVH (Stable Version Hash)</a></h2>
+<p>A hash of the crate’s content used to name finalized session directories. A session directory named <code>s-{timestamp}-{SVH}</code> is considered finalized and valid. This lets the compiler quickly identify the most recent valid cache for a given crate.</p>
+<h2 id="work-product"><a class="header" href="#work-product">Work Product</a></h2>
+<p>A record of the compiled artifact files produced for one CGU in a session. Stored in <code>work-products.bin</code>. Contains the CGU name and a map of file type to file path (e.g. <code>"o" -&gt; "/path/to/foo.o"</code>). On an incremental rebuild, if a CGU’s dep-node is green and the symbol hash matches, its work product files are reused directly instead of recompiling.</p>
+<blockquote>
+<p>Source: <a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_middle/src/dep_graph/graph.rs#L1110-L1135"><code>graph.rs:1110-1135</code></a></p>
+</blockquote>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="introduction.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../../../research/resources/rustc/stable_hash.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="research.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../../research/resources/libsyntax/SUMMARY.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -240,11 +228,11 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="introduction.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../../../research/resources/rustc/stable_hash.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="research.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../../research/resources/libsyntax/SUMMARY.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>
@@ -264,17 +252,17 @@
         </script>
 
 
-        <script src="elasticlunr-ef4e11c1.min.js"></script>
-        <script src="mark-09e88c2c.min.js"></script>
-        <script src="searcher-c2a407aa.js"></script>
+        <script src="../../../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../../../mark-09e88c2c.min.js"></script>
+        <script src="../../../searcher-c2a407aa.js"></script>
 
-        <script src="clipboard-1626706a.min.js"></script>
-        <script src="highlight-abc7f01d.js"></script>
-        <script src="book-a0b12cfe.js"></script>
+        <script src="../../../clipboard-1626706a.min.js"></script>
+        <script src="../../../highlight-abc7f01d.js"></script>
+        <script src="../../../book-a0b12cfe.js"></script>
 
         <!-- Custom JS scripts -->
-        <script src="theme/mermaid-3a6b472a.min.js"></script>
-        <script src="theme/mermaid-init-025d9952.js"></script>
+        <script src="../../../theme/mermaid-3a6b472a.min.js"></script>
+        <script src="../../../theme/mermaid-init-025d9952.js"></script>
 
 
 

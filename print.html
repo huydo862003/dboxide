@@ -38,10 +38,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-3e637a72.js";
+            window.path_to_searchindex_js = "searchindex-bc14f50f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-838e2ecf.js"></script>
+        <script src="toc-70032468.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -240,7 +240,7 @@
 <ul>
 <li><a href="#research-plan"><strong>Research Plan</strong></a>: This page outlines the research plan, including the list of topics to be investigated.</li>
 <li><a href="#resources"><strong>Resources</strong></a>: This page documents the knowledge learnt from various resources.</li>
-<li><a href="#glossary"><strong>Glossary</strong></a>: This page contains brief explanations of the concepts and techniques researched for the project.</li>
+<li><a href="#glossary-1"><strong>Glossary</strong></a>: This page contains brief explanations of the concepts and techniques researched for the project.</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="research-plan"><a class="header" href="#research-plan">Research Plan</a></h1>
@@ -2707,9 +2707,9 @@ fn main() {
 <p>Basically the <a href="#rust-analyzer">rust-analyzer</a> has covered most of AST design &amp; query-based compilation. However, it (seems to) only cover incrementalism inside a process. What if I want incrementalism to survive across recompilations? Rustc as a compiler would really want this, so it covers the following:</p>
 <ul>
 <li><a href="#incremental-compilation-in-detail---persistent-incremental-compilation">Incremental Compilation in Detail</a></li>
-<li><a href="research/resources/rustc/cache_persistence.html">Cache Persistence</a></li>
-<li><a href="research/resources/rustc/stable_hash.html">StableHash Infrastructure</a></li>
-<li><a href="research/resources/rustc/glossary.html">Glossary</a></li>
+<li><a href="#cache-persistence">Cache Persistence</a></li>
+<li><a href="#stablehash">StableHash Infrastructure</a></li>
+<li><a href="#glossary">Glossary</a></li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="incremental-compilation-in-detail---persistent-incremental-compilation"><a class="header" href="#incremental-compilation-in-detail---persistent-incremental-compilation">Incremental Compilation in Detail - Persistent Incremental Compilation</a></h1>
@@ -2835,6 +2835,277 @@ fn main() {
 <p>If <code>leaf_query(C)</code> is needed, the compiler loads its result from cache. <code>intermediate_query(B)</code> is never loaded. When the compiler writes the new result cache at the end of the session, only in-memory results are written, so <code>intermediate_query(B)</code> goes missing from the new cache.</p>
 <p>The next session that actually needs <code>intermediate_query(B)</code> will have to recompute it, even though a valid cached result existed just before.</p>
 <p>To prevent the result cache from silently shrinking, the compiler performs <strong>cache promotion</strong>: before writing the new cache, it walks all green dep-nodes and ensures their query results are loaded into memory, so they are included in the serialized output.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="cache-persistence"><a class="header" href="#cache-persistence">Cache Persistence</a></h1>
+<p>This document covers how <code>rustc</code> physically organizes, loads, and saves its incremental compilation cache across sessions. It complements <a href="#incremental-compilation-in-detail---persistent-incremental-compilation">Incremental Compilation in Detail</a>, which covers the conceptual algorithm.</p>
+<p>Sources:</p>
+<ul>
+<li>Rustc dev guide: <a href="https://rustc-dev-guide.rust-lang.org/queries/incremental-compilation-in-detail.html">Incremental Compilation in Detail</a></li>
+<li><a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_incremental/src/persist/fs.rs"><code>compiler/rustc_incremental/src/persist/fs.rs</code></a> - session directory management</li>
+<li><a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_incremental/src/persist/load.rs"><code>compiler/rustc_incremental/src/persist/load.rs</code></a> - cache loading</li>
+<li><a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_incremental/src/persist/save.rs"><code>compiler/rustc_incremental/src/persist/save.rs</code></a> - cache writing</li>
+<li><a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_middle/src/dep_graph/serialized.rs"><code>compiler/rustc_middle/src/dep_graph/serialized.rs</code></a> - dep-graph format</li>
+<li><a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_middle/src/query/on_disk_cache.rs"><code>compiler/rustc_middle/src/query/on_disk_cache.rs</code></a> - query-cache format</li>
+</ul>
+<h2 id="physical-organization"><a class="header" href="#physical-organization">Physical Organization</a></h2>
+<ul>
+<li>In <code>rustc</code>, the <strong>root cache directory</strong> is specified via the <code>-C incremental=&lt;path&gt;</code> flag passed to <code>rustc</code>.</li>
+<li>When using Cargo, this is managed automatically - set via <code>incremental = true/false</code> in <code>Cargo.toml</code> under <code>[profile.*]</code>, and the cache is placed under <code>target/{profile}/incremental/</code>.</li>
+</ul>
+<p>Inside the <strong>cache directory</strong>, the layout is (<a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_incremental/src/persist/fs.rs#L224-L246"><code>fs.rs:224-246</code></a>):</p>
+<pre><code>&lt;incr-comp-dir or root-cache-dir&gt;/
+  {crate-name-and-disambiguator}/     &lt;- one per crate
+    s-{timestamp}-{random}-working/   &lt;- active session (in progress)
+    s-{timestamp}-{SVH}/              &lt;- finalized session (previous runs)
+</code></pre>
+<blockquote>
+<p>Note that <strong>on Windows</strong>, <a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_incremental/src/persist/fs.rs#L229-L232">rustc uses a hack to “insert a weird prefix that makes in windows tolerate long paths”</a>. It seems that this prefix is <code>\\?\</code>?</p>
+</blockquote>
+<h3 id="directory-of-a-compilation-session"><a class="header" href="#directory-of-a-compilation-session">Directory of a Compilation Session</a></h3>
+<p>A <strong>compilation session</strong> is one invocation of the compiler on a crate.</p>
+<ul>
+<li>Each session gets its own subdirectory named <code>s-{timestamp}-{random}-working</code> while active.</li>
+<li>On successful completion it is renamed to <code>s-{timestamp}-{SVH}</code>, where SVH (Stable Version Hash) is a hash of the crate’s content.</li>
+<li>If the compiler crashes, the <code>-working</code> directory is left behind and cleaned up on the next run.</li>
+</ul>
+<p>Sessions follow a <strong>copy-on-write</strong> protocol (<a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_incremental/src/persist/fs.rs#L4-L96"><code>fs.rs:4-96</code></a>):</p>
+<ul>
+<li>A new session starts as a <code>-working</code> directory, populated by hard-linking files from the previous finalized session. Only files that change are rewritten.</li>
+<li>On success, the <code>-working</code> directory is renamed to a finalized session directory (named with the crate’s stable version hash).</li>
+<li>Multiple compiler processes can run concurrently for the same crate without interfering - each works on its own private copy.</li>
+</ul>
+<h3 id="picking-a-source-directory-to-reuse"><a class="header" href="#picking-a-source-directory-to-reuse">Picking a Source Directory to Reuse</a></h3>
+<p>At startup, the compiler scans the crate’s directory for finalized session directories and picks the <strong>most recently timestamped</strong> one (<a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_incremental/src/persist/fs.rs#L518-L557"><code>fs.rs:518-557</code></a>). The timestamp is embedded in the directory name (<code>s-{timestamp}-{SVH}</code>), so no stat calls are needed - it’s just a string comparison over directory entries.</p>
+<p>The SVH in the directory name is <strong>not used for selection</strong> - only the timestamp matters. Whether the selected session’s cache is actually usable is determined later, when the dep-graph is loaded and its header is checked (compiler version + commandline args hash).</p>
+<p>If the selected directory cannot be copied from (e.g. deleted mid-copy by a concurrent garbage collector), the compiler falls back to the next most recent candidate and retries. If no finalized session exists at all, it starts with an empty cache.</p>
+<p><strong>Pitfalls</strong>:</p>
+<ul>
+<li><strong>Clock skew</strong>: if the system clock goes backwards (NTP adjustment, VM migration), a newer session can get an older timestamp and be bypassed in favor of a genuinely older one. The compiler has no defense against this.</li>
+<li><strong>Optimistic copy</strong>: the source directory is selected and hard-linked before the dep-graph header is checked. If the cache turns out to be invalid (wrong compiler version, changed flags), the hard-linking was wasted work. Hard-linking is cheap on most filesystems, but on filesystems without hard link support (e.g. FAT), the files are fully copied instead - making an invalid cache selection genuinely costly.</li>
+</ul>
+<h3 id="lock-files-and-crash-detection"><a class="header" href="#lock-files-and-crash-detection">Lock Files and Crash Detection</a></h3>
+<p>Each session directory has a <strong>lock file</strong> that the compiler holds an exclusive lock on for the duration of the session. The lock serves two purposes:</p>
+<ol>
+<li><strong>Crash detection</strong> (<a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_incremental/src/persist/fs.rs#L55-L70"><code>fs.rs:55-70</code></a>): a crashed process cannot run cleanup code, so stale <code>-working</code> directories cannot be deleted by the process that created them. Instead, on each startup, <code>garbage_collect_session_directories</code> scans for leftover <code>-working</code> directories and tries to acquire an exclusive lock on each one.</li>
+</ol>
+<ul>
+<li>Lock fails -&gt; the owning process is still alive, leave it alone.</li>
+<li>Lock succeeds -&gt; the owning process is dead, safe to delete.</li>
+</ul>
+<p>OS-level file locks are automatically released when a process dies (crash, OOM, kill), so this works reliably without any explicit crash handling. To avoid a race between a process creating the lock file and actually locking it, only directories older than a few seconds are considered for garbage collection.</p>
+<ol start="2">
+<li><strong>Reader/writer coordination</strong>: when one process wants to copy a finalized session directory (to start a new session from it), it acquires a <strong>shared</strong> lock on that directory’s lock file. Any garbage-collecting process acquires an <strong>exclusive</strong> lock. This prevents a collector from deleting a directory that another process is actively copying from.</li>
+</ol>
+<p>Each session directory contains three binary files (<code>.bin</code> signals raw binary format, not text or JSON):</p>
+<ul>
+<li><code>dep-graph.bin</code> - the dependency graph (nodes, edges, fingerprints)</li>
+<li><code>query-cache.bin</code> - cached query result values</li>
+<li><code>work-products.bin</code> - CGU artifact registry</li>
+</ul>
+<p>Some noteworthy points:</p>
+<ul>
+<li>A dummy lockfile is created solely for representing folder synchronization.
+<blockquote>
+<p>Locking a whole directory is unreliably, because the lock API requires calling the file lock API on an open file descriptor. However, opening a directory is unstable on Linux.</p>
+</blockquote>
+</li>
+<li>“There is still a small time window between the original process creating the lock file and actually locking it. In order to minimize the chance that another process tries to acquire the lock in just that instance, only session directories that are older than a few seconds are considered for garbage collection”.</li>
+</ul>
+<h3 id="dependency-and-change-tracking-dep-graph"><a class="header" href="#dependency-and-change-tracking-dep-graph">Dependency and Change Tracking (<code>dep-graph</code>)</a></h3>
+<p><a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_middle/src/dep_graph/serialized.rs#L1-L40"><code>serialized.rs:1-40</code></a> - the module comment describes the format in full.</p>
+<p>Stores the dependency graph: nodes, edges, and fingerprints. No query result data is stored here - only the graph structure and hashes needed for change detection. Fully decoded upfront into memory on load - no random access into the file itself.</p>
+<p>Each node contains:</p>
+<ul>
+<li><code>DepKind</code> - which query this node represents.</li>
+<li>Key fingerprint - a stable hash of the query key (e.g. a <code>DefPathHash</code>). This serves as the node’s stable identity across sessions - no numeric ID is persisted.</li>
+<li>Value fingerprint - a hash of the query’s return value, used to detect whether the result changed since the previous session.</li>
+<li>Edges - indices of the nodes this node depends on.</li>
+</ul>
+<pre><code>[ file header                   ]  &lt;- compiler version + commandline args hash
+[ NodeInfo, NodeInfo, NodeInfo  ]  &lt;- streamed node records, written as queries finish
+[ ...                           ]
+[ total_node_count: u64         ]  &lt;- last 16 bytes, appended after all nodes are written
+[ total_edge_count: u64         ]
+</code></pre>
+<blockquote>
+<p>The counts are at the end rather than the start because nodes are streamed to disk as queries finish - the total is not known until writing is complete. Putting them first would require buffering the entire graph in memory or a second pass to rewrite the header.</p>
+</blockquote>
+<p>Each node record corresponds to one <code>NodeInfo</code> (a dep-node plus its value fingerprint and edges). On disk it is split into two parts:</p>
+<ul>
+<li>A fixed-size <code>SerializedNodeHeader</code> (<a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_middle/src/dep_graph/serialized.rs#L432"><code>serialized.rs:432</code></a>): 38 bytes packed as <code>DepKind</code> discriminant (2 bytes) + key fingerprint (16 bytes) + value fingerprint (16 bytes) + edge count and edge byte-width metadata (remaining bits).</li>
+<li>A variable-length edge list immediately following the header.</li>
+</ul>
+<p>The total node/edge counts at the end of the file allow the decoder to pre-allocate arrays upfront before reading any records (<a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_middle/src/dep_graph/serialized.rs#L300-L346"><code>serialized.rs:300-346</code></a>). The dep-graph file is then read sequentially from start to end - there is no random access into individual node records. All lookups after load go through the in-memory <code>SerializedDepGraph</code> arrays.</p>
+<h3 id="computed-result-store-query-cache"><a class="header" href="#computed-result-store-query-cache">Computed Result Store (<code>query-cache</code>)</a></h3>
+<p><a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_middle/src/query/on_disk_cache.rs#L52-L116"><code>on_disk_cache.rs:52-116</code></a></p>
+<p>Stores the serialized return values of cached queries. On load, only the footer index is decoded into memory; result blobs are accessed lazily by offset via <code>mmap</code>. Values and their lookup index are kept in separate regions of the file:</p>
+<pre><code>[ query result blob ]  &lt;- raw serialized value for some query
+[ query result blob ]  &lt;- raw serialized value for another query
+[ ...               ]
+[ Footer            ]  &lt;- index: maps each dep-node -&gt; byte offset of its result blob
+[ footer_pos: u64   ]  &lt;- last 8 bytes: byte offset of the Footer
+</code></pre>
+<p>On load, the compiler reads the last 8 bytes to find the footer position, jumps to it, and decodes the full index into memory (<a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_middle/src/query/on_disk_cache.rs#L159-L165"><code>on_disk_cache.rs:159-165</code></a>). Individual result blobs are then accessed directly by offset on demand.</p>
+<h3 id="compiled-artifact-registry-work-products"><a class="header" href="#compiled-artifact-registry-work-products">Compiled Artifact Registry (<code>work-products</code>)</a></h3>
+<p>Stores the set of compiled artifact files produced per CGU. Fully loaded upfront on every startup - the list is small (one entry per CGU) and always needed in full. Simple sequential encoding with no index.</p>
+<p>Each entry maps a <code>WorkProductId</code> (stable hash of the CGU name) to a <code>WorkProduct</code> (the artifact file paths for that CGU, e.g. <code>"o" -&gt; "/path/to/foo.o"</code>), allowing the compiler to look up “given this CGU, where are its compiled files from last session?” (<a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_middle/src/dep_graph/graph.rs#L1110-L1135"><code>graph.rs:1110-1135</code></a>).</p>
+<p>On an incremental rebuild, if the CGU’s dep-node is green and the symbol hash matches, the saved files are reused directly. Otherwise the CGU is recompiled and a new entry is written.</p>
+<h2 id="load-algorithm"><a class="header" href="#load-algorithm">Load Algorithm</a></h2>
+<p><a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_incremental/src/persist/load.rs#L40-L225"><code>load.rs:40-225</code></a></p>
+<p>At startup, the compiler:</p>
+<ol>
+<li>Scans the crate’s directory for finalized session directories (<code>s-{timestamp}-{SVH}</code>) and picks the most recently timestamped one as the source (<a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_incremental/src/persist/fs.rs#L518-L557"><code>fs.rs:518-557</code></a>).
+<ul>
+<li>If the copy fails (e.g. a concurrent garbage collector deleted the directory mid-copy), it retries with the next most recent candidate.</li>
+<li>If no finalized session exists, it starts with an empty cache and skips to step 4.</li>
+</ul>
+</li>
+<li>Hard-links files from the selected source directory into the new <code>-working</code> directory. Only files that change during this session will be rewritten.</li>
+<li>Reads <code>dep-graph.bin</code> from the hard-linked copy.
+<ul>
+<li>Checks the file header: if the compiler version or command-line arguments hash has changed, the entire cache is discarded.</li>
+<li>If valid, fully decodes it upfront into a <code>SerializedDepGraph</code> (<a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_middle/src/dep_graph/serialized.rs#L99-L126"><code>serialized.rs:99-126</code></a>): flat arrays of nodes, value fingerprints, and edges held in memory. It is wrapped in an <code>Arc</code> and never mutated after construction. Only fingerprints and indices are stored - no query result values.</li>
+</ul>
+</li>
+<li>Reads <code>work-products.bin</code> fully upfront. The list is small (one entry per CGU) and always needed in full, so no index or lazy loading is used. Entries whose artifact files no longer exist on disk are pruned.</li>
+<li>Memory-maps <code>query-cache.bin</code> but only decodes its footer index (dep-node -&gt; byte offset) into memory. The actual result blobs remain in the mmap and are decoded lazily on demand by offset.</li>
+</ol>
+<p>At this point, two dep-graphs coexist in memory:</p>
+<ul>
+<li><code>previous</code> - the <code>SerializedDepGraph</code> decoded from disk: flat arrays of nodes, value fingerprints, and edges. Used for fingerprint lookups and color marking. Never mutated.</li>
+<li><code>current</code> - a new empty graph being built for this session, populated as queries execute.</li>
+</ul>
+<p>They are <strong>never merged</strong>. Green nodes from the previous graph are copied into the current one as they are marked.</p>
+<h2 id="write-algorithm"><a class="header" href="#write-algorithm">Write Algorithm</a></h2>
+<p>Dev guide: “Once the compilation session has finished…the new graph is serialized out to disk, alongside the query result cache”.</p>
+<p>The dep-graph is streamed to a staging file (<code>dep-graph.part.bin</code>) as each query finishes (<a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_incremental/src/persist/save.rs"><code>save.rs</code></a>).</p>
+<p>At the end of the session:</p>
+<ol>
+<li><strong>Cache promotion</strong> runs first: walks all green dep-nodes and loads any query results not yet in memory.
+<ul>
+<li>Dev guide: “Before emitting the new result cache it will walk all green dep-nodes and make sure that their query result is loaded into memory”.</li>
+<li>Without this, those results silently disappear from the new cache, causing unnecessary recomputation next session.</li>
+</ul>
+</li>
+<li>The query-cache is written out with all in-memory results.</li>
+<li>The <code>-working</code> directory is renamed to a finalized session directory.</li>
+</ol>
+<p>If the compiler exits with errors, the <code>-working</code> directory is left unfinalized and cleaned up on the next run.</p>
+<h2 id="garbage-collection"><a class="header" href="#garbage-collection">Garbage Collection</a></h2>
+<p>Two levels of GC run on each startup (<a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_incremental/src/persist/fs.rs#L613"><code>fs.rs:613</code></a>):</p>
+<p><strong>Session directories</strong>: <code>garbage_collect_session_directories</code> scans the crate directory and keeps only the most recent finalized session directory. All older finalized directories that can be exclusively locked are deleted via <code>remove_dir_all</code> (which removes the <code>.bin</code> files inside). Stale <code>-working</code> directories older than ~10 seconds that can be exclusively locked are also deleted.</p>
+<p><strong>Artifact files</strong>: during load, any work product entry whose artifact files are missing is passed to <code>delete_workproduct_files</code>, which deletes whatever artifact files still exist for that entry and drops the entry from the in-memory map (<a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_incremental/src/persist/load.rs#L35-L38"><code>load.rs:35-38</code></a>).</p>
+<h2 id="io-techniques"><a class="header" href="#io-techniques">IO Techniques</a></h2>
+<p>Concrete techniques observed in the source code.</p>
+<p><strong>Hard-linking unchanged files</strong> (<a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_incremental/src/persist/fs.rs#L24-L26"><code>fs.rs:24-26</code></a>): when starting a new session, the previous session’s files are hard-linked into the new <code>-working</code> directory. Only files that are actually rewritten get new disk writes.</p>
+<p><strong>Streaming dep-graph writes</strong> (<a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_middle/src/dep_graph/serialized.rs#L565-L984"><code>serialized.rs:565-984</code></a>): each dep-graph node is written to disk as its query completes - no in-memory accumulation of the full graph.</p>
+<ul>
+<li>Nodes are streamed into <code>dep-graph.part.bin</code> during the session. The <code>.part</code> suffix signals the file is incomplete. At the end of the session it is renamed to <code>dep-graph.bin</code> once all nodes and the trailing counts are written.
+<blockquote>
+<p>Remark: This is probably to avoid unnecessary memory usage/recomputation at the end?</p>
+</blockquote>
+</li>
+</ul>
+<p><strong>mmap for cache reads</strong> (<a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_incremental/src/persist/load.rs#L91-L100"><code>load.rs:91-100</code></a>, <a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_middle/src/query/on_disk_cache.rs#L152"><code>on_disk_cache.rs:152</code></a>): both the dep-graph and query-cache files are memory-mapped via <code>Mmap</code>. The compiler does not read them into a heap buffer.</p>
+<p><strong>Footer-based random access</strong> (<a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_middle/src/query/on_disk_cache.rs#L159-L165"><code>on_disk_cache.rs:159-165</code></a>): the query-cache footer (an index of <code>dep-node -&gt; byte offset</code>) is decoded once on startup. Individual results are then read by seeking directly to their offset.</p>
+<p><strong>Deferred reverse index construction</strong> (<a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_middle/src/dep_graph/serialized.rs#L159-L166"><code>serialized.rs:159-166</code></a>): after loading the dep-graph, the per-<code>DepKind</code> reverse index (<code>LazyNodeIndex</code>) is not built upfront. Each kind’s index is constructed on first lookup via <code>OnceLock</code>.</p>
+<h2 id="pitfalls"><a class="header" href="#pitfalls">Pitfalls</a></h2>
+<p><strong>The cache can silently shrink</strong> without cache promotion. Intermediate query results that are green but never accessed during a session are not in memory when the new cache is written, so they are dropped. The next session that needs them recomputes from scratch.</p>
+<p><strong>Whole-cache invalidation happens more often than expected</strong>. Any change to the compiler version or command-line arguments discards the entire cache - not just affected nodes. This is intentional and conservative: the file header check rejects mismatches at the binary level.</p>
+<p><strong>Artifact files can go missing independently of the dep-graph</strong>. A work-product entry can survive while its <code>.o</code> file has been deleted (e.g. by <code>cargo clean</code> on a specific target). The compiler handles this by checking file existence on load and pruning stale entries (<a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_incremental/src/persist/load.rs#L56-L88"><code>load.rs:56-88</code></a>). However, this check is not atomic - if a file is deleted after the existence check but before the backend copies it out during codegen, <code>link_or_copy</code> returns an error. For non-object files this is a compiler error; for <code>.o</code> files it is a fatal abort (<code>emit_fatal</code>) with no fallback to recompiling the CGU (<a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_codegen_ssa/src/back/write.rs#L895-L944"><code>write.rs:895-944</code></a>).</p>
+<p><strong>The query-cache does not store upstream crate results</strong>. Results from external crates live in their compiled <code>.rmeta</code> artifacts and are read directly from there. Only results computed in the local crate are persisted in the local cache.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="stablehash"><a class="header" href="#stablehash">StableHash</a></h1>
+<p>This document covers how <code>rustc</code> hashes values in a way that is stable across compilation sessions, which is required for fingerprint-based change detection.</p>
+<p>The conceptual need for stable hashing is described in <a href="#incremental-compilation-in-detail---persistent-incremental-compilation">Incremental Compilation in Detail</a>. This document covers how it is actually implemented.</p>
+<p>Sources:</p>
+<ul>
+<li>Rustc dev guide: <a href="https://rustc-dev-guide.rust-lang.org/queries/incremental-compilation-in-detail.html">Incremental Compilation in Detail</a></li>
+<li><a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_data_structures/src/stable_hash.rs"><code>compiler/rustc_data_structures/src/stable_hash.rs</code></a> - trait definitions</li>
+<li><a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_middle/src/dep_graph/graph.rs"><code>compiler/rustc_middle/src/dep_graph/graph.rs</code></a> - fingerprint computation</li>
+</ul>
+<h2 id="the-problem"><a class="header" href="#the-problem">The Problem</a></h2>
+<p>Rust’s standard <code>Hash</code> trait is not stable across sessions. It can hash memory addresses, pointer values, or anything tied to the current process state. Two objects that are logically identical will not produce the same hash if session-local details differ.</p>
+<p>For incremental compilation, fingerprints must be consistent: hashing the same value in session 1 and session 2 must produce the same bits, so the compiler can tell whether a query result changed.</p>
+<h2 id="the-stablehash-trait"><a class="header" href="#the-stablehash-trait">The <code>StableHash</code> Trait</a></h2>
+<p><a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_data_structures/src/stable_hash.rs#L76-L77"><code>stable_hash.rs:76-77</code></a></p>
+<p><code>rustc</code> defines a separate <code>StableHash</code> trait. Its doc comment states these requirements:</p>
+<ul>
+<li><strong>Session-independent</strong>: must not hash memory addresses, <code>DefId</code> values, or any other session-local state.</li>
+<li><strong>Architecture-independent</strong>: must produce the same bits on any host (endianness, pointer size). The <code>StableHasher</code> handles this internally.</li>
+<li><strong>Consistent with equality</strong>: <code>x == y</code> implies <code>stable_hash(x) == stable_hash(y)</code>, and <code>x != y</code> implies <code>stable_hash(x) != stable_hash(y)</code>. This second condition is stricter than the standard <code>Hash</code> trait, which only requires the first.</li>
+</ul>
+<p>For simple types (integers, strings, paths), <code>StableHash</code> delegates to the standard hasher since their values are already stable. For session-local types like <code>DefId</code>, it requires a <strong>hashing context</strong> (<code>Hcx</code>) to translate them into stable equivalents before hashing.</p>
+<p><code>HashMap</code> and <code>HashSet</code> explicitly do NOT implement <code>StableHash</code> because their iteration order is unstable (<a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_data_structures/src/stable_hash.rs#L593-L594"><code>stable_hash.rs:593-594</code></a>):</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl&lt;V&gt; !StableHash for std::collections::HashSet&lt;V&gt; {}
+impl&lt;K, V&gt; !StableHash for std::collections::HashMap&lt;K, V&gt; {}
+<span class="boring">}</span></code></pre>
+<h2 id="the-hashing-context-stablehashctxt"><a class="header" href="#the-hashing-context-stablehashctxt">The Hashing Context (<code>StableHashCtxt</code>)</a></h2>
+<p><a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_data_structures/src/stable_hash.rs#L23-L36"><code>stable_hash.rs:23-36</code></a></p>
+<p>The context passed into <code>stable_hash</code> provides two key operations:</p>
+<ul>
+<li><code>def_path_hash(def_id)</code> - converts an unstable <code>DefId</code> into its stable <code>DefPathHash</code> before feeding it to the hasher.</li>
+<li><code>stable_hash_span(span)</code> - converts a <code>Span</code> (which references session-local byte offsets) into a stable representation.</li>
+</ul>
+<p>This means that when any type containing a <code>DefId</code> implements <code>StableHash</code>, it does not hash the <code>DefId</code> integer directly - it calls <code>hcx.def_path_hash(def_id)</code> and hashes that instead. The context is the translation layer between session-local IDs and stable identifiers.</p>
+<p>Dev guide: “whenever something is hashed that might change in between compilation sessions (e.g. a <code>DefId</code>), we instead hash its stable equivalent”.</p>
+<h2 id="stablehashcontrols"><a class="header" href="#stablehashcontrols"><code>StableHashControls</code></a></h2>
+<p><a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_data_structures/src/stable_hash.rs#L623-L630"><code>stable_hash.rs:623-630</code></a></p>
+<p>The context also carries a <code>StableHashControls</code> struct (currently just <code>hash_spans: bool</code>) that lets callers opt out of hashing certain data. The comment states: “Whenever a <code>StableHash</code> implementation caches its result, it needs to include <code>StableHashControls</code> as part of the key, to ensure that it does not produce an incorrect result”.</p>
+<p>This is used when producing fingerprints that should not change just because line numbers shifted.</p>
+<h2 id="the-stablehasher-algorithm"><a class="header" href="#the-stablehasher-algorithm">The <code>StableHasher</code> Algorithm</a></h2>
+<p><code>StableHasher</code> wraps <code>SipHasher128</code>, which is SipHash 1-3 with a 128-bit output. It is initialized with a fixed key of <code>(0, 0)</code> so the output is deterministic across processes and platforms:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>StableHasher { state: SipHasher128::new_with_keys(0, 0) }
+<span class="boring">}</span></code></pre>
+<p>SipHash was chosen because it is fast (designed for short keys), has good collision resistance for non-cryptographic use, and was already the algorithm behind Rust’s standard <code>HashMap</code> (so it was well-understood). The 128-bit output reduces collision probability to negligible levels for fingerprinting. Rustc explicitly accepts that a collision would produce an incorrect incremental result and treats it as an acceptable risk given the 2^128 output space.</p>
+<h2 id="enum-discriminant-stability"><a class="header" href="#enum-discriminant-stability">Enum Discriminant Stability</a></h2>
+<p>For enums, <code>StableHash</code> impls hash the discriminant index first, then the variant fields. This means that inserting a new variant in the middle of an enum shifts all following discriminants, invalidating fingerprints for every value of those variants.</p>
+<p>Rustc is careful about this. The practical rule is: new variants go at the end, or the enum uses explicit discriminant values so insertion does not shift existing ones.</p>
+<h2 id="connection-to-fingerprints"><a class="header" href="#connection-to-fingerprints">Connection to Fingerprints</a></h2>
+<p><a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_middle/src/dep_graph/graph.rs#L160-L167"><code>graph.rs:160-167</code></a>, <a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_middle/src/dep_graph/graph.rs#L483-L489"><code>graph.rs:483-489</code></a></p>
+<p>When a query finishes, its return value is fingerprinted via <code>hash_result</code>, which calls <code>stable_hash</code> with a <code>StableHashCtxt</code> backed by <code>TyCtxt</code>:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub fn hash_result&lt;R: StableHash&gt;(hcx: &amp;mut StableHashState&lt;'_&gt;, result: &amp;R) -&gt; Fingerprint {
+    let mut stable_hasher = StableHasher::new();
+    result.stable_hash(hcx, &amp;mut stable_hasher);
+    stable_hasher.finish()
+}
+<span class="boring">}</span></code></pre>
+<p>This fingerprint is stored in the dep-graph node as the value fingerprint and compared against the stored fingerprint from the previous session to decide green vs red.</p>
+<p>Dev guide: “Each time a new query result is computed, the query engine will compute a 128 bit hash value of the result”.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="glossary"><a class="header" href="#glossary">Glossary</a></h1>
+<p>Rustc-specific terms used across the rustc research docs.</p>
+<h2 id="cgu-codegen-unit"><a class="header" href="#cgu-codegen-unit">CGU (Codegen Unit)</a></h2>
+<p>A partition of a crate’s code that is compiled independently by the backend (LLVM). <code>rustc</code> splits a crate into CGUs to enable parallel compilation and incremental reuse. Each CGU maps to a set of symbols (functions, statics) and produces its own artifact files.</p>
+<h2 id="defid"><a class="header" href="#defid">DefId</a></h2>
+<p>A numeric identifier for a definition (function, struct, trait, etc.) within a specific compilation session. <code>DefId</code> values are session-local - the same definition may get a different <code>DefId</code> in the next session if the source changes. They must never be persisted directly to disk.</p>
+<h2 id="defpath"><a class="header" href="#defpath">DefPath</a></h2>
+<p>A path-based, stable representation of a definition - e.g. <code>std::collections::HashMap</code>. Unlike <code>DefId</code>, <code>DefPath</code> is derived from the source structure and does not shift when unrelated code is added or removed.</p>
+<h2 id="defpathhash"><a class="header" href="#defpathhash">DefPathHash</a></h2>
+<p>A 128-bit hash of a <code>DefPath</code>. It is <code>Copy</code>, cheap to compare, and stable across sessions. This is the practical unit of identity used when persisting anything keyed by definition to disk. On load, the compiler maps <code>DefPathHash</code> back to the current session’s <code>DefId</code> via a hash table lookup.</p>
+<h2 id="depnode"><a class="header" href="#depnode">DepNode</a></h2>
+<p>A node in the dependency graph. Represents one unit of computation (a query invocation). Each <code>DepNode</code> carries a <code>DepKind</code> (which query) and a key fingerprint (which input). Edges between nodes encode “this computation read the result of that computation”.</p>
+<h2 id="fingerprint"><a class="header" href="#fingerprint">Fingerprint</a></h2>
+<p>A 128-bit hash (<code>u64, u64</code>) produced by <code>StableHasher</code>. Used in two roles per dep node:</p>
+<ul>
+<li><strong>Key fingerprint</strong>: identifies which node this is (a stable hash of the query key, e.g. a <code>DefPathHash</code>).</li>
+<li><strong>Value fingerprint</strong>: a hash of the query’s return value, used for change detection across sessions.</li>
+</ul>
+<h2 id="hirid"><a class="header" href="#hirid">HirId</a></h2>
+<p>An identifier for a HIR node that is not a definition-level item. Conceptually a pair of <code>(DefPath, LocalId)</code> - the <code>DefPath</code> identifies the owning item, and the <code>LocalId</code> identifies something within it. Stable across sessions as long as the owning item’s path does not change.</p>
+<h2 id="svh-stable-version-hash"><a class="header" href="#svh-stable-version-hash">SVH (Stable Version Hash)</a></h2>
+<p>A hash of the crate’s content used to name finalized session directories. A session directory named <code>s-{timestamp}-{SVH}</code> is considered finalized and valid. This lets the compiler quickly identify the most recent valid cache for a given crate.</p>
+<h2 id="work-product"><a class="header" href="#work-product">Work Product</a></h2>
+<p>A record of the compiled artifact files produced for one CGU in a session. Stored in <code>work-products.bin</code>. Contains the CGU name and a map of file type to file path (e.g. <code>"o" -&gt; "/path/to/foo.o"</code>). On an incremental rebuild, if a CGU’s dep-node is green and the symbol hash matches, its work product files are reused directly instead of recompiling.</p>
+<blockquote>
+<p>Source: <a href="https://github.com/rust-lang/rust/blob/63f05e3635171e7ac3f9ca78bad6c71052cda5a3/compiler/rustc_middle/src/dep_graph/graph.rs#L1110-L1135"><code>graph.rs:1110-1135</code></a></p>
+</blockquote>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="libsyntax"><a class="header" href="#libsyntax"><code>libsyntax</code></a></h1>
 <ul>
@@ -3149,7 +3420,7 @@ User requests diagnostics -&gt; Salsa recomputes only affected queries -&gt; Ret
 <li><a href="#testing"><code>rust-analyzer</code> testing</a> <a id="3"></a></li>
 </ol>
 <div style="break-before: page; page-break-before: always;"></div>
-<h1 id="glossary"><a class="header" href="#glossary">Glossary</a></h1>
+<h1 id="glossary-1"><a class="header" href="#glossary-1">Glossary</a></h1>
 <p>Technical terms and concepts used throughout the <code>dboxide</code> project documentation.</p>
 <h2 id="api-boundary"><a class="header" href="#api-boundary">API Boundary</a></h2>
 <p>An explicit interface layer that separates different components of a system. By making boundaries opaque (hiding implementation details), you can refactor internal code without breaking external consumers. Example: the separation between the <code>hir</code> analysis layer and the <code>ide</code> layer in <code>rust-analyzer</code>.</p>
