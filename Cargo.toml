@@ -4,10 +4,3 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-
-[package.metadata.bin]
-mdbook = { version = "^0.5" }
-mdbook-mermaid = { version = "^0.14" }
-mdbook-toc = { version = "^0.14" }
-mdbook-alerts = { version = "^0.6" }
-mdbook-cmdrun = { version = "^3.0" }

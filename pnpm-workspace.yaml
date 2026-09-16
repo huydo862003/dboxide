@@ -1,0 +1,4 @@
+packages:
+  - "homepage"
+allowBuilds:
+  '@typerighter/rpc-server': true

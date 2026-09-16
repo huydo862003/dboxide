@@ -1,3 +1,0 @@
-# Salsa
-
-- [Overview](./overview.md)

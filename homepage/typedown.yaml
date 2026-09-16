@@ -1,0 +1,16 @@
+version: "1.0.0"
+vault:
+  root_dir: "vault"
+repo: "https://github.com/hdnax/dboxide"
+site:
+  title: "dboxide"
+  base_path: "/dboxide"
+  description: "A rewrite of a DBML parser exploring modern compiler design concepts"
+  author: "Huy-DNA"
+  license: "MIT License"
+  nav:
+    - title: "Research"
+      link: "/research/index"
+      icon: icon.library
+    - title: "GitHub"
+      link: "https://github.com/hdnax/dboxide"

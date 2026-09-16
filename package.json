@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "packageManager": "pnpm@11.0.0",
+  "scripts": {
+    "doc:dev": "pnpm --filter @dboxide/homepage dev",
+    "doc:build": "pnpm --filter @dboxide/homepage build"
+  },
+  "devDependencies": {
+    "typerighter": "0.33.2"
+  }
+}
