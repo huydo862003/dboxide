@@ -10,7 +10,7 @@ site:
   license: "MIT License"
   nav:
     - title: "Research"
-      link: "/research/index"
+      link: "/02-research/index"
       icon: icon.library
     - title: "GitHub"
       link: "https://github.com/hdnax/dboxide"
