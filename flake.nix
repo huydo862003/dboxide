@@ -1,32 +1,24 @@
 {
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
   };
+
   outputs =
-    {
-      self,
-      nixpkgs,
-      flake-utils,
-      ...
-    }:
+    { nixpkgs, flake-utils, ... }:
     flake-utils.lib.eachDefaultSystem (
       system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
       in
       {
-        devShell = pkgs.mkShell {
+        devShells.default = pkgs.mkShell {
           packages = with pkgs; [
+            rustc
             cargo
-            rustup
+            rustfmt
+            clippy
             rust-analyzer
-            cargo-run-bin
-            mdbook
-            mdbook-mermaid
-            mdbook-toc
-            mdbook-cmdrun
-            just
           ];
         };
       }
