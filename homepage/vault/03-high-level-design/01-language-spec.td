@@ -321,6 +321,37 @@ Ref: orders.(a, b) > merchants.(a, b)       // composite FK
 | `color` | color |
 | `inactive` | boolean |
 
+### Dep
+
+Describes data dependencies among tables and columns for data lineage. Arrows always point from upstream to downstream. Three syntactic forms like `Ref`: inline, short, and block.
+
+```dbml
+Dep: raw_orders -> stg_orders                         // short, table-level
+Dep: raw_orders.amount -> stg_orders.revenue           // short, column-level
+
+Table fct_orders [dep: <- stg_orders] {                // inline, table-level
+  revenue decimal [dep: -> report_revenue.total]       // inline, column-level
+}
+
+Dep order_staging [color: #79AD51] {                   // block, named
+  raw_orders -> stg_orders
+  raw_payments -> stg_orders
+  raw_orders.amount -> stg_orders.revenue
+  note: 'Staging transformation'
+  materialized: 'table'
+  owner: 'data-team'
+}
+```
+
+**Settings**:
+
+| Setting | Value |
+| --- | --- |
+| `color` | color |
+| `note` | string |
+
+Block form also accepts free-form `key: value` metadata like `materialized`, `query`, `owner`.
+
 ### Enum
 
 Defines a named enumeration of string variants, optionally schema-qualified. It has no element-level settings.
