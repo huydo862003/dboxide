@@ -220,3 +220,249 @@ class Controller {
 }
 ```
 :::
+
+## Configuration: Programming Miss Grant's Controller
+
+::: tip
+The domain model above is **common code**: how state machines work. Basically, it describes **how the model works** regardless of **configurations**.
+
+In this section, we configure the model to work with an instance of the problem it's designed to work with. This configuration is **variable code**: what Miss Grant's controller does. Basically, it applies a configuration to the model.
+:::
+
+::: note
+It feels like the separation between the **model** and the **configuration** is in actuality the separation between **behavior**/**logic**/**code** and **data**.
+:::
+
+### Imperative: Java
+
+So in Java, the controller logic can be implemented like this:
+
+```java
+/* init events */
+Event doorClosed   = new Event("doorClosed", "D1CL");
+Event drawerOpened = new Event("drawerOpened", "D2OP");
+// ...
+
+/* init commands */
+Command unlockPanelCmd = new Command("unlockPanel", "PNUL");
+Command lockPanelCmd   = new Command("lockPanel", "PNLK");
+// ...
+
+/* init states & add transitions/actions */
+State idle               = new State("idle");
+State unlockedPanelState = new State("unlockedPanel");
+// ...
+
+idle.addTransition(doorClosed, activeState);
+idle.addAction(unlockDoorCmd);
+idle.addAction(lockPanelCmd);
+// ...
+
+StateMachine machine = new StateMachine(idle);
+machine.addResetEvents(doorOpened);
+```
+
+### Declarative: XML Configuration
+
+The same configuration can be expressed as XML:
+
+```xml
+<stateMachine start="idle">
+  <event name="doorClosed" code="D1CL"/>
+  <event name="drawerOpened" code="D2OP"/>
+  <!-- ... -->
+
+  <command name="unlockPanel" code="PNUL"/>
+  <command name="lockPanel" code="PNLK"/>
+  <!-- ... -->
+
+  <state name="idle">
+    <transition event="doorClosed" target="active"/>
+    <action command="unlockDoor"/>
+    <action command="lockPanel"/>
+  </state>
+
+  <state name="active">
+    <transition event="drawerOpened" target="waitingForLight"/>
+    <transition event="lightOn" target="waitingForDrawer"/>
+  </state>
+
+  <!-- ... -->
+
+  <state name="unlockedPanel">
+    <action command="unlockPanel"/>
+    <action command="lockDoor"/>
+    <transition event="panelClosed" target="idle"/>
+  </state>
+
+  <resetEvent name="doorOpened"/>
+</stateMachine>
+```
+
+Advantages over the Java wiring:
+
+- Separation between **model** and **configuration**: No recompilation needed. Ship the state machine JAR once, swap XML files per customer.
+  > Remark: This further highlights the separation between **code** and **data**
+- **Declarative**. No variable shuffling. Transitions and actions are expressed as sub-elements of their parent state, not as method calls on object references.
+- **Limited by design**. The XML can only express configuration, not arbitrary logic. This constraint reduces the surface area for mistakes.
+
+The tradeoff is that syntax errors move from compile time to runtime. XML schema validation helps, but does not fully replace type checking.
+
+::: note
+This is why so many Java/C# frameworks ended up configured with XML files. The configuration is data, and XML is a data format.
+:::
+
+But XML is noisy. Can we do better?
+
+### Custom Syntax (External DSL)
+
+```
+events
+  doorClosed   D1CL
+  drawerOpened D2OP
+  lightOn      L1ON
+  doorOpened   D1OP
+  panelClosed  PNCL
+end
+
+resetEvents
+  doorOpened
+end
+
+commands
+  unlockPanel PNUL
+  lockPanel   PNLK
+  lockDoor    D1LK
+  unlockDoor  D1UL
+end
+
+state idle
+  actions {unlockDoor lockPanel}
+  doorClosed => active
+end
+
+state active
+  drawerOpened => waitingForLight
+  lightOn      => waitingForDrawer
+end
+
+state waitingForLight
+  lightOn => unlockedPanel
+end
+
+state waitingForDrawer
+  drawerOpened => unlockedPanel
+end
+
+state unlockedPanel
+  actions {unlockPanel lockDoor}
+  panelClosed => idle
+end
+```
+
+A custom syntax Fowler made up for this example.
+
+- Terser than XML: No quoting, no angle brackets, no closing tags.
+- Not Turing-complete: Can only configure this particular kind of state machine. This limitation is a feature: easy to edit, process, and verify.
+- Readable by non-programmers: The people who set up the security system can read this and spot errors, even if they cannot read the Java code.
+- Requires a custom parser: Unlike XML, there is no off-the-shelf tooling to parse it.
+
+::: note
+This is an **external DSL**: a language with its own custom syntax, separate from the host programming language.
+:::
+
+### Ruby (Internal DSL)
+
+```ruby
+event :doorClosed,   "D1CL"
+event :drawerOpened, "D2OP"
+event :lightOn,      "L1ON"
+event :doorOpened,   "D1OP"
+event :panelClosed,  "PNCL"
+
+command :unlockPanel, "PNUL"
+command :lockPanel,   "PNLK"
+command :lockDoor,    "D1LK"
+command :unlockDoor,  "D1UL"
+
+resetEvents :doorOpened
+
+state :idle do
+  actions :unlockDoor, :lockPanel
+  transitions :doorClosed => :active
+end
+
+state :active do
+  transitions :drawerOpened => :waitingForLight,
+              :lightOn      => :waitingForDrawer
+end
+
+state :waitingForLight do
+  transitions :lightOn => :unlockedPanel
+end
+
+state :waitingForDrawer do
+  transitions :drawerOpened => :unlockedPanel
+end
+
+state :unlockedPanel do
+  actions :unlockPanel, :lockDoor
+  transitions :panelClosed => :idle
+end
+```
+
+This is valid Ruby. It uses a subset of Ruby's capabilities to look like a custom language. Ruby's syntactic flexibility (symbols, blocks, hash rockets) makes this possible.
+
+::: note
+This is an **internal DSL**: a DSL embedded within a host language's syntax. Lisp programmers have done this for decades. The term **fluent interface** is sometimes used as a synonym.
+:::
+
+### Java (Internal DSL)
+
+The original Java configuration code is NOT a DSL. It is API wiring. But Java can also host an internal DSL:
+
+```java
+public class BasicStateMachine extends StateMachineBuilder {
+    Events   doorClosed, drawerOpened, lightOn, panelClosed;
+    Commands unlockPanel, lockPanel, lockDoor, unlockDoor;
+    States   idle, active, waitingForLight, waitingForDrawer, unlockedPanel;
+    ResetEvents doorOpened;
+
+    protected void defineStateMachine() {
+        doorClosed .code("D1CL");
+        drawerOpened.code("D2OP");
+        // ...
+
+        idle
+            .actions(unlockDoor, lockPanel)
+            .transition(doorClosed).to(active);
+
+        active
+            .transition(drawerOpened).to(waitingForLight)
+            .transition(lightOn).to(waitingForDrawer);
+
+        // ...
+
+        unlockedPanel
+            .actions(unlockPanel, lockDoor)
+            .transition(panelClosed).to(idle);
+    }
+}
+```
+
+It uses unusual formatting and fluent method chaining, but it is valid Java. **The declarative flow is what makes it a DSL rather than just an API**.
+
+::: tip
+What separates an internal DSL from a normal API? Fowler calls it "a rather fuzzy notion of a language-like flow." A regular API is a **command-query API**: you call methods to get things done. A DSL has a **fluent interface**: you compose declarations that read like a language.
+:::
+
+### Recap: External vs Internal DSLs
+
+All four representations (Java API, XML, custom syntax, Ruby) configure the same domain model. The difference is in how the configuration is expressed.
+
+- An **external DSL** has its own syntax, separate from the host language. The custom syntax and the XML are both external DSLs.
+- An **internal DSL** is a stylized use of a general-purpose language for a domain-specific purpose. The Ruby and Java fluent versions are internal DSLs.
+
+::: note
+Most XML configuration files are essentially external DSLs wrapped in an XML carrier syntax. The XML is just **a serialization format for the real language underneath**.
+:::
