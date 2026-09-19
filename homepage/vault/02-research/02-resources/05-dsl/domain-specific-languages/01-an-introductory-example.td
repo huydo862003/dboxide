@@ -14,6 +14,12 @@ tags:
 
 This chapter introduces DSLs through a concrete running example, then generalizes in the next chapter.
 
+::: note
+The state machine model is an example of a DSL.
+
+That is to say, a DSL isn't necessarily text, it's a modeling "language" (by language, I mean notation, etc.). The text is usually a **serilization** of that language.
+:::
+
 ## The Gothic Security System
 
 Scenario: A company installs security systems in old castles. Each castle has hidden rooms that open through a specific sequence of actions (close a door, open a drawer, turn on a light, etc.).
@@ -76,3 +82,25 @@ stateDiagram-v2
         Commands: unlockPanel, lockDoor
     end note
 ```
+
+## The State Machine Model
+
+The **state machine** can be a good model for this case (both for communication and actually solving it).
+
+Basically, the user will think about the controller in terms of: **events**, **states** and **transitions**. If these terms can be embedded in the code, then users can verify the business logic represented by the code (users and programmers share a language).
+
+::: tip
+This is the Domain-Driven Design (DDD) principle. The **domain model** is the shared conceptual vocabulary between domain experts (who describe how the security system should work) and programmers (who implement it). Both sides think in terms of states, events, transitions, and commands. The code structure mirrors the domain structure.
+:::
+
+The domain model for the state machine framework:
+
+${fref("./_assets/01-an-introductory-example-1789797361.png")}
+
+- A **state machine** has:
+  - 1 **starting state**
+  - A set of **reset events**, which will reset the state machine to the **starting state**.
+- A **state** has:
+  - A mapping from **event code** to a **transition**.
+  - A set of **commands**.
+- A **transition** specifies the **source** and **target** state along with the **event** that triggers it.
