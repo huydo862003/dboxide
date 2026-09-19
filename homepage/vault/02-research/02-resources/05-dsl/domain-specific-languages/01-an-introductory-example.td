@@ -470,4 +470,54 @@ All four representations (Java API, XML, custom syntax, Ruby) configure the same
 Most XML configuration files are essentially external DSLs wrapped in an XML carrier syntax. The XML is just **a serialization format for the real language (that describes the configuration for a semantic model) underneath**.
 :::
 
-## Languages & Semantic Model
+## Languages and Semantic Model
+
+**The role of a DSL is to populate the semantic model**.
+
+```mermaid
+flowchart LR
+    subgraph Input
+        DSL["events\n  doorClosed D1CL\nend\n\nstate idle\n  doorClosed => active\nend"]
+    end
+
+    DSL -->|populates| SM
+
+    subgraph SM [Semantic Model]
+        S1[":State\nname = idle"]
+        S2[":State\nname = active"]
+        T[":Transition"]
+        E[":Event\nname = doorClosed\ncode = D1CL"]
+        T --> S1
+        T --> S2
+        T --> E
+    end
+```
+
+The model is the engine that provides behavior. The DSL is a thin facade that populates it. This is the difference from a command-query API: the API also populates the model, but the DSL does it in a form that is readable and verifiable.
+
+::: tip
+Fowler advocates that a semantic model is a vital part of a well-designed DSL. It provides a clear separation of concerns:
+
+- You can reason about the model without worrying about language issues.
+- You can test the model independently by populating it with a command-query API.
+- You can evolve the model and the DSL independently.
+- All four representations (Java API, XML, custom syntax, Ruby) built on the same model and created the same object configuration.
+:::
+
+### Semantic Model vs Domain Model
+
+From the DSL's point of view, Fowler calls the model a **semantic model**. Syntax is what the DSL looks like (captured by the grammar). Semantics is what it means (captured by the model). For practical purposes, a semantic model is very close to a domain model. The difference is perspective: domain model emphasizes the business domain, semantic model emphasizes the DSL's meaning.
+
+### Adaptive Model
+
+A state machine is an **adaptive model**: a model whose population effectively acts as the program for the system. Changing behavior means altering the objects and their wiring, not changing code. This blurs the distinction between code and data.
+
+Adaptive models are powerful but hard to use because there is no visible code that defines the behavior. A DSL solves this by providing an explicit, readable representation of the configuration. The DSL gives people the sensation of programming the model.
+
+### Alternative Computational Models
+
+State machines, production rule systems, and dependency networks are **alternative computational models**. They replace the standard imperative step-by-step approach with a different way of thinking about computation. An adaptive model is a good way to implement them, and a DSL is a good way to make them programmable. This is often called **declarative programming**.
+
+### Model-First vs DSL-First
+
+Fowler describes a model-first process: build the model, then layer a DSL over it. But the reverse also works. You can design the DSL with domain experts first, then build the model and DSL simultaneously. Either way, the model and DSL end up as separate concerns.
