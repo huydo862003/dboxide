@@ -14,6 +14,15 @@ tags:
 
 This chapter introduces DSLs through a concrete running example, then generalizes in the next chapter.
 
+::: note
+Recap:
+
+- Semantic model: The general mechanism/logic that can be instantiated with various configurations.
+- DSL: The language that describes the configurations for the semantic model.
+
+At runtime, we have the DSL engine containing the semantic model's logic & we parse the static DSL to populate the semantic model with a configuration.
+:::
+
 ## The Gothic Security System
 
 Scenario: A company installs security systems in old castles. Each castle has hidden rooms that open through a specific sequence of actions (close a door, open a drawer, turn on a light, etc.).
@@ -458,5 +467,7 @@ All four representations (Java API, XML, custom syntax, Ruby) configure the same
 - An **internal DSL** is a stylized use of a general-purpose language for a domain-specific purpose. The Ruby and Java fluent versions are internal DSLs.
 
 ::: note
-Most XML configuration files are essentially external DSLs wrapped in an XML carrier syntax. The XML is just **a serialization format for the real language underneath**.
+Most XML configuration files are essentially external DSLs wrapped in an XML carrier syntax. The XML is just **a serialization format for the real language (that describes the configuration for a semantic model) underneath**.
 :::
+
+## Languages & Semantic Model
