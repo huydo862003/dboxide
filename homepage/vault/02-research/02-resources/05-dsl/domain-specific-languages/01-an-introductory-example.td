@@ -97,10 +97,126 @@ The domain model for the state machine framework:
 
 ${fref("./_assets/01-an-introductory-example-1789797361.png")}
 
-- A **state machine** has:
-  - 1 **starting state**
-  - A set of **reset events**, which will reset the state machine to the **starting state**.
-- A **state** has:
-  - A mapping from **event code** to a **transition**.
-  - A set of **commands**.
-- A **transition** specifies the **source** and **target** state along with the **event** that triggers it.
+::: details AbstractEvent
+The base class for both commands and events. Each has a human-readable name and a machine-readable code.
+
+```java
+class AbstractEvent {
+    private String name, code;
+
+    public AbstractEvent(String name, String code) {
+        this.name = name;
+        this.code = code;
+    }
+
+    public String getCode() { return code; }
+    public String getName() { return name; }
+}
+
+class Command extends AbstractEvent { }
+class Event extends AbstractEvent { }
+```
+:::
+
+::: details State
+A state has a name, a set of actions (commands to execute on entry), and a map from event codes to transitions. The map acts as a lookup: given an event code, which transition do we take?
+
+```java
+class State {
+    private String name;
+    private List<Command> actions = new ArrayList<>();
+    private Map<String, Transition> transitions = new HashMap<>();
+
+    public void addTransition(Event event, State targetState) {
+        transitions.put(event.getCode(), new Transition(this, event, targetState));
+    }
+
+    public boolean hasTransition(String eventCode) {
+        return transitions.containsKey(eventCode);
+    }
+
+    public State targetState(String eventCode) {
+        return transitions.get(eventCode).getTarget();
+    }
+
+    public void executeActions(CommandChannel channel) {
+        for (Command c : actions) channel.send(c.getCode());
+    }
+}
+```
+:::
+
+::: details Transition
+A transition connects a source state to a target state, triggered by an event.
+
+```java
+class Transition {
+    private final State source, target;
+    private final Event trigger;
+
+    public Transition(State source, Event trigger, State target) {
+        this.source = source;
+        this.target = target;
+        this.trigger = trigger;
+    }
+
+    public State getSource() { return source; }
+    public State getTarget() { return target; }
+    public Event getTrigger() { return trigger; }
+    public String getEventCode() { return trigger.getCode(); }
+}
+```
+:::
+
+::: details StateMachine*
+Holds the start state and a list of reset events. Reset events jump the machine back to the start state from any state.
+
+The sole purpose of this class is for the initial configuration of the controller, which is a bit misleading
+
+```java
+class StateMachine {
+    private State start;
+    private List<Event> resetEvents = new ArrayList<>();
+
+    public StateMachine(State start) {
+        this.start = start;
+    }
+
+    public void addResetEvents(Event... events) {
+        for (Event e : events) resetEvents.add(e);
+    }
+
+    public boolean isResetEvent(String eventCode) {
+        return resetEvents.stream()
+            .anyMatch(e -> e.getCode().equals(eventCode));
+    }
+
+    public State getStart() { return start; }
+}
+```
+:::
+
+::: details Controller
+The runtime that processes incoming events against the state machine. It tracks the current state and dispatches commands.
+
+```java
+class Controller {
+    private State currentState;
+    private StateMachine machine;
+    private CommandChannel commandsChannel;
+
+    public void handle(String eventCode) {
+        if (currentState.hasTransition(eventCode))
+            transitionTo(currentState.targetState(eventCode));
+        else if (machine.isResetEvent(eventCode))
+            transitionTo(machine.getStart());
+        // ignore unknown events
+    }
+
+    private void transitionTo(State target) {
+        currentState = target;
+        currentState.executeActions(commandsChannel);
+    }
+}
+```
+:::
