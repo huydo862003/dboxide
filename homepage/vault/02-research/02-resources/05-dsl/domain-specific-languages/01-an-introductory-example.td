@@ -14,12 +14,6 @@ tags:
 
 This chapter introduces DSLs through a concrete running example, then generalizes in the next chapter.
 
-::: note
-The state machine model is an example of a DSL.
-
-That is to say, a DSL isn't necessarily text, it's a modeling "language" (by language, I mean notation, etc.). The text is usually a **serilization** of that language.
-:::
-
 ## The Gothic Security System
 
 Scenario: A company installs security systems in old castles. Each castle has hidden rooms that open through a specific sequence of actions (close a door, open a drawer, turn on a light, etc.).
