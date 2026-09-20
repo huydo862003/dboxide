@@ -14,10 +14,17 @@ tags:
 
 This chapter covers implementation techniques common to both internal and external DSLs.
 
+::: note
+Recap:
+
+1. DSL parsing produces AST (either explicitly or implicitly).
+2. The AST maps to a populated semantic model.
+:::
+
 ## Architecture of DSL Processing
 
 ```
-DSL script --> parse --> semantic model --> (optional) generate --> target code
+DSL script --parse-> semantic model --(optional) generate-> target code
 ```
 
 The **semantic model** is where all the important behavior lives. The DSL's only job is to populate it via a parsing step. Once populated, you either execute the model directly or generate code from it.
@@ -88,3 +95,46 @@ External DSLs produce a more explicit tree, sometimes materialized as a real dat
 Some approaches execute or generate code directly from the syntax tree, effectively using it as a semantic model.
 
 Fowler discourages this: the syntax tree is tied to the DSL syntax, so it couples processing to syntax. Changing the DSL means changing the processing logic too.
+
+## Grammars, Syntax, and Semantics
+
+A **grammar** is a set of production rules that describe how a text stream is turned into a syntax tree.
+
+```
+additionStatement := number '+' number
+```
+
+This tells the parser that `5 + 3` is an addition statement. Rules reference each other to form a full grammar.
+
+- A language can have multiple valid grammars. There is no single "the grammar" for a language. Each grammar defines a different syntax tree structure for the same text.
+- A grammar defines **syntax** only: how text maps to a tree. It says nothing about **semantics**: what the text means. `5 + 3` could mean `8` or `"53"` depending on context. Same syntax, different semantics.
+
+With a semantic model, semantics is defined by how the syntax tree populates the model. Two expressions with different syntax but the same resulting model structure have the same semantics.
+
+::: note
+Internal DSLs involve two parsing passes and thus two grammars:
+
+1. The host language parser reads the DSL script and produces executable instructions.
+2. As those instructions execute, the DSL's implicit syntax tree forms on the call stack.
+
+The DSL grammar only applies in the second pass.
+:::
+
+## Parsing Data
+
+The parser only sees one branch of the syntax tree at a time.
+
+References that cross branches (a command defined in one place, used in another) require extra data structures.
+
+- **Symbol Table**: a dictionary mapping identifiers to their objects.
+  1. When `unlockDoor D1UL` is parsed, the command is stored under `"unlockDoor"`.
+  2. Later, `actions {unlockDoor}` looks it up to wire the relationship.
+- **Context Variable**: tracks the current parsing context (e.g. "which state are we building") when it cannot be inferred from the tree.
+  - Treat as a smell: they make parsing harder to follow, like mutable globals in regular code.
+  - Similar to the `>>` ambiguity in C++: whether `vector<vector<int>>` closes one or two template arguments depends on context. Early compilers required `vector<vector<int> >` because they had no such tracking.
+- **Construction Builder**: a mutable intermediate object that accumulates data for a semantic model object that is read-only after construction. Once all data is gathered, the real object is created.
+
+Parsing can also be split into two phases:
+
+1. First read the DSL into intermediate data
+2. Then walk that data to populate the semantic model.
