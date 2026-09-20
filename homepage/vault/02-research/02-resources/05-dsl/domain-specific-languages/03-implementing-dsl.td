@@ -138,3 +138,13 @@ Parsing can also be split into two phases:
 
 1. First read the DSL into intermediate data
 2. Then walk that data to populate the semantic model.
+
+## Macros
+
+Macros come in two flavors:
+
+- **Textual macros**: simple text substitution. A macro processor replaces `MEDIUM_SHADE` with `#FFB595` before the file is processed. Can take parameters, e.g. C preprocessor's `sqr(x)` -> `x * x`. Fallen out of favor due to awkward edge cases.
+- **Syntactic macros**: substitution on syntactically valid expressions, transforming one kind of expression into another.
+  - Lisp is the canonical example.
+  - C++ templates are a more familiar one.
+  These are core to internal DSLs in Lisp, but only available in languages that support them.
