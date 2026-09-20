@@ -64,3 +64,27 @@ Even then, keep a runnable semantic model. You can test without generating code 
 
 Code generation also helps when a rich semantic model feels like "magic" to developers. Generated code makes behavior explicit.
 :::
+
+## Parser Workings
+
+Any script can be read as a **syntax tree**: nodes are constructs, children are their parts. The tree is a more useful representation than raw text because you can walk and transform it.
+
+::: note
+The syntax tree is often not a real data structure. It lives implicitly on the call stack, forming and pruning as the parser walks the input. You only ever see the branch currently being processed.
+
+This is similar to **SAX** (Simple API for XML): an event-based XML parser that fires events ("opening tag", "text", "closing tag") as it reads top to bottom, never holding the full tree in memory. A call-stack-based parser works the same way: one node at a time, no full tree.
+
+Even so, it is a useful mental model.
+
+How the implicit tree is formed in an internal DSL:
+
+- **Nested Function**: nesting via arguments - `state("idle", transition("doorClosed", "active"))`.
+- **Method Chaining**: nesting via chained calls - `.transition(doorClosed).to(active)`.
+- **Function Sequence + Context Variables**: no nesting at all; a shared mutable context tracks the current position.
+
+External DSLs produce a more explicit tree, sometimes materialized as a real data structure.
+:::
+
+Some approaches execute or generate code directly from the syntax tree, effectively using it as a semantic model.
+
+Fowler discourages this: the syntax tree is tied to the DSL syntax, so it couples processing to syntax. Changing the DSL means changing the processing logic too.
