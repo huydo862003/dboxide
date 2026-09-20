@@ -89,3 +89,20 @@ DSL boundaries are blurry. The real tests are **language nature** and **limited 
 ### Human Jargon
 
 - Starbucks ordering has domain focus, limited expressiveness, and grammar, but it is a human language, not a computer language. Fowler reserves "DSL" for computer languages and uses **domain language** for the human equivalent.
+
+## Fragmentary vs Stand-alone DSLs
+
+- A **stand-alone DSL** is a self-contained script, typically a single file. Someone familiar with the DSL but not the host language can read and understand it on its own.
+- A **fragmentary DSL** appears as small snippets embedded within host language code. You cannot follow it without understanding the surrounding host code.
+
+Examples:
+
+- **Stand-alone**: the state machine custom syntax like in ${fref("02-research/02-resources/05-dsl/domain-specific-languages/01-an-introductory-example.td")}.
+- **Fragmentary (external)**: regular expressions and SQL embedded in a larger program.
+- **Fragmentary (internal)**: mock object expectation grammars in unit tests. Annotations that add metadata to host code elements.
+
+::: note
+Annotations are a popular Java feature for building internal fragmentary DSLs. They attach metadata to host code elements like classes and fields (e.g. `@Entity`, `@Table`), and a framework reads them at runtime. Because they always need a host code element to sit on, you cannot have a file that is purely annotations. This makes them only suitable for fragmentary DSLs.
+:::
+
+The same DSL can be used in both forms. SQL is a good example: it appears as embedded statements in application code and also as stand-alone query files.
