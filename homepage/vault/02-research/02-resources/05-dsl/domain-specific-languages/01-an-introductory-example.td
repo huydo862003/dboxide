@@ -493,7 +493,16 @@ flowchart LR
     end
 ```
 
-The model is the engine that provides behavior. The DSL is a thin facade that populates it. This is the difference from a command-query API: the API also populates the model, but the DSL does it in a form that is readable and verifiable.
+### Semantic Model vs Domain Model
+
+From the DSL's point of view, Fowler calls the **domain model** a **semantic model**.
+
+- Syntax is what the DSL looks like (captured by the grammar).
+- Semantics is what it means (captured by the model).
+
+For practical purposes, a semantic model is _very close to a domain model_. The difference is perspective: domain model emphasizes the business domain, semantic model emphasizes the DSL's meaning.
+
+> Essential, the semantic model decides what a DSL describes.
 
 ::: tip
 Fowler advocates that a semantic model is a vital part of a well-designed DSL. It provides a clear separation of concerns:
@@ -504,20 +513,33 @@ Fowler advocates that a semantic model is a vital part of a well-designed DSL. I
 - All four representations (Java API, XML, custom syntax, Ruby) built on the same model and created the same object configuration.
 :::
 
-### Semantic Model vs Domain Model
+> It's more like this: When you design a DSL, it's a good architecture to separate the concerns between "parsing"/"translating" to the "model" and the "model" internal logic.
 
-From the DSL's point of view, Fowler calls the model a **semantic model**. Syntax is what the DSL looks like (captured by the grammar). Semantics is what it means (captured by the model). For practical purposes, a semantic model is very close to a domain model. The difference is perspective: domain model emphasizes the business domain, semantic model emphasizes the DSL's meaning.
+The semantic model is the more important part:
+
+- The model is the engine that provides behavior. The DSL is a thin facade that populates it.
+- The model brings configurability and dynamically at runtime via the DSL.
+- The DSL plays the role of augmenting people's comprehension of the model.
 
 ### Adaptive Model
 
-A state machine is an **adaptive model**: a model whose population effectively acts as the program for the system. Changing behavior means altering the objects and their wiring, not changing code. This blurs the distinction between code and data.
+A state machine is an **adaptive model**: a model whose population effectively acts as the program for the system. Changing behavior means altering the objects and their wiring, not changing code. **This blurs the distinction between code and data**.
 
-Adaptive models are powerful but hard to use because there is no visible code that defines the behavior. A DSL solves this by providing an explicit, readable representation of the configuration. The DSL gives people the sensation of programming the model.
+Adaptive models are powerful but hard to use because there is no visible code that defines the behavior.
+
+A DSL solves this by providing an explicit, readable representation of the configuration. The DSL gives people the sensation of programming the model.
 
 ### Alternative Computational Models
 
-State machines, production rule systems, and dependency networks are **alternative computational models**. They replace the standard imperative step-by-step approach with a different way of thinking about computation. An adaptive model is a good way to implement them, and a DSL is a good way to make them programmable. This is often called **declarative programming**.
+State machines, production rule systems, and dependency networks are **alternative computational models**.
+
+> Turing machine is a computation model that closely models our computer. But sometimes, it can be too low-level.
+
+- An adaptive model is a good way to implement alternative computational models.
+- A DSL is a good way to make them programmable.
+
+This is often called **declarative programming**.
 
 ### Model-First vs DSL-First
 
-Fowler describes a model-first process: build the model, then layer a DSL over it. But the reverse also works. You can design the DSL with domain experts first, then build the model and DSL simultaneously. Either way, the model and DSL end up as separate concerns.
+Fowler describes a **model-first process**: build the model, then layer a DSL over it. But the reverse also works. You can design the DSL with domain experts first, then build the model and DSL simultaneously. Either way, the model and DSL end up as separate concerns.
