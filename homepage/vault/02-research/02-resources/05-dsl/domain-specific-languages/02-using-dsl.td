@@ -131,3 +131,15 @@ Always separate the benefits of the **model** from the benefits of the **DSL** (
 ::: warning
 The **COBOL fallacy**: "business people can now write the rules themselves, without programmers". It rarely holds.
 :::
+
+## Problems with DSLs
+
+Do not use a DSL when none of the benefits apply, or when the cost outweighs the benefit.
+
+- **Language cacophony**: The concern that many languages make a project harder to learn. But DSLs are far simpler than general-purpose languages.
+  - **The real question** is how much harder it is to learn a DSL versus learning the underlying model directly.
+  - Since a DSL is designed to make the model easier to understand, the incremental learning cost is usually small or negative.
+- **Cost of building**: A DSL adds code to write and maintain. If a command-query API does the job, there is no value adding a DSL on top. External DSLs in particular add parsers that many developers find intimidating.
+  - The cost should be weighed against the cost of the model alone, not zero - a complicated enough problem to need a DSL almost certainly needs a model too.
+- **Ghetto language**: Building whole systems in an in-house language traps you. A DSL should stay narrow. Watch for features creeping in - conditionals today, loops tomorrow, and suddenly you have an accidental general-purpose language.
+- **Blinkered abstraction**: A comfortable abstraction can make you reluctant to change it. DSLs make this worse because they make the abstraction more comfortable to work in. Domain experts are especially prone to this once they get used to a DSL. Treat any DSL as evolving, not finished.
