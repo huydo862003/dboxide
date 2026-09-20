@@ -544,4 +544,23 @@ This is often called **declarative programming**.
 
 Fowler describes a **model-first process**: build the model, then layer a DSL over it. But the reverse also works. You can design the DSL with domain experts first, then build the model and DSL simultaneously. Either way, the model and DSL end up as separate concerns.
 
-## Code Generation
+## Interpretation vs Code Generation
+
+Two approaches to processing a DSL:
+
+- **Interpretation**: Parse the DSL, populate the semantic model, execute the model directly.
+- **Code generation** (compilation): Parse the DSL, populate the semantic model, generate code from it. The generated code runs separately.
+
+Code generation is useful when:
+
+- The target platform differs from the DSL tooling platform (generate C, SQL, COBOL, MathCAD).
+- You want to avoid shipping the parser and model to production.
+
+Code generation is NOT useful when:
+
+- People treat it as the primary goal. It is just an implementation mechanism.
+- People skip the semantic model and generate code directly from the parse tree. This couples parsing to output and makes everything harder to change.
+
+::: tip
+A semantic model decouples parsing, semantics, and output. You can change the DSL syntax without touching the code generator. You can generate multiple outputs from the same model. You can use both interpretation and code generation off the same model.
+:::
