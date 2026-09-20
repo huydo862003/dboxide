@@ -564,3 +564,9 @@ Code generation is NOT useful when:
 ::: tip
 A semantic model decouples parsing, semantics, and output. You can change the DSL syntax without touching the code generator. You can generate multiple outputs from the same model. You can use both interpretation and code generation off the same model.
 :::
+
+## Language Workbenches
+
+- Tools that let you define a DSL AND its editing environment (highlighting, completion, diagnostics) together. They solve the main disadvantage of external DSLs: limited tooling.
+- Can go beyond text: diagrammatic languages, tables, projectional editing (edit the AST directly).
+- Examples: JetBrains MPS, Xtext/Langium, Spoofax.
