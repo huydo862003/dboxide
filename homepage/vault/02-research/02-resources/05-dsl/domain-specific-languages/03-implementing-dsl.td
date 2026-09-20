@@ -148,3 +148,17 @@ Macros come in two flavors:
   - Lisp is the canonical example.
   - C++ templates are a more familiar one.
   These are core to internal DSLs in Lisp, but only available in languages that support them.
+
+## Testing DSLs
+
+- **Semantic model tests**: populate the model directly via its command-query API, no parser involved.
+- **Parser tests**: feed small DSL fragments and assert the correct model structure. Build a method that walks two model instances and collects all differences at once.
+- **Script tests**: parse a DSL script, populate the model, run it, and check the output. Integration tests for the full pipeline.
+
+::: note
+Negative input tests are as important as positive input tests.
+:::
+
+::: tip
+Add assertions inside the semantic model itself so it fails immediately with a clear error when put into an invalid state, rather than letting the caller discover it later.
+:::
