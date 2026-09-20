@@ -55,7 +55,7 @@ Another way to look at a DSL: it is a front-end to a library or framework, provi
 - The DSL is the declarative way to manipulate it.
 
 ::: tip
-Building the DSL is usually not the hard work but building the model is.
+The model brings its own benefits independent of the DSL: it removes duplication, provides a reusable abstraction, and encapsulates behavior. The DSL is a thin layer on top. Building the model is usually the hard work.
 :::
 
 > Basically, the DSL is just an API for interacting with the model - it's user-facing.
@@ -106,3 +106,28 @@ Annotations are a popular Java feature for building internal fragmentary DSLs. T
 :::
 
 The same DSL can be used in both forms. SQL is a good example: it appears as embedded statements in application code and also as stand-alone query files.
+
+## Why Use a DSL?
+
+DSLs are a specific tool for specific conditions, not a paradigm shift.
+
+::: note
+Always separate the benefits of the **model** from the benefits of the **DSL** (see [DSL as Abstraction Front-End](#dsl-as-abstraction-front-end)). It is a common mistake to conflate the two.
+:::
+
+- **Clarity**: A DSL makes intent clearer than a command-query API.
+  - Easier to read means easier to spot mistakes and change.
+  - Limited expressiveness makes it harder to say wrong things.
+- **Reduced surface area**: The DSL only exposes what is actually used, cutting down what developers need to learn.
+  - Wrapping a poor third-party API amplifies this further.
+- **Domain expert communication**: Domain experts can read DSL scripts and spot mistakes without knowing the host language.
+  - The gain is **reading**, not writing. A DSL designed with domain experts has value even if never implemented.
+- **Execution context**: A DSL lets you express rules comfortably and generate code for the target environment (SQL, C, JavaScript).
+  - Scripts also live in version control, unlike rules buried in a database.
+- **Declarative models**: Some problems fit state machines, dependency networks, or production rules better than imperative code.
+  - The model provides the computation.
+  - The DSL makes it easy to populate and read.
+
+::: warning
+The **COBOL fallacy**: "business people can now write the rules themselves, without programmers". It rarely holds.
+:::
