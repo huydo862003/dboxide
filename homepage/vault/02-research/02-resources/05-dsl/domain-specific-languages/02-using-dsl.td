@@ -59,3 +59,33 @@ Building the DSL is usually not the hard work but building the model is.
 :::
 
 > Basically, the DSL is just an API for interacting with the model - it's user-facing.
+
+## Boundaries of DSLs
+
+DSL boundaries are blurry. The real tests are **language nature** and **limited expressiveness**. Domain focus alone is not a reliable boundary.
+
+### Internal DSL vs Command-Query API
+
+- A command-query API defines the vocabulary; an internal DSL adds a grammar.
+- Methods in an internal DSL only make sense within a larger expression. `.to(unlockedPanel)` is meaningless alone but reads naturally inside `.transition(lightOn).to(unlockedPanel)`.
+- Limited expressiveness in an internal DSL comes from self-restraint: you use only a narrow slice of the host language. Piers Cawley calls this a **pidgin** use of the host language.
+
+### External DSL vs General-Purpose Language
+
+- A language can have domain focus and still be general-purpose. **R** targets statistics but is Turing-complete, so Fowler would not call it a DSL.
+- The clearest indicator of a DSL is that it is not Turing-complete: no variables, no subroutines, no general control flow.
+- **XSLT** is a corner case: it has domain focus but is Turing-complete. Whether it counts as a DSL depends on usage. The same language can sit on either side of the line.
+
+### Config Files
+
+- A config file is a DSL when it is the primary way humans interact with that part of the system. If it is only a machine exchange format, it is a serialization format.
+- A series of property assignments (`color = blue`) lacks fluency and does not count.
+- In practice, machine-generated XML often becomes the primary human-editing mechanism anyway. **XML becomes a DSL by accident.**
+
+### Language Workbench vs Form-Based App
+
+- A language workbench produces a DSL when the editing experience has the fluency and grammar of a language. Most form-based UIs do not achieve that, even if they manipulate the same underlying model.
+
+### Human Jargon
+
+- Starbucks ordering has domain focus, limited expressiveness, and grammar, but it is a human language, not a computer language. Fowler reserves "DSL" for computer languages and uses **domain language** for the human equivalent.
