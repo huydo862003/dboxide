@@ -143,3 +143,26 @@ Do not use a DSL when none of the benefits apply, or when the cost outweighs the
   - The cost should be weighed against the cost of the model alone, not zero - a complicated enough problem to need a DSL almost certainly needs a model too.
 - **Ghetto language**: Building whole systems in an in-house language traps you. A DSL should stay narrow. Watch for features creeping in - conditionals today, loops tomorrow, and suddenly you have an accidental general-purpose language.
 - **Blinkered abstraction**: A comfortable abstraction can make you reluctant to change it. DSLs make this worse because they make the abstraction more comfortable to work in. Domain experts are especially prone to this once they get used to a DSL. Treat any DSL as evolving, not finished.
+
+## DSL Lifecycle
+
+Two approaches to starting a DSL:
+
+- **Model-first**: build the framework and command-query API, then layer the DSL on top once you see the need. Common when the DSL was not planned upfront.
+- **DSL-first**: sketch the DSL with domain experts before any implementation. Write example scripts in the form you want, then build the model and DSL together incrementally. Good for establishing a shared language early.
+
+When growing a DSL on top of an existing model:
+
+- **Language-seeded**: treat the model as a black box. Sketch pseudo-DSL for existing use cases, then implement scenario by scenario with minimal changes to the model.
+- **Model-seeded**: add fluent methods to the model first, then gradually extract them into a DSL. More gradual, lower upfront cost, better suited to internal DSLs.
+
+Either way, the critical step is separating the model from the configuration code. The DSL comes after that separation.
+
+## What Makes a Good DSL Design?
+
+The goal is clarity for the reader: your target audience (programmer or domain expert) should understand DSL sentences quickly.
+
+- Use the jargon of the domain. If users know the terms, they should see them in the DSL and in the model.
+- Follow conventions of the host environment. If your team writes Java, use `//` for comments and `{}` for structure.
+- Iterate and test ideas on your target audience. Be prepared to try and discard many alternatives.
+- Do not try to make the DSL read like natural language. Attempts at natural language syntax (like AppleScript) add syntactic sugar that obscures semantics. A DSL is a programming language: it should feel like programming, with the terseness and precision that implies.
