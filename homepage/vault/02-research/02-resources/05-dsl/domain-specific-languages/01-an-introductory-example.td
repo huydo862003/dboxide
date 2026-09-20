@@ -543,3 +543,5 @@ This is often called **declarative programming**.
 ### Model-First vs DSL-First
 
 Fowler describes a **model-first process**: build the model, then layer a DSL over it. But the reverse also works. You can design the DSL with domain experts first, then build the model and DSL simultaneously. Either way, the model and DSL end up as separate concerns.
+
+## Code Generation
