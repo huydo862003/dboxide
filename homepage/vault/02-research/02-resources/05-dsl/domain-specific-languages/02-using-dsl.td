@@ -62,7 +62,7 @@ The model brings its own benefits independent of the DSL: it removes duplication
 
 ## Boundaries of DSLs
 
-DSL boundaries are blurry. The real tests are **language nature** and **limited expressiveness**. Domain focus alone is not a reliable boundary.
+DSL boundaries are blurry. The real tests are **language nature** and **limited expressiveness**.
 
 ### Internal DSL vs Command-Query API
 
@@ -115,9 +115,7 @@ DSLs are a specific tool for specific conditions, not a paradigm shift.
 Always separate the benefits of the **model** from the benefits of the **DSL** (see [DSL as Abstraction Front-End](#dsl-as-abstraction-front-end)). It is a common mistake to conflate the two.
 :::
 
-- **Clarity**: A DSL makes intent clearer than a command-query API.
-  - Easier to read means easier to spot mistakes and change.
-  - Limited expressiveness makes it harder to say wrong things.
+- **Clarity**: A DSL makes intent clearer than a command-query API. Limited expressiveness makes it harder to say wrong things and easier to spot mistakes.
 - **Reduced surface area**: The DSL only exposes what is actually used, cutting down what developers need to learn.
   - Wrapping a poor third-party API amplifies this further.
 - **Domain expert communication**: Domain experts can read DSL scripts and spot mistakes without knowing the host language.

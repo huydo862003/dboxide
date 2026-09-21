@@ -502,7 +502,7 @@ From the DSL's point of view, Fowler calls the **domain model** a **semantic mod
 
 For practical purposes, a semantic model is _very close to a domain model_. The difference is perspective: domain model emphasizes the business domain, semantic model emphasizes the DSL's meaning.
 
-> Essential, the semantic model decides what a DSL describes.
+> Essentially, the semantic model decides what a DSL can describe.
 
 ::: tip
 Fowler advocates that a semantic model is a vital part of a well-designed DSL. It provides a clear separation of concerns:
@@ -518,8 +518,7 @@ Fowler advocates that a semantic model is a vital part of a well-designed DSL. I
 The semantic model is the more important part:
 
 - The model is the engine that provides behavior. The DSL is a thin facade that populates it.
-- The model brings configurability and dynamically at runtime via the DSL.
-- The DSL plays the role of augmenting people's comprehension of the model.
+- The model brings runtime configurability. The DSL makes that configurability readable.
 
 ### Adaptive Model
 

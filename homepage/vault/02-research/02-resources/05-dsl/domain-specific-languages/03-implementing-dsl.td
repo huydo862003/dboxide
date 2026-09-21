@@ -56,7 +56,7 @@ Both internal and external DSLs produce the same semantic model. The difference 
 - **External DSL**: parser reads text and populates the model.
 - **Internal DSL**: host language handles the text. An **Expression Builder** layer provides the fluent interface and populates the model. Without this explicit layer, DSL and model code easily get mixed up.
 
-::: details On "parsing" an internal DSL
+::: details What "parsing" means for an internal DSL
 "Parsing" an internal DSL means executing it. The input is function calls instead of a text stream, but the idea is the same: arrange them into a structure that populates the model.
 
 The common definition of internal DSL (written in the host language) is usually right but not always. A JRuby DSL inside a Java app is still internal. The true distinction: an internal DSL is **executed**; an external DSL is **read** as a data structure.
@@ -64,7 +64,7 @@ The common definition of internal DSL (written in the host language) is usually 
 
 Executing the model directly is simpler and usually the right choice. Code generation is optional.
 
-::: details When to use code generation
+::: details When code generation is worth it
 Use it when the target environment has limited language choices (embedded hardware, SQL). Parse in a comfortable language, generate C or SQL for the target.
 
 Even then, keep a runnable semantic model. You can test without generating code and catch errors before generation. The semantic model also decouples the code generator from the parser.
@@ -94,7 +94,7 @@ External DSLs produce a more explicit tree, sometimes materialized as a real dat
 
 Some approaches execute or generate code directly from the syntax tree, effectively using it as a semantic model.
 
-Fowler discourages this: the syntax tree is tied to the DSL syntax, so it couples processing to syntax. Changing the DSL means changing the processing logic too.
+Fowler discourages this because the syntax tree is tied to the DSL syntax, coupling any processing changes to syntax changes.
 
 ## Grammars, Syntax, and Semantics
 
@@ -161,4 +161,38 @@ Negative input tests are as important as positive input tests.
 
 ::: tip
 Add assertions inside the semantic model itself so it fails immediately with a clear error when put into an invalid state, rather than letting the caller discover it later.
+:::
+
+## Error Handling
+
+Error handling has two locations: the parser and the semantic model.
+
+- **Syntactic errors** naturally live in the parser. Some are handled for free (host language errors in an internal DSL, grammar errors in a parser generator).
+- **Semantic errors** can go in either place. The model is the right place for checking well-formedness rules because all information is structured and available there.
+  > It's like semantic errors are both checked at compile time and runtime.
+
+The problem with model-only errors: no link back to the DSL script location (not even a line number).
+
+Three strategies for semantic errors:
+
+- **Detection in the parser**: has script context but works at the syntax tree level, making rules harder to write and easier to duplicate.
+- **Push script info into the model**: add line numbers to model objects. Makes the model more complicated.
+- **Model detects, parser reports**: parse a chunk, populate the model, then ask the model to check for errors. The parser adds script context to whatever the model finds. Separates syntactic knowledge (parser) from semantic knowledge (model).
+
+::: note
+Divide error handling into **initiation** (parser), **detection** (model), and **reporting** (both: model supplies the semantics, parser adds the script context).
+- **Initiation**: the parser decides *when* to trigger error checking. After parsing a chunk and populating the model, the parser calls something like `model.validate()`.
+- **Detection**: the model checks its own well-formedness rules and finds what is wrong.
+- **Reporting**: both collaborate. The model says what the error is. The parser adds where in the script it came from.
+:::
+
+## Migrating DSLs
+
+A DSL definition is a published interface. When it changes, existing scripts may break. Two migration strategies:
+
+- **Incremental migration**: for each change to the DSL, create a migration script that transforms old scripts to the new version. Keep changes as small as possible. Ten small migrations are easier to write and chain than one big one.
+- **Model-based migration**: keep parsers for each released version, all populating the same semantic model. To migrate a script, parse it with the old parser, then generate a new-version script from the model. Downside: non-semantic content like comments can be lost.
+
+::: tip
+Add a mandatory version statement to DSL scripts. Hard to retrofit later, but makes it easy to detect out-of-date scripts and trigger migrations automatically.
 :::
