@@ -1,5 +1,5 @@
 ---
-_label: "General DSL Philosophy"
+_label: "DSL"
 _icon: icon.sun
 ---
 
