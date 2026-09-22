@@ -23,7 +23,7 @@ Key design takeaway from HCL:
 - **Expressions** provide dynamic computation within structures (interpolation, variables, functions).
 - **Schemas** are user-defined, not hardcoded. The user specifies which block types exist, what fields they accept, and what constraints apply. Validation is a separate step that matches the parsed tree against the schema.
 
-This means the parser is reusable across different config formats. Only the schema changes per application.
+> DBML today is a structured config language with a hardcoded adhoc schema, varying per builtin. The goal is to make the schema user-defined so the parser is reusable across formats.
 :::
 
 [[directory-index]]
