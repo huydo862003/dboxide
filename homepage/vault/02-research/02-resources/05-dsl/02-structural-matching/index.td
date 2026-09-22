@@ -18,3 +18,5 @@ Resources on how to define and match structural patterns in syntax.
   - Types and values unified into a single lattice, making type checking and validation the same operation.
   - The closest model to structural type checking where validation is not a separate pass but part of the type system itself.
   - Link: [cuelang.org](https://cuelang.org/docs/concept/the-logic-of-cue/)
+
+[[directory-index]]
