@@ -8,6 +8,14 @@ tags:
   - "config language"
 ---
 
+::: note
+These are the important syntatic concepts of HCL:
+
+- **Argument**: Key-value pair of form `key = value`.
+- **Block**: A container with a label and body, creating a nesting level.
+- **Body**: A collection of arguments and blocks inside a nesting level.
+:::
+
 HCL configuration is built from two main constructs:
 
 - **arguments** (key-value pairs)
@@ -37,7 +45,10 @@ service "http" "web_proxy" {
 
 ## Bodies
 
-The collection of arguments and blocks at a particular nesting level is called a **body**. A file has a root body containing top-level elements, and each block has its own body.
+The **collection** of **arguments** and **blocks** at a particular nesting level is called a **body**.
+
+- A **file** has a **root body** containing **top-level elements**.
+- Each **block** has its **own body**.
 
 ::: note
 The term "attribute" and "argument" are used interchangeably for top-level key-value pairs in a body.

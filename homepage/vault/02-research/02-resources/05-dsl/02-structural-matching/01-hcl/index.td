@@ -3,6 +3,31 @@ _label: "HCL Language Design"
 _icon: icon.sun
 ---
 
+## Pipeline
+
+```
+raw bytes
+    │
+    ▼ hclparse.Parser (no schema)
+*hcl.File { Body: opaque hcl.Body }
+    │  - structure recognized (blocks, attributes, expressions)
+    │  - no validity check; JSON ambiguity unresolved
+    │
+    ▼ Structural decoding (Body + schema)
+blocks + attributes as hcl.Expression (unevaluated)
+    │  - schema enforces which block types and fields are valid
+    │  - JSON ambiguity resolved here by the schema
+    │
+    ▼ Expression evaluation (hcl.Expression + hcl.EvalContext)
+cty.Value
+    │  - variables and functions injected via EvalContext
+    │  - only phase that requires the eval context
+```
+
+> The key insight: parsing is schema-free, so the same parser works for any HCL-based language. The schema is what gives meaning - applied only at decode time.
+
+## Foreword
+
 HCL is a **toolkit** for **creating structured configuration languages**, not a single language. It provides:
 
 - Parser:
