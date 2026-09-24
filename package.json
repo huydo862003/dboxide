@@ -6,6 +6,6 @@
     "doc:build": "pnpm --filter @dboxide/homepage build"
   },
   "devDependencies": {
-    "typerighter": "0.39.0"
+    "typerighter": "0.40.0"
   }
 }
