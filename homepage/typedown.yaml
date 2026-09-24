@@ -3,6 +3,7 @@ vault:
   root_dir: "vault"
 repo: "https://github.com/hdnax/dboxide"
 site:
+  url: "https://huydo862003.github.io"
   title: "dboxide"
   base_path: "/dboxide"
   description: "A rewrite of a DBML parser exploring modern compiler design concepts"
