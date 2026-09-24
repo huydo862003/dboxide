@@ -13,6 +13,7 @@ The end goal is a DSL that can:
 - Define type checking rules.
 - Describe corresponding data formats.
 - Use an alternative computational model (production rules, constraints) for validating the data format.
+- Support **static analysis of expressions**: inspect expression structure without evaluating - extract references, traversals, and dependency information. This enables cross-reference resolution, dependency graph construction, and reference validation entirely before evaluation.
 :::
 
 ::: note
