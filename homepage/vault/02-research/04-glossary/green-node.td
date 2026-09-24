@@ -8,4 +8,10 @@ depends_on:
   - fref("02-research/04-glossary/lossless-syntax-tree.td")
 ---
 
-The immutable storage layer in the Red-Green tree architecture. Stores the actual syntax tree data in a space-efficient, persistent structure that can be shared across threads via `Arc`. Contains only `kind: SyntaxKind`, `text_len: usize`, and children, with no position information or parent pointers. Optimizations include DST layout, tagged pointers, and token interning.
+The immutable storage layer in the Red-Green tree architecture. Shareable across threads via `Arc`. Contains only `kind: SyntaxKind`, `text_len: usize`, and children. No position information or parent pointers.
+
+Optimizations:
+
+- DST layout
+- Tagged pointers
+- Token interning
