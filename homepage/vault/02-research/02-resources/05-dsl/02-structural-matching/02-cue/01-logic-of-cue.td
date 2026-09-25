@@ -253,3 +253,45 @@ CUE's interpretation is inspired by TypeScript, but because types are values in 
 | `null` | `null` |
 | `undefined` / `void` | `_\|_` (bottom) |
 | optional field (`?`) | optional field (`?`) |
+
+## Default Values
+
+CUE's equivalent of **inheritance**, letting instances supply a fallback value that a more specific struct can concretize.
+
+### Relation to Inheritance
+
+CUE guarantees that any **observed concrete value** is final.
+
+> An observed concrete value is a fully resolved value at a field, like `5`, `"hello"`, or `true`, as opposed to an open constraint like `string` or `>=3`.
+
+- **Defaults** appear as **non-concrete**, so a concrete value always wins.
+  **Conflicting defaults** are an error.
+  > A default like `*5 | int` is still a constraint: it leaves the field open for further refinement. It is not concrete until a more specific struct pins it to a single value.
+- A non-concrete value (like `string`) explicitly signals that resolution is not done, so making false conclusions is hard.
+  > If a field still shows `string`, the type itself tells you the value has not been pinned down yet and cannot be treated as final.
+- If you erroneously try to set a field that already has a concrete value, CUE errors and reports the conflicting locations.
+
+In override-based systems (GCL, Jsonnet, HCL, Kustomize), a concrete value is not final - another layer can override it silently. Tracing inheritance chains or overlay order is required to be certain.
+
+CUE also enforces constraints top-down across groups of values and files.
+
+- Once a constraint is set, there is no need to check individual values or files to know it applies.
+- Constraints unify rather than accumulate: `>=3 & <=10` and `>=5 & <=20` becomes `>=5 & <=10`. GCL/Jsonnet assertions pile up independently and grow without bound.
+
+### Semantics of Defaults
+
+Defaults must not let evaluation order influence the outcome.
+
+CUE models each field as two parallel values:
+
+- **all allowed values**
+- **the default** (which must be an instance of the former).
+
+```cue
+a: int | *1
+b: int | *2
+a: b
+b: a
+```
+
+The default branch evaluates to `a: 1, b: 2` with `a: b` - a conflict. Both defaults bottom out and only the allowed-values branch is returned. Default selection is per-field: fields that do not depend on each other can independently have their defaults selected or not.
