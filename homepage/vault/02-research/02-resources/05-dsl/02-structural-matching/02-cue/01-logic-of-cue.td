@@ -201,8 +201,55 @@ graph TD
   opt_bottom --> bottom
 ```
 
-::: details CUE's Theoretical Foundation
+::: details CUE's Theoretical Foundation in Loose Term
 
-**Graph unification** of **typed feature structures** is the theoretical foundation of CUE.
+[**Graph unification**](../../../../04-glossary/graph-unification.td) of [**typed feature structures**](../../../../04-glossary/typed-feature-structure.td) is the theoretical foundation of CUE.
 
+Subsumption: Given,
+- A set $\mathcal{F}$ of all **typed feature structures (TFSs)**, such as graphs, CUE values.
+- $F$ and $F'$ in $\mathcal{F}$.
+
+Then:
+
+$F$ subsumes $F'$ (denoted as $F \sqsubseteq F'$) if and only if:
+
+> $\sqsubseteq$ looks like "subset", but $F \sqsubseteq F'$ means F is more general, F' is more specific.
+
+- $$\pi \equiv_F \pi' \implies \pi \equiv_{F'} \pi'$$
+
+  > If two paths point to the same node in $F$, they must also point to the same node in $F'$. A more specific structure cannot break a sharing that the more general structure declared.
+
+- $$\mathcal{P}_F(\pi) = t \implies \mathcal{P}_{F'}(\pi) = t' \text{ and } t' \sqsubseteq t$$
+
+  > If $F$ assigns type $t$ to path $\pi$, then $F'$ must also assign some type $t'$ to that path, and $t'$ must be at least as specific as $t$. A more specific structure can tighten a type constraint, but cannot loosen or remove it.
+
+Where:
+- $\pi \equiv_F \pi'$ means $F \in \mathcal{F}$ contains a [**path equivalence**](../../../../04-glossary/path-equivalence.td) or [**reentrancy**](../../../../04-glossary/reentrancy.td) between paths $\pi$ and $\pi'$ (two references from the root end up at the same node).
+- $\mathcal{P}_F(\pi) = t$ means the type at path $\pi$ in $F$ is $t$ (itself a graph in $\mathcal{F}$).
+
+Unification $F \sqcap F'$ of two TFSs is the greatest lower bound of $F$ and $F'$ in $\mathcal{F}$ ordered by subsumption.
+
+This definition determines almost everything about CUE:
+
+- [**Lazy binding**](../../../../04-glossary/lazy-binding-cue.td) was not a design decision. Subsumption requires complete feature structures, so all constraints must be accumulated before resolution - binding must be deferred.
+- Evaluation strategies and cycle semantics are constrained by what produces a consistent meet in the lattice.
+- Optional fields, definitions, and default values were added by choice, but their semantics strictly follow from what the subsumption ordering permits.
+
+> The math came first. CUE's surface language is a set of choices about what to expose, but the semantics of every feature is dictated by the underlying lattice.
 :::
+
+### Null
+
+`null` is surprisingly hard to pin down.
+
+> The partial reason is the JSON standard gives no guidance on what it means, so different tools interpret it differently. CUE wants to cover all existing use cases.
+
+> TypeScript imposes order by introducing `undefined`, `void`, and `null` as distinct concepts.
+
+CUE's interpretation is inspired by TypeScript, but because types are values in CUE, those three concepts collapse onto a simpler model:
+
+| TypeScript | CUE |
+|---|---|
+| `null` | `null` |
+| `undefined` / `void` | `_\|_` (bottom) |
+| optional field (`?`) | optional field (`?`) |
