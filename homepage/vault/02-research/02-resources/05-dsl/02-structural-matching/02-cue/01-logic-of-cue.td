@@ -63,7 +63,7 @@ This subsumption ordering gives CUE a critical property: for any two values, the
 
 ## CUE's Hierarchy
 
-A walkthrough of how CUE's value lattice applies to each built-in kind: booleans, numbers, strings, structs, and lists.
+How the value lattice applies to each built-in kind: booleans, numbers, strings, structs, and lists.
 
 ### Booleans
 
@@ -295,3 +295,51 @@ b: a
 ```
 
 The default branch evaluates to `a: 1, b: 2` with `a: b` - a conflict. Both defaults bottom out and only the allowed-values branch is returned. Default selection is per-field: fields that do not depend on each other can independently have their defaults selected or not.
+
+## Reasoning and Inference
+
+The lattice in CUE allows humans and machines to **reason about values, schemas, and constraints**. Because constraints are values in a well-defined order, operations that would require ad-hoc tooling elsewhere become straightforward lattice computations in CUE.
+
+::: tip
+Limiting inheritance (language based like C++ or file-baed like HCL) allows easier reasoning!
+:::
+
+### Boilerplate Removal
+
+CUE limits inheritance but provides a new mechanism: applying a constraint to a collection of fields at once, across files, without repeating it at every node.
+
+```cue
+jobs: [string]: acmeMonitoring
+```
+
+> `[string]:` is a pattern constraint - "for all fields whose key is a string". The whole declaration says every field inside `jobs` must satisfy `acmeMonitoring`, without naming each job individually.
+
+- A constraint with sensible defaults simultaneously validates and removes boilerplate.
+- `cue trim` automates this: it removes values from configs already implied by a constraint higher in the lattice.
+
+### Cycles
+
+CUE allows cyclic field references, which most languages forbid. The lattice model handles them through logic rather than constraint solvers.
+
+```cue
+a: b
+b: a
+```
+
+This means `a` and `b` must be equal. If no concrete value is assigned, they remain unspecified - equivalent to both being declared as `string`.
+
+```cue
+a: b + 1
+b: a - 1
+b: 1
+```
+
+CUE resolves `b` to `(a-1) & 1`. It cannot recursively resolve `a` (that would cycle), but `(a-1) & 1` is only valid if `a-1 == 1`, so `a` must be `2`. CUE infers this without a constraint solver - just logic.
+
+```cue
+a: 2
+b: 1
+```
+
+- Most cycles that do not result in infinite structures are handled by CUE.
+- CUE places practical limits on infinite structures, even though it could handle most in bounded time.
