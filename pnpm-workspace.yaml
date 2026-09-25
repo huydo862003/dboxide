@@ -2,3 +2,7 @@ packages:
   - "homepage"
 allowBuilds:
   '@typerighter/rpc-server': true
+minimumReleaseAgeExclude:
+  - '@typerighter/rpc-client@0.40.2'
+  - '@typerighter/rpc-server@0.40.2'
+  - typerighter@0.40.2
