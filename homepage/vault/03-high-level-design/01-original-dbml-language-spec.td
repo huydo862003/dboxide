@@ -453,15 +453,104 @@ DiagramView name {
 
 ## Module System
 
-DBML supports splitting a schema across multiple files. All files are merged into one logical schema before analysis.
+DBML supports splitting a schema across multiple files. All files are merged into one logical schema before analysis. `use` and `reuse` are top-level only.
+
+### Import All
+
+Imports everything a file exports into the current file.
 
 ```dbml
-use './path/to/other.dbml'
+use * from './path-to-file'
 ```
 
-- Paths are relative to the current file.
-- `use` is top-level only. Name collisions across files are errors.
+The `.dbml` extension is optional (`'./base'` and `'./base.dbml'` both work).
+
+### Selective Import
+
+Imports only the specified elements, avoiding unintended name conflicts.
+
+```dbml
+use {
+  type name
+  type name
+} from './path-to-file'
+```
+
+- `type` is the element kind: `table`, `enum`, `tablepartial`, `note`, `schema`, or `tablegroup`. Case-insensitive.
+- `name` is the element name as declared in the source file.
+
+Supported import types:
+
+| Keyword | What is imported |
+| --- | --- |
+| `table` | Table (records and refs come along) |
+| `enum` | Enum |
+| `tablepartial` | TablePartial |
+| `note` | Sticky Note |
+| `schema` | All elements under that schema |
+| `tablegroup` | TableGroup (all tables in the group) |
+
+```dbml
+use {
+  table auth.users as u
+  table auth.roles as r
+} from './auth'
+
+use {
+  schema auth
+} from './auth'
+
+use {
+  tablegroup auth_core
+} from './auth'
+```
+
+### Import Aliases
+
+Use `as` inside a selective import to rename an element and avoid conflicts.
+
+```dbml
+use {
+  table users as auth_users
+} from './auth'
+
+use {
+  table users as billing_users
+} from './billing'
+```
+
+Once aliased, only the alias name is accessible - the original name is not.
+
+### Re-exporting with reuse
+
+`use` imports elements only into the current file - they are not visible to files that later import the current file. `reuse` additionally re-exports the imports to those files.
+
+```dbml
+// common/index.dbml - private imports
+use * from './users'
+use * from './orders'
+
+// main.dbml - users and orders are NOT available here
+use * from './common/index'
+```
+
+```dbml
+// common/index.dbml - public re-exports
+reuse * from './users'
+reuse * from './orders'
+
+// main.dbml - users and orders are available here
+use * from './common/index'
+```
+
+::: note
+`use` is not transitive. If `a.dbml` imports `b.dbml` and `b.dbml` imports `c.dbml` via `use`, elements from `c.dbml` are not visible in `a.dbml`. Use `reuse` to pass elements through.
+:::
+
+::: tip
+Circular imports are allowed. Because DBML is declarative, files can reference each other without issues.
+:::
 
 ::: danger
-Name collisions across files are errors. If two files define a table or enum with the same qualified name, the schema is rejected at analysis time.
+Name collisions across files are errors. If two files define an element with the same qualified name, the schema is rejected at analysis time.
 :::
