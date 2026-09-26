@@ -1,14 +1,13 @@
 ---
-_label: "Language Specification"
+_label: "Original DBML Language Specification"
 _icon: icon.document
 ---
 
+This document reiterates the current markup supported in DBML.
+
+dboxide will be a meta DSL that can cover all DBML use cases.
+
 Original DBML doc: [DBML documentation](https://dbml.dbdiagram.io/home/)
-
-The current weaknesses I like to fix in the current state of DBML:
-
-- No SQL datatype awareness (basically all types are treated as bare string)
-On this page, from [Tokens](#tokens) to [Module System](#module-system), I'll reiterate what DBML currently supports.
 
 ## Tokens
 
@@ -466,4 +465,3 @@ use './path/to/other.dbml'
 ::: danger
 Name collisions across files are errors. If two files define a table or enum with the same qualified name, the schema is rejected at analysis time.
 :::
-
