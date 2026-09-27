@@ -1,2 +1,3 @@
-mod syntax;
 mod db;
+mod syntax;
+mod types;
