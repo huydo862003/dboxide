@@ -80,3 +80,9 @@ pub enum SyntaxKind {
   // Error
   Error,
 }
+
+impl From<SyntaxKind> for rowan::SyntaxKind {
+  fn from(kind: SyntaxKind) -> Self {
+    rowan::SyntaxKind(kind as u16)
+  }
+}
