@@ -81,8 +81,29 @@ pub enum SyntaxKind {
   Error,
 }
 
+// TIL:
+// - Rowan uses an internal u16 (rowan::SyntaxKind) to distinguish various kinds of syntax nodes
+// - The user-defined syntax kind is for user-convenience
+// - We need to switch back-and-forth between the 2 syntax kinds (see the DboxideLang)
 impl From<SyntaxKind> for rowan::SyntaxKind {
   fn from(kind: SyntaxKind) -> Self {
     rowan::SyntaxKind(kind as u16)
+  }
+}
+
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+pub enum DboxideLang {}
+
+impl rowan::Language for DboxideLang {
+  type Kind = SyntaxKind;
+
+  fn kind_from_raw(raw: rowan::SyntaxKind) -> Self::Kind {
+    unsafe {
+      std::mem::transmute(raw.0)
+    }
+  }
+
+  fn kind_to_raw(kind: Self::Kind) -> rowan::SyntaxKind {
+    kind.into()
   }
 }
