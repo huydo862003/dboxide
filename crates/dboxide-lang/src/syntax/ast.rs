@@ -1,85 +1,87 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[allow(non_camel_case_types)]
 #[repr(u16)]
 pub enum SyntaxKind {
   /* Nodes */
-  SourceFile = 0,
+  SOURCE_FILE = 0,
   
   // Example <block-element>:
   // <type> <target>? (as <alias>)? <setting-list>? {
   //   (<element-field> | <element-attribute> | <block-element>)*
   // }
-  BlockElementDeclaration,
-  BlockElementDeclarationType,
-  BlockElementDeclarationTarget,
-  BlockElementDeclarationAlias,
-  BlockElementDeclarationBody,
+  BLOCK_ELEMENT_DECLARATION,
+  BLOCK_ELEMENT_DECLARATION_TYPE,
+  BLOCK_ELEMENT_DECLARATION_TARGET,
+  BLOCK_ELEMENT_DECLARATION_ALIAS,
+  BLOCK_ELEMENT_DECLARATION_BODY,
 
   // Example <inline-element>:
   // <type> <target>? (as <alias>)? <setting-list>?: <element-field>
-  InlineElementDeclaration,
-  InlineElementDeclarationTarget,
-  InlineElementDeclarationBody,
+  INLINE_ELEMENT_DECLARATION,
+  INLINE_ELEMENT_DECLARATION_TARGET,
+  INLINE_ELEMENT_DECLARATION_BODY,
 
   // Example <element-field>:
   // <arg>+ <setting-list>?
-  ElementFieldDeclaration,
-  ElementFieldDeclarationArg,
+  ELEMENT_FIELD_DECLARATION,
+  ELEMENT_FIELD_DECLARATION_ARG,
 
   // Example <element-attribute>:
   // <name>: <value>
-  ElementAttributeDeclaration,
-  ElementAttributeDeclarationName,
-  ElementAttributeDeclarationValue,
+  ELEMENT_ATTRIBUTE_DECLARATION,
+  ELEMENT_ATTRIBUTE_DECLARATION_NAME,
+  ELEMENT_ATTRIBUTE_DECLARATION_VALUE,
 
   // Example <setting-list>:
   // [<name>(: <value>)?,*]
-  SettingList,
-  SettingListItem,
-  SettingListItemName,
-  SettingListItemValue,
+  SETTING_LIST,
+  SETTING_LIST_ITEM,
+  SETTING_LIST_ITEM_NAME,
+  SETTING_LIST_ITEM_VALUE,
 
   /* Expression nodes */
-  InfixExpression,
-  PrefixExpression,
-  PostfixExpression,
+  INFIX_EXPRESSION,
+  PREFIX_EXPRESSION,
+  POSTFIX_EXPRESSION,
 
-  ParenExpression,
-  IndexExpression,
-  CallExpression,
-  ClosureExpression,
+  PAREN_EXPRESSION,
+  INDEX_EXPRESSION,
+  CALL_EXPRESSION,
+  CLOSURE_EXPRESSION,
 
-  ListExpression,
-  TupleExpression,
-  NumberExpression,
-  DqStringExpression,
-  SqStringExpression,
-  OStringExpression,
-  IdentExpression,
+  LIST_EXPRESSION,
+  TUPLE_EXPRESSION,
+  NUMBER_EXPRESSION,
+  DQ_STRING_EXPRESSION,
+  SQ_STRING_EXPRESSION,
+  OQ_STRING_EXPRESSION,
+  IDENT_EXPRESSION,
 
   /* Tokens */
-  Ident = 400,
-  DqString,
-  SqString,
-  OString,
-  Number,
-  Colon,        // :
-  Comma,        // ,
-  LParen,       // (
-  RParen,       // )
-  LBracket,     // [
-  RBracket,     // ]
-  LBrace,       // {
-  RBrace,       // }
-  Operator,
+  IDENT = 400,
+  DQ_STRING,
+  SQ_STRING,
+  OQ_STRING,
+  NUMBER,
+  COLON,         // :
+  COMMA,         // ,
+  L_PAREN,       // (
+  R_PAREN,       // )
+  L_BRACKET,     // [
+  R_BRACKET,     // ]
+  L_BRACE,       // {
+  R_BRACE,       // }
+  OPERATOR,
 
   // Trivia
-  Whitespace = 600,
-  Newline,
-  Eof,
+  WHITESPACE = 600,
+  NEWLINE,
+  EOF,
 
   // Error
-  Error,
+  ERROR,
 }
+pub use SyntaxKind::*;
 
 // TIL:
 // - Rowan uses an internal u16 (rowan::SyntaxKind) to distinguish various kinds of syntax nodes
