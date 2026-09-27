@@ -1,9 +1,62 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u16)]
 pub enum SyntaxKind {
-  // TODO: Define syntax kinds for syntax nodes
+  /* Nodes */
+  SourceFile = 0,
+  
+  // Example <block-element>:
+  // <type> <target>? (as <alias>)? <setting-list>? {
+  //   (<element-field> | <element-attribute> | <block-element>)*
+  // }
+  BlockElementDeclaration,
+  BlockElementDeclarationType,
+  BlockElementDeclarationTarget,
+  BlockElementDeclarationAlias,
+  BlockElementDeclarationBody,
 
-  // Shared tokens
+  // Example <inline-element>:
+  // <type> <target>? (as <alias>)? <setting-list>?: <element-field>
+  InlineElementDeclaration,
+  InlineElementDeclarationTarget,
+  InlineElementDeclarationBody,
+
+  // Example <element-field>:
+  // <arg>+ <setting-list>?
+  ElementFieldDeclaration,
+  ElementFieldDeclarationArg,
+
+  // Example <element-attribute>:
+  // <name>: <value>
+  ElementAttributeDeclaration,
+  ElementAttributeDeclarationName,
+  ElementAttributeDeclarationValue,
+
+  // Example <setting-list>:
+  // [<name>(: <value>)?,*]
+  SettingList,
+  SettingListItem,
+  SettingListItemName,
+  SettingListItemValue,
+
+  /* Expression nodes */
+  InfixExpression,
+  PrefixExpression,
+  PostfixExpression,
+
+  ParenExpression,
+  IndexExpression,
+  CallExpression,
+  ClosureExpression,
+
+  ListExpression,
+  TupleExpression,
+  NumberExpression,
+  DqStringExpression,
+  SqStringExpression,
+  OStringExpression,
+  IdentExpression,
+
+  /* Tokens */
   Ident = 400,
   DqString,
   SqString,
