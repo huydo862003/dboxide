@@ -109,3 +109,7 @@ impl rowan::Language for DboxideLang {
     kind.into()
   }
 }
+
+pub type SyntaxNode = rowan::SyntaxNode<DboxideLang>;
+pub type SyntaxToken = rowan::SyntaxToken<DboxideLang>;
+pub type GreenNode = rowan::NodeOrToken<SyntaxNode, SyntaxToken>;
