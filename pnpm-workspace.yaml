@@ -3,6 +3,6 @@ packages:
 allowBuilds:
   '@typerighter/rpc-server': true
 minimumReleaseAgeExclude:
-  - '@typerighter/rpc-client@0.40.2 || 0.40.3'
-  - '@typerighter/rpc-server@0.40.2 || 0.40.3'
-  - typerighter@0.40.2 || 0.40.3
+  - '@typerighter/rpc-client@0.40.4'
+  - '@typerighter/rpc-server@0.40.4'
+  - typerighter@0.40.4

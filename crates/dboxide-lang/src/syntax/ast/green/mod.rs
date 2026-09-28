@@ -10,8 +10,8 @@ use crate::syntax::ast::SyntaxKind;
 pub use node::SyntaxNode;
 pub use token::SyntaxToken;
 
-/// GreenNode: A tagged pointer to either a Node or a Token.
-/// Tag bit 0 = node, tag bit 1 = token.
+/// GreenNode: A tagged pointer to either a Node or a Token
+/// Tag bit 0 = node, tag bit 1 = token
 pub struct GreenNode(usize);
 
 impl GreenNode {

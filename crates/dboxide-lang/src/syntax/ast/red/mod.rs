@@ -2,8 +2,8 @@ use std::fmt::{self, Debug};
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 
+use super::green::{GreenNode, node::SyntaxNode};
 use crate::syntax::ast::SyntaxKind;
-use crate::syntax::green::{GreenNode, node::SyntaxNode};
 
 #[derive(Clone)]
 struct RedNodeData {
@@ -27,8 +27,7 @@ impl Hash for RedNodeData {
   }
 }
 
-/// A red node wraps a green node with offset and parent pointer,
-/// giving it identity in the source text
+/// A red node wraps a green node with offset and parent pointer, giving it identity in the source text
 #[derive(Clone, Eq, PartialEq)]
 pub struct RedNode(RedNodeData);
 

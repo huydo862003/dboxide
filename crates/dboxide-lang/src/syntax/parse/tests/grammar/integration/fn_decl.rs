@@ -1,0 +1,968 @@
+use crate::syntax::parse::tests::utils::*;
+
+#[test]
+fn fn_no_params_no_return() {
+  let tree = parse_source("fn foo() {}");
+  let expected = r#"(SourceFile
+  (FnDeclaration
+    "fn"
+    " "
+    (FnDeclarationName
+      "foo")
+    (FnDeclarationParams
+      "("
+      ")")
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn fn_one_param_with_return() {
+  let tree = parse_source("fn foo(x: int): bool {}");
+  let expected = r#"(SourceFile
+  (FnDeclaration
+    "fn"
+    " "
+    (FnDeclarationName
+      "foo")
+    (FnDeclarationParams
+      "("
+      (FnDeclarationParam
+        (IdentExpr
+          "x")
+        ":"
+        " "
+        (IdentExpr
+          "int"))
+      ")")
+    (FnDeclarationReturnType
+      ":"
+      " "
+      (IdentExpr
+        "bool"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn fn_two_params() {
+  let tree = parse_source("fn add(a: int, b: int): int {}");
+  let expected = r#"(SourceFile
+  (FnDeclaration
+    "fn"
+    " "
+    (FnDeclarationName
+      "add")
+    (FnDeclarationParams
+      "("
+      (FnDeclarationParam
+        (IdentExpr
+          "a")
+        ":"
+        " "
+        (IdentExpr
+          "int"))
+      ","
+      " "
+      (FnDeclarationParam
+        (IdentExpr
+          "b")
+        ":"
+        " "
+        (IdentExpr
+          "int"))
+      ")")
+    (FnDeclarationReturnType
+      ":"
+      " "
+      (IdentExpr
+        "int"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn fn_operator_single_char() {
+  let tree = parse_source("fn operator>(a: int, b: int): bool {}");
+  let expected = r#"(SourceFile
+  (FnDeclaration
+    "fn"
+    " "
+    (FnDeclarationName
+      "operator"
+      ">")
+    (FnDeclarationParams
+      "("
+      (FnDeclarationParam
+        (IdentExpr
+          "a")
+        ":"
+        " "
+        (IdentExpr
+          "int"))
+      ","
+      " "
+      (FnDeclarationParam
+        (IdentExpr
+          "b")
+        ":"
+        " "
+        (IdentExpr
+          "int"))
+      ")")
+    (FnDeclarationReturnType
+      ":"
+      " "
+      (IdentExpr
+        "bool"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn fn_operator_multi_char() {
+  let tree = parse_source("fn operator~>(a: bool, b: bool): bool {}");
+  let expected = r#"(SourceFile
+  (FnDeclaration
+    "fn"
+    " "
+    (FnDeclarationName
+      "operator"
+      "~>")
+    (FnDeclarationParams
+      "("
+      (FnDeclarationParam
+        (IdentExpr
+          "a")
+        ":"
+        " "
+        (IdentExpr
+          "bool"))
+      ","
+      " "
+      (FnDeclarationParam
+        (IdentExpr
+          "b")
+        ":"
+        " "
+        (IdentExpr
+          "bool"))
+      ")")
+    (FnDeclarationReturnType
+      ":"
+      " "
+      (IdentExpr
+        "bool"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn fn_with_body_field() {
+  let tree = parse_source(
+    r#"fn double(x: int): int {
+  x + x
+}"#,
+  );
+  let expected = r#"(SourceFile
+  (FnDeclaration
+    "fn"
+    " "
+    (FnDeclarationName
+      "double")
+    (FnDeclarationParams
+      "("
+      (FnDeclarationParam
+        (IdentExpr
+          "x")
+        ":"
+        " "
+        (IdentExpr
+          "int"))
+      ")")
+    (FnDeclarationReturnType
+      ":"
+      " "
+      (IdentExpr
+        "int"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (InfixExpr
+          (IdentExpr
+            "x")
+          " "
+          "+"
+          (IdentExpr
+            " "
+            "x")))
+      "\n"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn fn_inside_type_body() {
+  let tree = parse_source(
+    r#"type T {
+  fn method(): bool {}
+}"#,
+  );
+  let expected = r#"(SourceFile
+  (TypeDeclaration
+    "type"
+    " "
+    (TypeDeclarationName
+      "T")
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (FnDeclaration
+        "fn"
+        " "
+        (FnDeclarationName
+          "method")
+        (FnDeclarationParams
+          "("
+          ")")
+        (FnDeclarationReturnType
+          ":"
+          " "
+          (IdentExpr
+            "bool"))
+        " "
+        (BlockElementDeclarationBody
+          "{"
+          "}"))
+      "\n"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn fn_return_type_union() {
+  let tree = parse_source("fn parse(): int | null {}");
+  let expected = r#"(SourceFile
+  (FnDeclaration
+    "fn"
+    " "
+    (FnDeclarationName
+      "parse")
+    (FnDeclarationParams
+      "("
+      ")")
+    (FnDeclarationReturnType
+      ":"
+      " "
+      (InfixExpr
+        (IdentExpr
+          "int")
+        " "
+        "|"
+        (IdentExpr
+          " "
+          "null")))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
+}
+
+// ---- fn without parens ----
+
+#[test]
+fn fn_no_params_no_parens() {
+  let tree = parse_source("fn foo {}");
+  let expected = r#"(SourceFile
+  (FnDeclaration
+    "fn"
+    " "
+    (FnDeclarationName
+      "foo")
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
+}
+
+// ---- quantifier expressions in fn body ----
+
+#[test]
+fn fn_forall_in_body() {
+  let tree = parse_source("fn check(): bool {\n  forall c of columns { true }\n}");
+  let expected = r#"(SourceFile
+  (FnDeclaration
+    "fn"
+    " "
+    (FnDeclarationName
+      "check")
+    (FnDeclarationParams
+      "("
+      ")")
+    (FnDeclarationReturnType
+      ":"
+      " "
+      (IdentExpr
+        "bool"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ForallExpr
+          "forall"
+          " "
+          (IdentExpr
+            "c")
+          " "
+          "of"
+          " "
+          (IdentExpr
+            "columns")
+          " "
+          (BlockElementDeclarationBody
+            "{"
+            " "
+            (ElementFieldDeclaration
+              (IdentExpr
+                "true"))
+            " "
+            "}")))
+      "\n"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn fn_exists_in_body() {
+  let tree = parse_source("fn check(): bool {\n  exists c of columns { true }\n}");
+  let expected = r#"(SourceFile
+  (FnDeclaration
+    "fn"
+    " "
+    (FnDeclarationName
+      "check")
+    (FnDeclarationParams
+      "("
+      ")")
+    (FnDeclarationReturnType
+      ":"
+      " "
+      (IdentExpr
+        "bool"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ExistsExpr
+          "exists"
+          " "
+          (IdentExpr
+            "c")
+          " "
+          "of"
+          " "
+          (IdentExpr
+            "columns")
+          " "
+          (BlockElementDeclarationBody
+            "{"
+            " "
+            (ElementFieldDeclaration
+              (IdentExpr
+                "true"))
+            " "
+            "}")))
+      "\n"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn fn_forall_dotted_collection() {
+  let tree = parse_source("fn check(): bool {\n  forall c of table.columns { true }\n}");
+  let expected = r#"(SourceFile
+  (FnDeclaration
+    "fn"
+    " "
+    (FnDeclarationName
+      "check")
+    (FnDeclarationParams
+      "("
+      ")")
+    (FnDeclarationReturnType
+      ":"
+      " "
+      (IdentExpr
+        "bool"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ForallExpr
+          "forall"
+          " "
+          (IdentExpr
+            "c")
+          " "
+          "of"
+          " "
+          (InfixExpr
+            (IdentExpr
+              "table")
+            "."
+            (IdentExpr
+              "columns"))
+          " "
+          (BlockElementDeclarationBody
+            "{"
+            " "
+            (ElementFieldDeclaration
+              (IdentExpr
+                "true"))
+            " "
+            "}")))
+      "\n"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
+}
+
+// ---- error recovery ----
+
+#[test]
+fn fn_error_missing_name() {
+  let tree = parse_source("fn {}");
+  let expected = r#"(SourceFile
+  (FnDeclaration
+    "fn"
+    " "
+    (FnDeclarationName)
+    (BlockElementDeclarationBody
+      "{"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn fn_error_missing_body() {
+  let tree = parse_source("fn foo()");
+  let expected = r#"(SourceFile
+  (FnDeclaration
+    "fn"
+    " "
+    (FnDeclarationName
+      "foo")
+    (FnDeclarationParams
+      "("
+      ")"))
+  "")"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn fn_error_operator_missing_symbol() {
+  let tree = parse_source("fn operator foo() {}");
+  let expected = r#"(SourceFile
+  (FnDeclaration
+    "fn"
+    " "
+    (FnDeclarationName
+      "operator"))
+  " "
+  (Error
+    (BlockElementDeclarationType
+      "foo"))
+  (Error
+    "("
+    ")"
+    " "
+    "{"
+    "}")
+  "")"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn fn_error_param_missing_colon() {
+  let tree = parse_source("fn foo(x int): bool {}");
+  let expected = r#"(SourceFile
+  (FnDeclaration
+    "fn"
+    " "
+    (FnDeclarationName
+      "foo")
+    (FnDeclarationParams
+      "("
+      (FnDeclarationParam
+        (IdentExpr
+          "x"))
+      " "
+      (FnDeclarationParam
+        (IdentExpr
+          "int"))
+      ")")
+    (FnDeclarationReturnType
+      ":"
+      " "
+      (IdentExpr
+        "bool"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn fn_error_unclosed_params() {
+  let tree = parse_source("fn foo(x: int");
+  let expected = r#"(SourceFile
+  (FnDeclaration
+    "fn"
+    " "
+    (FnDeclarationName
+      "foo")
+    (FnDeclarationParams
+      "("
+      (FnDeclarationParam
+        (IdentExpr
+          "x")
+        ":"
+        " "
+        (IdentExpr
+          "int"))))
+  "")"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn fn_error_bad_token_in_params() {
+  let tree = parse_source("fn foo(123): bool {}");
+  let expected = r#"(SourceFile
+  (FnDeclaration
+    "fn"
+    " "
+    (FnDeclarationName
+      "foo")
+    (FnDeclarationParams
+      "("
+      "123"
+      ")")
+    (FnDeclarationReturnType
+      ":"
+      " "
+      (IdentExpr
+        "bool"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn fn_error_forall_missing_of() {
+  let tree = parse_source("fn check(): bool {\n  forall c columns { true }\n}");
+  let expected = r#"(SourceFile
+  (FnDeclaration
+    "fn"
+    " "
+    (FnDeclarationName
+      "check")
+    (FnDeclarationParams
+      "("
+      ")")
+    (FnDeclarationReturnType
+      ":"
+      " "
+      (IdentExpr
+        "bool"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ForallExpr
+          "forall"
+          " "
+          (IdentExpr
+            "c")
+          " "
+          (IdentExpr
+            "columns")
+          " "
+          (BlockElementDeclarationBody
+            "{"
+            " "
+            (ElementFieldDeclaration
+              (IdentExpr
+                "true"))
+            " "
+            "}")))
+      "\n"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn fn_error_forall_missing_body() {
+  let tree = parse_source("fn check(): bool {\n  forall c of columns\n}");
+  let expected = r#"(SourceFile
+  (FnDeclaration
+    "fn"
+    " "
+    (FnDeclarationName
+      "check")
+    (FnDeclarationParams
+      "("
+      ")")
+    (FnDeclarationReturnType
+      ":"
+      " "
+      (IdentExpr
+        "bool"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ForallExpr
+          "forall"
+          " "
+          (IdentExpr
+            "c")
+          " "
+          "of"
+          " "
+          (IdentExpr
+            "columns")))
+      "\n"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
+}
+
+// ---- fn with return type but no parens ----
+
+#[test]
+fn fn_no_parens_with_return_type() {
+  let tree = parse_source("fn foo: bool {}");
+  let expected = r#"(SourceFile
+  (FnDeclaration
+    "fn"
+    " "
+    (FnDeclarationName
+      "foo")
+    (FnDeclarationReturnType
+      ":"
+      " "
+      (IdentExpr
+        "bool"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
+}
+
+// ---- exists with dotted collection ----
+
+#[test]
+fn fn_exists_dotted_collection() {
+  let tree = parse_source("fn check(): bool {\n  exists c of table.columns { true }\n}");
+  let expected = r#"(SourceFile
+  (FnDeclaration
+    "fn"
+    " "
+    (FnDeclarationName
+      "check")
+    (FnDeclarationParams
+      "("
+      ")")
+    (FnDeclarationReturnType
+      ":"
+      " "
+      (IdentExpr
+        "bool"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ExistsExpr
+          "exists"
+          " "
+          (IdentExpr
+            "c")
+          " "
+          "of"
+          " "
+          (InfixExpr
+            (IdentExpr
+              "table")
+            "."
+            (IdentExpr
+              "columns"))
+          " "
+          (BlockElementDeclarationBody
+            "{"
+            " "
+            (ElementFieldDeclaration
+              (IdentExpr
+                "true"))
+            " "
+            "}")))
+      "\n"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
+}
+
+// ---- multiple quantifiers in one body ----
+
+#[test]
+fn fn_two_quantifiers_in_body() {
+  let tree =
+    parse_source("fn check(): bool {\n  forall a of xs { true }\n  exists b of ys { true }\n}");
+  let expected = r#"(SourceFile
+  (FnDeclaration
+    "fn"
+    " "
+    (FnDeclarationName
+      "check")
+    (FnDeclarationParams
+      "("
+      ")")
+    (FnDeclarationReturnType
+      ":"
+      " "
+      (IdentExpr
+        "bool"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ForallExpr
+          "forall"
+          " "
+          (IdentExpr
+            "a")
+          " "
+          "of"
+          " "
+          (IdentExpr
+            "xs")
+          " "
+          (BlockElementDeclarationBody
+            "{"
+            " "
+            (ElementFieldDeclaration
+              (IdentExpr
+                "true"))
+            " "
+            "}")))
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ExistsExpr
+          "exists"
+          " "
+          (IdentExpr
+            "b")
+          " "
+          "of"
+          " "
+          (IdentExpr
+            "ys")
+          " "
+          (BlockElementDeclarationBody
+            "{"
+            " "
+            (ElementFieldDeclaration
+              (IdentExpr
+                "true"))
+            " "
+            "}")))
+      "\n"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
+}
+
+// ---- operator with space before symbol ----
+
+#[test]
+fn fn_operator_with_space_before_symbol() {
+  let tree = parse_source("fn operator >(a: int): bool {}");
+  let expected = r#"(SourceFile
+  (FnDeclaration
+    "fn"
+    " "
+    (FnDeclarationName
+      "operator"
+      " "
+      ">")
+    (FnDeclarationParams
+      "("
+      (FnDeclarationParam
+        (IdentExpr
+          "a")
+        ":"
+        " "
+        (IdentExpr
+          "int"))
+      ")")
+    (FnDeclarationReturnType
+      ":"
+      " "
+      (IdentExpr
+        "bool"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
+}
+
+// ---- error: bare fn keyword with no name or body ----
+
+#[test]
+fn fn_error_only_keyword() {
+  let tree = parse_source("fn");
+  let expected = r#"(SourceFile
+  (FnDeclaration
+    "fn"
+    (FnDeclarationName))
+  "")"#;
+  assert_eq!(tree, expected);
+}
+
+// ---- error: param with name only, no colon or type ----
+
+#[test]
+fn fn_error_param_no_colon_or_type() {
+  let tree = parse_source("fn foo(x): bool {}");
+  let expected = r#"(SourceFile
+  (FnDeclaration
+    "fn"
+    " "
+    (FnDeclarationName
+      "foo")
+    (FnDeclarationParams
+      "("
+      (FnDeclarationParam
+        (IdentExpr
+          "x"))
+      ")")
+    (FnDeclarationReturnType
+      ":"
+      " "
+      (IdentExpr
+        "bool"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
+}
+
+// ---- error: forall with missing binding name ----
+
+#[test]
+fn fn_error_forall_missing_binding() {
+  // "of" is consumed as the binding IdentExpr; "columns" becomes the collection.
+  // The parser emits a diagnostic for the missing "of" keyword and recovers.
+  let tree = parse_source("fn check(): bool {\n  forall of columns { true }\n}");
+  let expected = r#"(SourceFile
+  (FnDeclaration
+    "fn"
+    " "
+    (FnDeclarationName
+      "check")
+    (FnDeclarationParams
+      "("
+      ")")
+    (FnDeclarationReturnType
+      ":"
+      " "
+      (IdentExpr
+        "bool"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ForallExpr
+          "forall"
+          " "
+          (IdentExpr
+            "of")
+          " "
+          (IdentExpr
+            "columns")
+          " "
+          (BlockElementDeclarationBody
+            "{"
+            " "
+            (ElementFieldDeclaration
+              (IdentExpr
+                "true"))
+            " "
+            "}")))
+      "\n"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
+}

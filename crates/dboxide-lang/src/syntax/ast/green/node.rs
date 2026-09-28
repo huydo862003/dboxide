@@ -13,7 +13,7 @@ pub(super) struct NodeHeader {
   pub(super) n_children: u32,
 }
 
-/// An interior node in the green tree.
+/// An interior node in the green tree
 pub struct SyntaxNode(pub(super) *const NodeHeader);
 
 impl SyntaxNode {

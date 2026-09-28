@@ -5,5 +5,8 @@ edition = "2024"
 
 [dependencies]
 hashbrown = "0.15"
+itertools = "0.14"
 salsa = "0.28.5"
 utf8-chars = "3.0.7"
+dboxide-macros = { path = "../dboxide-macros" }
+unescaper = "0.2.0"

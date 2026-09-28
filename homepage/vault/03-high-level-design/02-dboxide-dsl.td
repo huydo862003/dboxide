@@ -208,7 +208,7 @@ An optional `[on use: expand]` annotation may be added to an `[element]` type. W
 
 ```
 type TableGroup [element, on use: expand] {
-  tables ref[Table][]
+  tables reference[Table][]
 }
 // use { tablegroup auth_core }
 //   -> dereferences tables -> gets each Table instance
@@ -240,9 +240,9 @@ A type body has three optional sections:
 ```
 type Table [element] {
   /* fields */
-  name qdecl[Table] [label, unique]
+  name qualified_declaration[Table] [label, unique]
   columns Column[]
-  partials ref[TablePartial][]
+  partials reference[TablePartial][]
   indexes Index[]
 
   /* namespace: what `.` traversal sees */
@@ -284,7 +284,7 @@ All syntax annotations (`[arg]`, `[csv]`, `[label]`, `[attribute]`, `[setting]`)
 
 ```
 type Column [field] {
-  name decl[Column] [arg: 0, label, unique]   // "id"      <- positional arg 0
+  name declaration[Column] [arg: 0, label, unique]   // "id"      <- positional arg 0
   type Type         [arg: 1]          // "integer" <- positional arg 1
 }
 // surface:  id integer [pk]
@@ -299,8 +299,8 @@ type Column [field] {
 
 ```
 type Table [element] {
-  name  qdecl[Table] [label]         // Table <name> { ... }
-  alias qdecl[Table] [label alias]          // Table <name> as <alias> { ... }
+  name  qualified_declaration[Table] [label]         // Table <name> { ... }
+  alias qualified_declaration[Table] [label alias]          // Table <name> as <alias> { ... }
 }
 // surface:  Table users as u { ... }
 ```
@@ -318,7 +318,7 @@ A field may carry both `[attribute, setting]` if it can be written in either pos
 type Column [field] {
   type Type  [attribute]   // written as inline keyword: id integer
   pk   bool? [setting]     // written inside brackets: id integer [pk]
-  name decl[Column] [arg: 0, unique]
+  name declaration[Column] [arg: 0, unique]
 }
 ```
 
@@ -344,7 +344,7 @@ Bare words and multi-word phrases inside `[...]` annotations are implicitly stri
 ### Declarations and References
 
 ::: note
-`decl`, `qdecl`, `ref`, and `qref` are primitives from the `metatype` module.
+`decl`, `qualified_declaration`, `ref`, and `qualified_reference` are primitives from the `metatype` module.
 :::
 
 A declaration introduces a name into a namespace. A reference resolves a declared name by searching the current namespace, then enclosing namespaces, then imported namespaces, in that order.
@@ -354,15 +354,15 @@ A declaration introduces a name into a namespace. A reference resolves a declare
 Two declaration forms are available, differing in whether the declared name also exposes a namespace.
 
 - `decl[T]`: declares a name in the namespace of the enclosing type `T`. The name is not visible outside it.
-- `qdecl[T]`: like `decl[T]`, but additionally exposes the container's own namespace under the declared name. This allows references of the form `name.member` to resolve into the container.
+- `qualified_declaration[T]`: like `decl[T]`, but additionally exposes the container's own namespace under the declared name. This allows references of the form `name.member` to resolve into the container.
 
 ```
 type Column [field] {
-  name decl[Column] [arg: 0, label, unique]   // "id" declared in Column's namespace
+  name declaration[Column] [arg: 0, label, unique]
 }
 
 type Table [element] {
-  name qdecl[Table] [label, unique]   // declares "users"; exposes Table's namespace
+  name qualified_declaration[Table] [label, unique]
 }
 // Table users { id integer }  ->  "users.id" resolves into Table's namespace
 ```
@@ -372,11 +372,11 @@ type Table [element] {
 Two reference forms are available, differing in whether the reference traverses a qualified namespace to reach its target.
 
 - `ref[T]`: a reference to a declaration of type `T`, resolved by searching enclosing namespaces in order.
-- `qref[T]`: like `ref[T]`, but the reference is qualified - it follows the named namespace exposed by `qdecl[T]` to reach the declaration (e.g. `schema.table.column`).
+- `qualified_reference[T]`: like `ref[T]`, but the reference is qualified - it follows the named namespace exposed by `qualified_declaration[T]` to reach the declaration (e.g. `schema.table.column`).
 
 ```
 type Index [element] {
-  columns ref[Column][]    // resolves column names in the enclosing Table's namespace
+  columns reference[Column][]    // resolves column names in the enclosing Table's namespace
 }
 ```
 
@@ -578,9 +578,9 @@ The `metatype` module provides all built-in types, operators, functions, and ann
 | Construct | Meaning |
 | --- | --- |
 | `decl[T]` | Declares a name in the namespace of enclosing type `T`; not visible outside |
-| `qdecl[T]` | Like `decl[T]`, but exposes the container's namespace under the declared name |
+| `qualified_declaration[T]` | Like `decl[T]`, but exposes the container's namespace under the declared name |
 | `ref[T]` | Reference to a declaration of type `T` |
-| `qref[T]` | Qualified reference, traversing a namespace exposed by `qdecl[T]` |
+| `qualified_reference[T]` | Qualified reference, traversing a namespace exposed by `qualified_declaration[T]` |
 | `Partial[T]` | All fields of `T`, all optional - for mixin/template injection |
 | `Map[K, V]` | Key-value map from `K` to `V` |
 
@@ -661,7 +661,7 @@ use * from 'metatype'
 
 type RefAction = "cascade" | "restrict" | "set null" | "set default" | "no action"
 
-/* Ref operators - typed dispatch on qref[Column][]
+/* Ref operators - typed dispatch on qualified_reference[Column][]
  * Column < Column  -> many-to-one RefBinary
  * Column > Column  -> one-to-many RefBinary
  * Column - Column  -> one-to-one RefBinary
@@ -670,38 +670,38 @@ type RefAction = "cascade" | "restrict" | "set null" | "set default" | "no actio
  */
 
 /* binary: Ref [name]: table.col op table.col [settings] */
-fn operator<(from: qref[Column][], to: qref[Column][]): RefBinary { RefBinary { from, to, cardinality: "<"    } }
-fn operator>(from: qref[Column][], to: qref[Column][]): RefBinary { RefBinary { from, to, cardinality: ">"    } }
-fn operator-(from: qref[Column][], to: qref[Column][]): RefBinary { RefBinary { from, to, cardinality: "-"    } }
-fn operator<>(from: qref[Column][], to: qref[Column][]): RefBinary { RefBinary { from, to, cardinality: "<>"  } }
+fn operator<(from: qualified_reference[Column][], to: qualified_reference[Column][]): RefBinary { RefBinary { from, to, cardinality: "<"    } }
+fn operator>(from: qualified_reference[Column][], to: qualified_reference[Column][]): RefBinary { RefBinary { from, to, cardinality: ">"    } }
+fn operator-(from: qualified_reference[Column][], to: qualified_reference[Column][]): RefBinary { RefBinary { from, to, cardinality: "-"    } }
+fn operator<>(from: qualified_reference[Column][], to: qualified_reference[Column][]): RefBinary { RefBinary { from, to, cardinality: "<>"  } }
 /* + all nullable binary variants: ?<, <?, ?<?, ?>, >?, ?>?, ?-, -?, ?-?, ?<>, <>?, ?<>? */
 
 /* unary: [ref: > users.id] - from is implicitly the enclosing column */
-fn operator<(to: qref[Column][]): RefUnary { RefUnary { to, cardinality: "<"    } }
-fn operator>(to: qref[Column][]): RefUnary { RefUnary { to, cardinality: ">"    } }
-fn operator-(to: qref[Column][]): RefUnary { RefUnary { to, cardinality: "-"    } }
-fn operator<>(to: qref[Column][]): RefUnary { RefUnary { to, cardinality: "<>"  } }
+fn operator<(to: qualified_reference[Column][]): RefUnary { RefUnary { to, cardinality: "<"    } }
+fn operator>(to: qualified_reference[Column][]): RefUnary { RefUnary { to, cardinality: ">"    } }
+fn operator-(to: qualified_reference[Column][]): RefUnary { RefUnary { to, cardinality: "-"    } }
+fn operator<>(to: qualified_reference[Column][]): RefUnary { RefUnary { to, cardinality: "<>"  } }
 /* + all nullable unary variants */
 
-/* Dep operators - typed dispatch on qref[Column | Table]
+/* Dep operators - typed dispatch on qualified_reference[Column | Table]
  * Table|Column -> Table|Column  generates a DepBinary (upstream to downstream)
  * Table|Column <- Table|Column  generates a DepBinary (downstream to upstream)
  */
 
 /* binary: Dep: raw_orders -> stg_orders */
-fn operator->(from: qref[Column | Table], to: qref[Column | Table]): DepBinary { DepBinary { from, direction: "->", to } }
-fn operator<-(to: qref[Column | Table], from: qref[Column | Table]): DepBinary { DepBinary { from, direction: "<-", to } }
+fn operator->(from: qualified_reference[Column | Table], to: qualified_reference[Column | Table]): DepBinary { DepBinary { from, direction: "->", to } }
+fn operator<-(to: qualified_reference[Column | Table], from: qualified_reference[Column | Table]): DepBinary { DepBinary { from, direction: "<-", to } }
 
 /* unary: [dep: -> stg_orders] - from/to is implicitly the enclosing element */
-fn operator->(to: qref[Column | Table]): DepUnary { DepUnary { direction: "->", target: to } }
-fn operator<-(from: qref[Column | Table]): DepUnary { DepUnary { direction: "<-", target: from } }
+fn operator->(to: qualified_reference[Column | Table]): DepUnary { DepUnary { direction: "->", target: to } }
+fn operator<-(from: qualified_reference[Column | Table]): DepUnary { DepUnary { direction: "<-", target: from } }
 
-fn operator~(p: ref[TablePartial]): TablePartialInjection { TablePartialInjection { partial: p } }
+fn operator~(p: reference[TablePartial]): TablePartialInjection { TablePartialInjection { partial: p } }
 
 /* Project */
 
 type Project [element] {
-  name decl[Project] [label, unique]
+  name declaration[Project] [label, unique]
   database_type string? [attribute]
   note string? [attribute]
 }
@@ -709,7 +709,7 @@ type Project [element] {
 /* Enum */
 
 type Enum [element] {
-  name qdecl[Enum] [label, unique]
+  name qualified_declaration[Enum] [label, unique]
   variants Variant[]
 
   namespace {
@@ -717,17 +717,17 @@ type Enum [element] {
   }
 
   type Variant [field] {
-    name decl[Variant] [arg: 0, label, unique]
+    name declaration[Variant] [arg: 0, label, unique]
     note string? [setting]
   }
 }
 
-/* RefBinary - result of binary ref operators (a.col > b.col) */
+/* RefBinary - result of binary reference operators (a.col > b.col) */
 
 type RefBinary [field] {
-  from qref[Column][] [arg: 0]
+  from qualified_reference[Column][] [arg: 0]
   cardinality string [arg: 1]
-  to qref[Column][] [arg: 2]
+  to qualified_reference[Column][] [arg: 2]
   delete RefAction? [setting]
   update RefAction? [setting]
   color color? [setting]
@@ -741,15 +741,15 @@ type RefBinary [field] {
  */
 
 type Ref [element] {
-  name decl[Ref]? [label]
+  name declaration[Ref]? [label]
   endpoints RefBinary[]
 }
 
-/* RefUnary - result of unary ref operators ([ref: > users.id]) */
+/* RefUnary - result of unary reference operators ([ref: > users.id]) */
 
 type RefUnary [field] {
   cardinality string [arg: 0]
-  to qref[Column][] [arg: 1]
+  to qualified_reference[Column][] [arg: 1]
   delete RefAction? [setting]
   update RefAction? [setting]
 }
@@ -757,9 +757,9 @@ type RefUnary [field] {
 /* DepBinary - result of binary dep operators (a -> b) */
 
 type DepBinary [field] {
-  from qref[Column | Table] [arg: 0]
+  from qualified_reference[Column | Table] [arg: 0]
   direction "->" | "<-" [arg: 1]
-  to qref[Column | Table] [arg: 2]
+  to qualified_reference[Column | Table] [arg: 2]
 }
 
 /* Dep [name]: a -> b
@@ -771,7 +771,7 @@ type DepBinary [field] {
  */
 
 type Dep [element] {
-  name decl[Dep]? [label]
+  name declaration[Dep]? [label]
   lines DepBinary[]
   color color? [setting]
   note string? [setting]
@@ -782,7 +782,7 @@ type Dep [element] {
 
 type DepUnary [field] {
   direction "->" | "<-" [arg: 0]
-  target qref[Column | Table] [arg: 1]
+  target qualified_reference[Column | Table] [arg: 1]
 }
 
 /* TablePartial name [settings] {
@@ -792,7 +792,7 @@ type DepUnary [field] {
  */
 
 type TablePartial [element] {
-  name decl[TablePartial] [label, unique]
+  name declaration[TablePartial] [label, unique]
   headercolor color? [setting, attribute]
   note string? [setting, attribute]
   columns Table.Column[]
@@ -809,8 +809,8 @@ type TablePartial [element] {
  */
 
 type TableGroup [element, on use: expand] {
-  name decl[TableGroup] [label, unique]
-  tables ref[Table][] [field: 0..]
+  name declaration[TableGroup] [label, unique]
+  tables reference[Table][] [field: 0..]
   note string? [setting]
   color color? [setting]
 }
@@ -826,7 +826,7 @@ type Note [element] {
 /* Note name [settings] { 'text' } */
 
 type StickyNote [element] {
-  name decl[StickyNote] [label, unique]
+  name declaration[StickyNote] [label, unique]
   content string [arg: 0]
   color (color | "none")? [setting]
 }
@@ -836,7 +836,7 @@ type StickyNote [element] {
  */
 
 type Metadata [element] {
-  target qref[Table | Table.Column | Enum | TableGroup] [label]
+  target qualified_reference[Table | Table.Column | Enum | TableGroup] [label]
   ...metadata: Map[string, any] [attribute]
 }
 
@@ -850,7 +850,7 @@ type Metadata [element] {
  */
 
 type DiagramView [element] {
-  name decl[DiagramView] [label, unique]
+  name declaration[DiagramView] [label, unique]
 
   type Tables [element] {
     items (ref[Table] | "*")[] [field: 0..]
@@ -872,8 +872,8 @@ type DiagramView [element] {
 /* Table */
 
 type Table [element] {
-  name qdecl[Table] [label, unique]
-  alias qdecl[Table] [label alias]
+  name qualified_declaration[Table] [label, unique]
+  alias qualified_declaration[Table] [label alias]
   headercolor color? [setting, attribute]
   note string? [setting, attribute]
   partials TablePartialInjection[]
@@ -896,7 +896,7 @@ type Table [element] {
 
   /* <name> <type> */
   type Column [field] {
-    name decl[Column] [arg: 0, label, unique]
+    name declaration[Column] [arg: 0, label, unique]
     type Type [arg: 1, attribute]
     unique bool? [attribute, setting]
     pk bool? [attribute, setting]
@@ -905,7 +905,7 @@ type Table [element] {
     increment bool? [setting]
     default interpret(type)? [setting]
     note string? [setting]
-    refs RefUnary[] [setting: ref]
+    references RefUnary[] [setting: reference]
     deps DepUnary[] [setting: dep]
     checks ostring[]
 
@@ -938,7 +938,7 @@ type Table [element] {
    * }
    */
   type Records [element] {
-    columns ref[Column][]? [field: 0.., label, attribute]
+    columns reference[Column][]? [field: 0.., label, attribute]
     row Row[]
 
     type Row [field] {

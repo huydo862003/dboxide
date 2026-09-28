@@ -1,9 +1,10 @@
 pub mod diagnostics;
 
-use std::{fs::File, io::BufReader, iter::Peekable, path::PathBuf, time::SystemTime};
+use itertools::MultiPeek;
+use std::{fs::File, io::BufReader, path::PathBuf, time::SystemTime};
 use utf8_chars::BufReadCharsExt;
 
-pub type PeekableStream<'a, T> = Peekable<Box<dyn Iterator<Item = T> + 'a>>;
+pub type PeekableStream<'a, T> = MultiPeek<Box<dyn Iterator<Item = T> + 'a>>;
 
 pub enum FileHandle {
   File {
@@ -22,14 +23,13 @@ pub enum FileHandle {
 impl FileHandle {
   pub fn open<'a>(&'a self) -> Option<PeekableStream<'a, char>> {
     match self {
-      FileHandle::File { path, .. } => Some(
-        (Box::new(FileIterator::new(BufReader::new(File::open(path).ok()?)))
-          as Box<dyn Iterator<Item = char>>)
-          .peekable(),
-      ),
-      FileHandle::Content { content, .. } => {
-        Some((Box::new(content.chars()) as Box<dyn Iterator<Item = char>>).peekable())
-      }
+      FileHandle::File { path, .. } => Some(itertools::multipeek(Box::new(FileIterator::new(
+        BufReader::new(File::open(path).ok()?),
+      ))
+        as Box<dyn Iterator<Item = char>>)),
+      FileHandle::Content { content, .. } => Some(itertools::multipeek(
+        Box::new(content.chars()) as Box<dyn Iterator<Item = char>>
+      )),
     }
   }
 }

@@ -1,4 +1,6 @@
+use std::cell::RefCell;
 use std::hash::{Hash, Hasher};
+use std::rc::Rc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use super::cache::Cache;
@@ -10,12 +12,12 @@ pub(super) struct TokenBody {
   pub(super) bytes: Vec<u8>,
 }
 
-/// The leaf node in the green tree.
+/// The leaf node in the green tree
 pub struct SyntaxToken(pub(super) *const TokenBody);
 
 impl SyntaxToken {
-  pub(crate) fn new(cache: &mut Cache, kind: SyntaxKind, text: &[u8]) -> Self {
-    cache.token(kind, text)
+  pub(crate) fn new(cache: Rc<RefCell<Cache>>, kind: SyntaxKind, text: &[u8]) -> Self {
+    cache.borrow_mut().token(kind, text)
   }
 
   pub(crate) fn from_raw_parts(kind: SyntaxKind, bytes: Vec<u8>) -> Self {
@@ -63,8 +65,7 @@ impl Drop for SyntaxToken {
 
 impl PartialEq for SyntaxToken {
   fn eq(&self, other: &Self) -> bool {
-    self.0 == other.0
-      || (self.kind() == other.kind() && self.bytes() == other.bytes())
+    self.0 == other.0 || (self.kind() == other.kind() && self.bytes() == other.bytes())
   }
 }
 

@@ -14,14 +14,14 @@ thread_local! {
   static CACHE: Rc<RefCell<Cache>> = Rc::new(RefCell::new(Cache::new()));
 }
 
-/// A non-thread-safe interner for node/token deduplication.
+/// A non-thread-safe interner for node/token deduplication
 #[derive(Default)]
 pub struct Cache {
   tokens: HashMap<SyntaxToken, ()>,
   nodes: HashMap<SyntaxNode, ()>,
 }
 
-/// Access the thread-local green cache.
+/// Access the thread-local green cache
 pub fn with_green_cache<F, R>(f: F) -> R
 where
   F: FnOnce(&mut Cache) -> R,
@@ -29,7 +29,7 @@ where
   CACHE.with(|cache| f(&mut cache.borrow_mut()))
 }
 
-/// Get a clone of the thread-local green cache handle.
+/// Get a clone of the thread-local green cache handle
 pub fn green_cache() -> Rc<RefCell<Cache>> {
   CACHE.with(|cache| cache.clone())
 }
