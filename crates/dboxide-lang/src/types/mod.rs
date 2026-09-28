@@ -1,3 +1,5 @@
+pub mod diagnostics;
+
 use std::{fs::File, io::BufReader, iter::Peekable, path::PathBuf, time::SystemTime};
 use utf8_chars::BufReadCharsExt;
 

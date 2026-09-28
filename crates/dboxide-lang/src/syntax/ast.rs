@@ -4,8 +4,7 @@
 pub enum SyntaxKind {
   /* Nodes */
   SOURCE_FILE = 0,
-  
-  // Example <block-element>:
+
   // <type> <target>? (as <alias>)? <setting-list>? {
   //   (<element-field> | <element-attribute> | <block-element>)*
   // }
@@ -15,24 +14,20 @@ pub enum SyntaxKind {
   BLOCK_ELEMENT_DECLARATION_ALIAS,
   BLOCK_ELEMENT_DECLARATION_BODY,
 
-  // Example <inline-element>:
   // <type> <target>? (as <alias>)? <setting-list>?: <element-field>
   INLINE_ELEMENT_DECLARATION,
   INLINE_ELEMENT_DECLARATION_TARGET,
   INLINE_ELEMENT_DECLARATION_BODY,
 
-  // Example <element-field>:
   // <arg>+ <setting-list>?
   ELEMENT_FIELD_DECLARATION,
   ELEMENT_FIELD_DECLARATION_ARG,
 
-  // Example <element-attribute>:
   // <name>: <value>
   ELEMENT_ATTRIBUTE_DECLARATION,
   ELEMENT_ATTRIBUTE_DECLARATION_NAME,
   ELEMENT_ATTRIBUTE_DECLARATION_VALUE,
 
-  // Example <setting-list>:
   // [<name>(: <value>)?,*]
   SETTING_LIST,
   SETTING_LIST_ITEM,
@@ -81,35 +76,11 @@ pub enum SyntaxKind {
   // Error
   ERROR,
 }
+
 pub use SyntaxKind::*;
 
-// TIL:
-// - Rowan uses an internal u16 (rowan::SyntaxKind) to distinguish various kinds of syntax nodes
-// - The user-defined syntax kind is for user-convenience
-// - We need to switch back-and-forth between the 2 syntax kinds (see the DboxideLang)
-impl From<SyntaxKind> for rowan::SyntaxKind {
-  fn from(kind: SyntaxKind) -> Self {
-    rowan::SyntaxKind(kind as u16)
+impl SyntaxKind {
+  pub fn is_trivia(self) -> bool {
+    matches!(self, SyntaxKind::WHITESPACE | SyntaxKind::NEWLINE)
   }
 }
-
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub enum DboxideLang {}
-
-impl rowan::Language for DboxideLang {
-  type Kind = SyntaxKind;
-
-  fn kind_from_raw(raw: rowan::SyntaxKind) -> Self::Kind {
-    unsafe {
-      std::mem::transmute(raw.0)
-    }
-  }
-
-  fn kind_to_raw(kind: Self::Kind) -> rowan::SyntaxKind {
-    kind.into()
-  }
-}
-
-pub type SyntaxNode = rowan::SyntaxNode<DboxideLang>;
-pub type SyntaxToken = rowan::SyntaxToken<DboxideLang>;
-pub type GreenNode = rowan::NodeOrToken<SyntaxNode, SyntaxToken>;
