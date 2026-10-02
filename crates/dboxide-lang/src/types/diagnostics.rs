@@ -29,7 +29,7 @@ impl DiagnosticCode {
 }
 
 /// Compilation diagnostics
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Diagnostic {
   /* Lexer */
   UnexpectedEof {
