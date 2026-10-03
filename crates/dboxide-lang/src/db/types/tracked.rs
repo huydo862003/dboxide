@@ -7,12 +7,12 @@ use crate::{
 };
 
 #[derive(Eq, PartialEq, Clone)]
-struct FileRedNode {
-  node: RedNode,
-  file: File,
+pub struct CheapRedNode {
+  pub node: RedNode,
+  pub file: File,
 }
 
-impl Hash for FileRedNode {
+impl Hash for CheapRedNode {
   fn hash<H: Hasher>(&self, state: &mut H) {
     self.node.kind().hash(state);
     self.node.offset().hash(state);
@@ -22,7 +22,17 @@ impl Hash for FileRedNode {
 }
 
 #[tracked]
-struct FileParseResult<'db> {
-  ast: RedNode,
+pub struct TrackedRedNode<'db> {
+  value: CheapRedNode,
+}
+
+#[tracked]
+pub struct FileParseResult<'db> {
+  ast: TrackedRedNode<'db>,
   diagnostics: Vec<Diagnostic>,
+}
+
+#[tracked]
+pub struct HirValue<'db> {
+  
 }

@@ -953,7 +953,7 @@ mod tests {
       itertools::multipeek(Box::new(input.chars()) as Box<dyn Iterator<Item = char> + '_>);
     let ctx = ParseCtx::new(stream, cache);
     let res = ctx.parse();
-    let root = RedNode::new_root(res.ast.as_node().unwrap().clone());
+    let root = RedNode::new_root(res.ast);
     let source_file = SourceFile::cast(root).expect("SourceFile cast");
 
     let table = source_file.block_elements().next().expect("Table element");
@@ -1037,6 +1037,6 @@ mod tests {
       itertools::multipeek(Box::new(input.chars()) as Box<dyn Iterator<Item = char> + '_>);
     let mut ctx = ParseCtx::new(stream, cache);
     let (green, _) = ctx.expr();
-    RedNode::new_root(green.as_node().unwrap().clone())
+    RedNode::new_root(green)
   }
 }

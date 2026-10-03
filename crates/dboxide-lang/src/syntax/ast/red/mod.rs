@@ -47,11 +47,11 @@ impl Debug for RedNode {
 }
 
 impl RedNode {
-  pub fn new_root(root: SyntaxNode) -> RedNode {
+  pub fn new_root(root: GreenNode) -> RedNode {
     RedNode(RedNodeData {
       offset: 0,
       parent: None,
-      green: GreenNode::from_node(root),
+      green: root,
     })
   }
 

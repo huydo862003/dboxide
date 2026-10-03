@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crate::syntax::ast::SyntaxKind;
 
 #[repr(u8)]
@@ -6,11 +8,14 @@ pub enum DiagnosticCode {
   UnexpectedEof = 0,
   UnexpectedChar,
   UnterminatedString,
+
   UnexpectedToken,
   ExpectedToken,
   InvalidTopElement,
   UnclosedDelimiter,
   MissingSyntaxNode,
+
+  FileNotFound,
 }
 
 impl DiagnosticCode {
@@ -24,6 +29,7 @@ impl DiagnosticCode {
       DiagnosticCode::InvalidTopElement => "invalid-top-element",
       DiagnosticCode::UnclosedDelimiter => "unclosed-delimiter",
       DiagnosticCode::MissingSyntaxNode => "missing-syntax-node",
+      DiagnosticCode::FileNotFound => "file-not-found",
     }
   }
 }
@@ -70,6 +76,13 @@ pub enum Diagnostic {
     start_offset: usize,
     end_offset: usize,
   },
+
+  /* File */
+  FileNotFound {
+    path: PathBuf,
+    start_offset: usize,
+    end_offset: usize,
+  }
 }
 
 impl Diagnostic {
@@ -102,6 +115,11 @@ impl Diagnostic {
         start_offset,
         end_offset,
         ..
+      }
+      | Diagnostic::FileNotFound {
+        start_offset,
+        end_offset,
+        ..
       } => Some((*start_offset, *end_offset)),
       Diagnostic::UnexpectedChar { offset, .. } => Some((*offset, *offset + 1)),
       Diagnostic::UnclosedDelimiter { open_offset, .. } => Some((*open_offset, *open_offset)),
@@ -125,6 +143,7 @@ impl Diagnostic {
       }
       Diagnostic::UnclosedDelimiter { delimiter, .. } => format!("unclosed '{delimiter}'"),
       Diagnostic::MissingSyntaxNode { expected, .. } => format!("missing {expected:?}"),
+      Diagnostic::FileNotFound { path, .. } => format!("File not found: {path:?}"),
     }
   }
 
@@ -138,6 +157,7 @@ impl Diagnostic {
       Diagnostic::InvalidTopLevelElement { .. } => DiagnosticCode::InvalidTopElement,
       Diagnostic::UnclosedDelimiter { .. } => DiagnosticCode::UnclosedDelimiter,
       Diagnostic::MissingSyntaxNode { .. } => DiagnosticCode::MissingSyntaxNode,
+      Diagnostic::FileNotFound { .. } => DiagnosticCode::FileNotFound,
     }
   }
 }

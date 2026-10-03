@@ -7,20 +7,20 @@ use crate::FileHandle;
 #[input]
 pub struct File {
   #[returns(deref)]
-  filepath: PathBuf,
+  pub filepath: PathBuf,
 
   #[returns(ref)]
-  handle: FileHandle,
+  pub handle: FileHandle,
 
   #[returns(copy)]
-  ctime: SystemTime,
+  pub ctime: SystemTime,
 
   #[returns(copy)]
-  mtime: SystemTime,
+  pub mtime: SystemTime,
 }
 
 #[input]
 pub struct Project {
   #[returns(ref)]
-  files: HashMap<PathBuf, File>,
+  pub files: HashMap<PathBuf, File>,
 }

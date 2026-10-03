@@ -11,7 +11,7 @@ use super::token::SyntaxToken;
 use crate::syntax::ast::SyntaxKind;
 
 thread_local! {
-  static CACHE: Rc<RefCell<Cache>> = Rc::new(RefCell::new(Cache::new()));
+  pub static CACHE: Rc<RefCell<Cache>> = Rc::new(RefCell::new(Cache::new()));
 }
 
 /// A non-thread-safe interner for node/token deduplication
