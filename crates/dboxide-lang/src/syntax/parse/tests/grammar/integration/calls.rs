@@ -13,10 +13,10 @@ fn comprehensive_call_expression() {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Test")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "CallExpression"))
     " "
@@ -25,50 +25,55 @@ fn comprehensive_call_expression() {
       "\n"
       "    "
       (ElementFieldDeclaration
-        (InfixExpr
-          (NumberExpr
-            "1")
-          " "
-          "**"
+        (ElementFieldDeclarationArg
           (InfixExpr
             (NumberExpr
-              " "
-              "2")
+              "1")
             " "
-            "+"
-            (NumberExpr
+            "**"
+            (InfixExpr
+              (NumberExpr
+                " "
+                "2")
               " "
-              "3")))
+              "+"
+              (NumberExpr
+                " "
+                "3"))))
         " "
-        (TupleExpr
-          "("
-          ")")
+        (ElementFieldDeclarationArg
+          (TupleExpr
+            "("
+            ")"))
         " "
-        (TupleExpr
-          "("
-          ")"))
-      "\n"
-      "    "
-      (ElementFieldDeclaration
-        (PrefixExpr
-          "-"
-          (CallExpr
-            (NumberExpr
-              "2")
+        (ElementFieldDeclarationArg
+          (TupleExpr
             "("
             ")")))
       "\n"
       "    "
       (ElementFieldDeclaration
-        (InfixExpr
-          (IdentExpr
-            "a")
-          "."
-          (CallExpr
+        (ElementFieldDeclarationArg
+          (PrefixExpr
+            "-"
+            (CallExpr
+              (NumberExpr
+                "2")
+              "("
+              ")"))))
+      "\n"
+      "    "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (InfixExpr
             (IdentExpr
-              "b")
-            "("
-            ")")))
+              "a")
+            "."
+            (CallExpr
+              (IdentExpr
+                "b")
+              "("
+              ")"))))
       "\n"
       "}"))
   "\n"
@@ -88,10 +93,10 @@ fn comprehensive_function_application() {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Test")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "FunctionApplication"))
     " "
@@ -100,11 +105,13 @@ fn comprehensive_function_application() {
       "\n"
       "    "
       (ElementFieldDeclaration
-        (IdentExpr
-          "id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
         "\t"
-        (IdentExpr
-          "integer")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "integer"))
         " "
         (SettingList
           "["
@@ -117,17 +124,20 @@ fn comprehensive_function_application() {
       "\n"
       "    "
       (ElementFieldDeclaration
-        (IdentExpr
-          "name")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "name"))
         " "
-        (IdentExpr
-          "char")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "char"))
         " "
-        (ParenExpr
-          "("
-          (NumberExpr
-            "255")
-          ")")
+        (ElementFieldDeclarationArg
+          (ParenExpr
+            "("
+            (NumberExpr
+              "255")
+            ")"))
         " "
         (SettingList
           "["

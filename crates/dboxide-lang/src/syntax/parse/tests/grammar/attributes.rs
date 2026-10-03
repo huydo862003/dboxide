@@ -9,10 +9,10 @@ fn attribute_basic() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Project")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "p"))
     " "
@@ -22,11 +22,13 @@ fn attribute_basic() {
       "  "
       (ElementAttributeDeclaration
         (ElementAttributeDeclarationName
-          "database_type")
+          (IdentExpr
+            "database_type"))
         ":"
         (ElementAttributeDeclarationValue
-          " "
-          "'PostgreSQL'"))
+          (SqStringExpr
+            " "
+            "'PostgreSQL'")))
       "\n"
       "}"))
   "")"#;

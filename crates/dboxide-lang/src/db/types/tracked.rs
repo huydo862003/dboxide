@@ -2,9 +2,7 @@ use std::hash::{Hash, Hasher};
 
 use salsa::tracked;
 
-use crate::{
-  ast::RedNode, db::types::input::File, diagnostics::Diagnostic,
-};
+use crate::{ast::RedNode, db::types::input::File, diagnostics::Diagnostic};
 
 #[derive(Eq, PartialEq, Clone)]
 pub struct CheapRedNode {
@@ -30,9 +28,4 @@ pub struct TrackedRedNode<'db> {
 pub struct FileParseResult<'db> {
   ast: TrackedRedNode<'db>,
   diagnostics: Vec<Diagnostic>,
-}
-
-#[tracked]
-pub struct HirValue<'db> {
-  
 }

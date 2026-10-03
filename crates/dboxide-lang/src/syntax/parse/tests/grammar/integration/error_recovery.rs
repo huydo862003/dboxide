@@ -219,10 +219,10 @@ fn type_missing_name_diag() {
     }]
   );
   let expected = r#"(SourceFile
-  (TypeDeclaration
+  (BlockElementDeclaration
     "type"
     " "
-    (TypeDeclarationName)
+    (EqualityDeclarationName)
     (BlockElementDeclarationBody
       "{"
       "}"))
@@ -242,10 +242,10 @@ fn type_missing_body_or_eq_diag() {
     }]
   );
   let expected = r#"(SourceFile
-  (TypeDeclaration
+  (EqualityDeclaration
     "type"
     " "
-    (TypeDeclarationName
+    (EqualityDeclarationName
       "Foo"))
   "")"#;
   assert_eq!(tree, expected);
@@ -368,10 +368,10 @@ fn type_missing_body_then_fn() {
     }]
   );
   let expected = r#"(SourceFile
-  (TypeDeclaration
+  (EqualityDeclaration
     "type"
     " "
-    (TypeDeclarationName
+    (EqualityDeclarationName
       "Foo"))
   "\n"
   (FnDeclaration

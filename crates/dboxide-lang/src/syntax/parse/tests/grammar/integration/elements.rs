@@ -27,7 +27,7 @@ Table Users as U {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
     (BlockElementDeclarationBody
@@ -38,10 +38,10 @@ Table Users as U {
   "\n"
   "\n"
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "TableGroup")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "group"))
     " "
@@ -53,7 +53,7 @@ Table Users as U {
   "\n"
   "\n"
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Ref")
     " "
     (BlockElementDeclarationBody
@@ -64,37 +64,40 @@ Table Users as U {
   "\n"
   "\n"
   (InlineElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Note")
     ":"
     " "
     (ElementFieldDeclaration
-      (SqStringExpr
-        "'This is a note'")))
+      (ElementFieldDeclarationArg
+        (SqStringExpr
+          "'This is a note'"))))
   "\n"
   "\n"
   (InlineElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Note")
     ":"
     " "
     (ElementFieldDeclaration
-      (TqStringExpr
-        "'''This is \nanother note'''")))
+      (ElementFieldDeclarationArg
+        (TqStringExpr
+          "'''This is \nanother note'''"))))
   "\n"
   "\n"
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "Users"))
     " "
     "as"
     " "
-    (BlockElementDeclarationAlias
-      "U")
+    (ElementDeclarationAlias
+      (IdentExpr
+        "U"))
     " "
     (BlockElementDeclarationBody
       "{"
@@ -114,15 +117,15 @@ fn comprehensive_element_in_simple_body() {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (InlineElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Note")
     ":"
     " "
     (BlockElementDeclaration
-      (BlockElementDeclarationType
+      (ElementDeclarationType
         "Enum")
       " "
-      (BlockElementDeclarationTargetFragment
+      (ElementDeclarationTargetFragment
         (IdentExpr
           "E"))
       " "
@@ -154,7 +157,7 @@ Table wrong_nested_element [] {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Project")
     " "
     (BlockElementDeclarationBody
@@ -162,10 +165,10 @@ Table wrong_nested_element [] {
       "\n"
       "    "
       (BlockElementDeclaration
-        (BlockElementDeclarationType
+        (ElementDeclarationType
           "Table")
         " "
-        (BlockElementDeclarationTargetFragment
+        (ElementDeclarationTargetFragment
           (IdentExpr
             "A"))
         " "
@@ -179,17 +182,18 @@ Table wrong_nested_element [] {
       "\n"
       "    "
       (BlockElementDeclaration
-        (BlockElementDeclarationType
+        (ElementDeclarationType
           "Table")
         " "
-        (BlockElementDeclarationTargetFragment
+        (ElementDeclarationTargetFragment
           (IdentExpr
             "B"))
         " "
         "as"
         " "
-        (BlockElementDeclarationAlias
-          "C")
+        (ElementDeclarationAlias
+          (IdentExpr
+            "C"))
         " "
         (BlockElementDeclarationBody
           "{"
@@ -203,10 +207,10 @@ Table wrong_nested_element [] {
   "\n"
   "\n"
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "wrong_nested_element"))
     " "
@@ -219,14 +223,14 @@ Table wrong_nested_element [] {
       "\n"
       "    "
       (BlockElementDeclaration
-        (BlockElementDeclarationType
+        (ElementDeclarationType
           "Indexes")
         " "
-        (BlockElementDeclarationTargetFragment
+        (ElementDeclarationTargetFragment
           (IdentExpr
             "wrong"))
         " "
-        (BlockElementDeclarationTargetFragment
+        (ElementDeclarationTargetFragment
           (IdentExpr
             "nested"))
         " "
@@ -235,9 +239,10 @@ Table wrong_nested_element [] {
             "element")))
       " "
       (ElementFieldDeclaration
-        (Error
+        (ElementFieldDeclarationArg
           (Error
-            "{")))
+            (Error
+              "{"))))
       "}"))
   " "
   "// parsed successfully as function application"

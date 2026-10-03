@@ -33,28 +33,31 @@ Ref: "diagrams"."id" - "user_role_in_diagram"."diagram_id"
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "users"))
     " "
     "as"
     " "
-    (BlockElementDeclarationAlias
-      "U")
+    (ElementDeclarationAlias
+      (IdentExpr
+        "U"))
     " "
     (BlockElementDeclarationBody
       "{"
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
         " "
-        (IdentExpr
-          "int")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int"))
         " "
         (SettingList
           "["
@@ -72,10 +75,10 @@ Ref: "diagrams"."id" - "user_role_in_diagram"."diagram_id"
   "\n"
   "\n"
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "user_role_in_diagram"))
     " "
@@ -84,27 +87,33 @@ Ref: "diagrams"."id" - "user_role_in_diagram"."diagram_id"
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "user_id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "user_id"))
         " "
-        (IdentExpr
-          "int"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int")))
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "diagram_id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "diagram_id"))
         " "
-        (IdentExpr
-          "int"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int")))
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "role")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "role"))
         " "
-        (IdentExpr
-          "int")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int"))
         " "
         (SettingList
           "["
@@ -113,8 +122,11 @@ Ref: "diagrams"."id" - "user_role_in_diagram"."diagram_id"
               "note")
             ":"
             (SettingListItemValue
-              " "
-              "'Role = sum(user'"
+              (SqStringExpr
+                " "
+                "'Role = sum(user'")))
+          (SettingListItem
+            (SettingListItemName
               "s"
               " "
               "available"
@@ -123,9 +135,12 @@ Ref: "diagrams"."id" - "user_role_in_diagram"."diagram_id"
               " "
               "bit"
               " "
-              "value"
-              ")"
-              "']"))
+              "value"))
+          (SettingListItem
+            (SettingListItemName
+              (Error
+                ")"
+                "']")))
           "\n"
           "  "
           (SettingListItem
@@ -165,10 +180,10 @@ Ref: "diagrams"."id" - "user_role_in_diagram"."diagram_id"
   "\n"
   "\n"
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "permissions"))
     " "
@@ -177,11 +192,13 @@ Ref: "diagrams"."id" - "user_role_in_diagram"."diagram_id"
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "bit")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "bit"))
         " "
-        (IdentExpr
-          "int")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int"))
         " "
         (SettingList
           "["
@@ -193,20 +210,22 @@ Ref: "diagrams"."id" - "user_role_in_diagram"."diagram_id"
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "name")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "name"))
         " "
-        (IdentExpr
-          "varchar"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "varchar")))
       "\n"
       "}"))
   "\n"
   "\n"
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "diagrams"))
     " "
@@ -215,11 +234,13 @@ Ref: "diagrams"."id" - "user_role_in_diagram"."diagram_id"
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
         " "
-        (IdentExpr
-          "int")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int"))
         " "
         (SettingList
           "["
@@ -239,51 +260,53 @@ Ref: "diagrams"."id" - "user_role_in_diagram"."diagram_id"
   "\n"
   "\n"
   (InlineElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Ref")
     ":"
     " "
     (ElementFieldDeclaration
-      (InfixExpr
+      (ElementFieldDeclarationArg
         (InfixExpr
-          (DqStringExpr
-            "\"users\"")
-          "."
-          (DqStringExpr
-            "\"id\""))
-        " "
-        "-"
-        (InfixExpr
-          (DqStringExpr
-            " "
-            "\"user_role_in_diagram\"")
-          "."
-          (DqStringExpr
-            "\"user_id\"")))))
+          (InfixExpr
+            (DqStringExpr
+              "\"users\"")
+            "."
+            (DqStringExpr
+              "\"id\""))
+          " "
+          "-"
+          (InfixExpr
+            (DqStringExpr
+              " "
+              "\"user_role_in_diagram\"")
+            "."
+            (DqStringExpr
+              "\"user_id\""))))))
   "\n"
   "\n"
   (InlineElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Ref")
     ":"
     " "
     (ElementFieldDeclaration
-      (InfixExpr
+      (ElementFieldDeclarationArg
         (InfixExpr
-          (DqStringExpr
-            "\"diagrams\"")
-          "."
-          (DqStringExpr
-            "\"id\""))
-        " "
-        "-"
-        (InfixExpr
-          (DqStringExpr
-            " "
-            "\"user_role_in_diagram\"")
-          "."
-          (DqStringExpr
-            "\"diagram_id\"")))))
+          (InfixExpr
+            (DqStringExpr
+              "\"diagrams\"")
+            "."
+            (DqStringExpr
+              "\"id\""))
+          " "
+          "-"
+          (InfixExpr
+            (DqStringExpr
+              " "
+              "\"user_role_in_diagram\"")
+            "."
+            (DqStringExpr
+              "\"diagram_id\""))))))
   "\n"
   "")"#;
   assert_eq!(tree, expected);
@@ -301,10 +324,10 @@ Note: 12."#;
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "E"))
     " "
@@ -313,26 +336,29 @@ Note: 12."#;
       "\n"
       "    "
       (ElementFieldDeclaration
-        (IdentExpr
-          "id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
         " "
-        (IdentExpr
-          "integer"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "integer")))
       "\n"
       "}"))
   "\n"
   "\n"
   (InlineElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Note")
     ":"
     " "
     (ElementFieldDeclaration
-      (InfixExpr
-        (NumberExpr
-          "12")
-        "."
-        (Error))))
+      (ElementFieldDeclarationArg
+        (InfixExpr
+          (NumberExpr
+            "12")
+          "."
+          (Error)))))
   "")"#;
   assert_eq!(tree, expected);
 }
@@ -375,10 +401,10 @@ Table citites {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (DqStringExpr
         "\"customer\""))
     " "
@@ -387,11 +413,13 @@ Table citites {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (DqStringExpr
-          "\"customer_id\"")
+        (ElementFieldDeclarationArg
+          (DqStringExpr
+            "\"customer_id\""))
         " "
-        (IdentExpr
-          "SMALLINT")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "SMALLINT"))
         " "
         (SettingList
           "["
@@ -414,11 +442,13 @@ Table citites {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (DqStringExpr
-          "\"store_id\"")
+        (ElementFieldDeclarationArg
+          (DqStringExpr
+            "\"store_id\""))
         " "
-        (IdentExpr
-          "TINYINT")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "TINYINT"))
         " "
         (SettingList
           "["
@@ -431,16 +461,18 @@ Table citites {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (DqStringExpr
-          "\"first_name\"")
+        (ElementFieldDeclarationArg
+          (DqStringExpr
+            "\"first_name\""))
         " "
-        (CallExpr
-          (IdentExpr
-            "VARCHAR")
-          "("
-          (NumberExpr
-            "45")
-          ")")
+        (ElementFieldDeclarationArg
+          (CallExpr
+            (IdentExpr
+              "VARCHAR")
+            "("
+            (NumberExpr
+              "45")
+            ")"))
         " "
         (SettingList
           "["
@@ -453,16 +485,18 @@ Table citites {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (DqStringExpr
-          "\"last_name\"")
+        (ElementFieldDeclarationArg
+          (DqStringExpr
+            "\"last_name\""))
         " "
-        (CallExpr
-          (IdentExpr
-            "VARCHAR")
-          "("
-          (NumberExpr
-            "45")
-          ")")
+        (ElementFieldDeclarationArg
+          (CallExpr
+            (IdentExpr
+              "VARCHAR")
+            "("
+            (NumberExpr
+              "45")
+            ")"))
         " "
         (SettingList
           "["
@@ -478,22 +512,25 @@ Table citites {
               "default")
             ":"
             (SettingListItemValue
-              " "
-              "faLse"))
+              (IdentExpr
+                " "
+                "faLse")))
           "]"))
       "\n"
       "  "
       (ElementFieldDeclaration
-        (DqStringExpr
-          "\"email\"")
+        (ElementFieldDeclarationArg
+          (DqStringExpr
+            "\"email\""))
         " "
-        (CallExpr
-          (IdentExpr
-            "VARCHAR")
-          "("
-          (NumberExpr
-            "50")
-          ")")
+        (ElementFieldDeclarationArg
+          (CallExpr
+            (IdentExpr
+              "VARCHAR")
+            "("
+            (NumberExpr
+              "50")
+            ")"))
         " "
         (SettingList
           "["
@@ -502,17 +539,20 @@ Table citites {
               "default")
             ":"
             (SettingListItemValue
-              " "
-              "NULL"))
+              (IdentExpr
+                " "
+                "NULL")))
           "]"))
       "\n"
       "  "
       (ElementFieldDeclaration
-        (DqStringExpr
-          "\"address_id\"")
+        (ElementFieldDeclarationArg
+          (DqStringExpr
+            "\"address_id\""))
         " "
-        (IdentExpr
-          "SMALLINT")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "SMALLINT"))
         " "
         (SettingList
           "["
@@ -525,11 +565,13 @@ Table citites {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (DqStringExpr
-          "\"active\"")
+        (ElementFieldDeclarationArg
+          (DqStringExpr
+            "\"active\""))
         " "
-        (IdentExpr
-          "BOOLEAN")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "BOOLEAN"))
         " "
         (SettingList
           "["
@@ -545,17 +587,20 @@ Table citites {
               "default")
             ":"
             (SettingListItemValue
-              " "
-              "TRUE"))
+              (IdentExpr
+                " "
+                "TRUE")))
           "]"))
       "\n"
       "  "
       (ElementFieldDeclaration
-        (DqStringExpr
-          "\"create_date\"")
+        (ElementFieldDeclarationArg
+          (DqStringExpr
+            "\"create_date\""))
         " "
-        (IdentExpr
-          "DATETIME")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "DATETIME"))
         " "
         (SettingList
           "["
@@ -568,11 +613,13 @@ Table citites {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (DqStringExpr
-          "\"last_update\"")
+        (ElementFieldDeclarationArg
+          (DqStringExpr
+            "\"last_update\""))
         " "
-        (IdentExpr
-          "TIMESTAMP")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "TIMESTAMP"))
         " "
         (SettingList
           "["
@@ -581,18 +628,19 @@ Table citites {
               "default")
             ":"
             (SettingListItemValue
-              " "
-              "`CURRENT_TIMESTAMP`"))
+              (OqStringExpr
+                " "
+                "`CURRENT_TIMESTAMP`")))
           "]"))
       "\n"
       "}"))
   "\n"
   "\n"
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "cities"))
     " "
@@ -601,11 +649,13 @@ Table citites {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
         " "
-        (IdentExpr
-          "integer")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "integer"))
         " "
         (SettingList
           "["
@@ -618,11 +668,13 @@ Table citites {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "name")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "name"))
         " "
-        (IdentExpr
-          "e")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "e"))
         " "
         (SettingList
           "["
@@ -631,35 +683,40 @@ Table citites {
               "default")
             ":"
             (SettingListItemValue
-              " "
-              "\"hello\""))
+              (DqStringExpr
+                " "
+                "\"hello\"")))
           "]"))
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "country_id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "country_id"))
         " "
-        (IdentExpr
-          "integer"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "integer")))
       "\n"
       "  "
       (ElementAttributeDeclaration
         (ElementAttributeDeclarationName
-          "note")
+          (IdentExpr
+            "note"))
         ":"
         (ElementAttributeDeclarationValue
-          " "
-          "\"sasasa\""))
+          (DqStringExpr
+            " "
+            "\"sasasa\"")))
       "\n"
       "}"))
   "\n"
   "\n"
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "country"))
     " "
@@ -668,31 +725,35 @@ Table citites {
       "\n"
       "\t"
       (ElementFieldDeclaration
-        (IdentExpr
-          "id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
         " "
-        (IdentExpr
-          "integer"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "integer")))
       "\n"
       "\t"
       (ElementFieldDeclaration
-        (IdentExpr
-          "cities")
-        " "
-        (IndexExpr
+        (ElementFieldDeclarationArg
           (IdentExpr
-            "string")
-          "["
-          "]"))
+            "cities"))
+        " "
+        (ElementFieldDeclarationArg
+          (IndexExpr
+            (IdentExpr
+              "string")
+            "["
+            "]")))
       "\n"
       "}"))
   "\n"
   "\n"
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "citites"))
     " "
@@ -701,23 +762,27 @@ Table citites {
       "\n"
       "\t"
       (ElementFieldDeclaration
-        (IdentExpr
-          "id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
         " "
-        (IdentExpr
-          "integer"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "integer")))
       "\n"
       "\t"
       (ElementFieldDeclaration
-        (IdentExpr
-          "name")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "name"))
         " "
-        (IdentExpr
-          "string"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "string")))
       "\n"
       "\t"
       (BlockElementDeclaration
-        (BlockElementDeclarationType
+        (ElementDeclarationType
           "indexes")
         " "
         (BlockElementDeclarationBody
@@ -725,11 +790,13 @@ Table citites {
           "\n"
           "\t\t"
           (ElementFieldDeclaration
-            (IdentExpr
-              "id")
+            (ElementFieldDeclarationArg
+              (IdentExpr
+                "id"))
             " "
-            (IdentExpr
-              "name"))
+            (ElementFieldDeclarationArg
+              (IdentExpr
+                "name")))
           "\n"
           "\t"
           "}"))
@@ -764,10 +831,10 @@ fn comprehensive_trailing_comments() {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "bookings"))
     " "
@@ -776,40 +843,48 @@ fn comprehensive_trailing_comments() {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
         " "
-        (IdentExpr
-          "integer"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "integer")))
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "country")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "country"))
         " "
-        (IdentExpr
-          "varchar"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "varchar")))
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "booking_date")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "booking_date"))
         " "
-        (IdentExpr
-          "date"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "date")))
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "created_at")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "created_at"))
         " "
-        (IdentExpr
-          "timestamp"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "timestamp")))
       "\n"
       "\n"
       "  "
       (BlockElementDeclaration
-        (BlockElementDeclarationType
+        (ElementDeclarationType
           "indexes")
         " "
         (BlockElementDeclarationBody
@@ -817,15 +892,16 @@ fn comprehensive_trailing_comments() {
           "\n"
           "      "
           (ElementFieldDeclaration
-            (TupleExpr
-              "("
-              (IdentExpr
-                "id")
-              ","
-              (IdentExpr
-                " "
-                "country")
-              ")")
+            (ElementFieldDeclarationArg
+              (TupleExpr
+                "("
+                (IdentExpr
+                  "id")
+                ","
+                (IdentExpr
+                  " "
+                  "country")
+                ")"))
             " "
             (SettingList
               "["
@@ -838,8 +914,9 @@ fn comprehensive_trailing_comments() {
           "\n"
           "      "
           (ElementFieldDeclaration
-            (IdentExpr
-              "created_at")
+            (ElementFieldDeclarationArg
+              (IdentExpr
+                "created_at"))
             " "
             (SettingList
               "["
@@ -848,8 +925,9 @@ fn comprehensive_trailing_comments() {
                   "name")
                 ":"
                 (SettingListItemValue
-                  " "
-                  "'created_at_index'"))
+                  (SqStringExpr
+                    " "
+                    "'created_at_index'")))
               ","
               " "
               (SettingListItem
@@ -857,26 +935,29 @@ fn comprehensive_trailing_comments() {
                   "note")
                 ":"
                 (SettingListItemValue
-                  " "
-                  "'Date'"))
+                  (SqStringExpr
+                    " "
+                    "'Date'")))
               "]"))
           "\n"
           "      "
           (ElementFieldDeclaration
-            (IdentExpr
-              "booking_date"))
+            (ElementFieldDeclarationArg
+              (IdentExpr
+                "booking_date")))
           "\n"
           "      "
           (ElementFieldDeclaration
-            (TupleExpr
-              "("
-              (IdentExpr
-                "country")
-              ","
-              (IdentExpr
-                " "
-                "booking_date")
-              ")")
+            (ElementFieldDeclarationArg
+              (TupleExpr
+                "("
+                (IdentExpr
+                  "country")
+                ","
+                (IdentExpr
+                  " "
+                  "booking_date")
+                ")"))
             " "
             (SettingList
               "["
@@ -887,8 +968,9 @@ fn comprehensive_trailing_comments() {
           "\n"
           "      "
           (ElementFieldDeclaration
-            (IdentExpr
-              "booking_date")
+            (ElementFieldDeclarationArg
+              (IdentExpr
+                "booking_date"))
             " "
             (SettingList
               "["
@@ -897,51 +979,55 @@ fn comprehensive_trailing_comments() {
                   "type")
                 ":"
                 (SettingListItemValue
-                  " "
-                  "hash"))
+                  (IdentExpr
+                    " "
+                    "hash")))
               "]"))
           "\n"
           "      "
           (ElementFieldDeclaration
-            (ParenExpr
-              "("
-              (InfixExpr
-                (IdentExpr
-                  "id")
-                "*"
-                (NumberExpr
-                  "2"))
-              ")"))
+            (ElementFieldDeclarationArg
+              (ParenExpr
+                "("
+                (InfixExpr
+                  (IdentExpr
+                    "id")
+                  "*"
+                  (NumberExpr
+                    "2"))
+                ")")))
           "\n"
           "      "
           (ElementFieldDeclaration
-            (TupleExpr
-              "("
-              (InfixExpr
-                (IdentExpr
-                  "id")
-                "*"
-                (NumberExpr
-                  "3"))
-              ","
-              (OqStringExpr
-                "`getdate()`")
-              ")"))
+            (ElementFieldDeclarationArg
+              (TupleExpr
+                "("
+                (InfixExpr
+                  (IdentExpr
+                    "id")
+                  "*"
+                  (NumberExpr
+                    "3"))
+                ","
+                (OqStringExpr
+                  "`getdate()`")
+                ")")))
           "\n"
           "      "
           (ElementFieldDeclaration
-            (TupleExpr
-              "("
-              (InfixExpr
+            (ElementFieldDeclarationArg
+              (TupleExpr
+                "("
+                (InfixExpr
+                  (IdentExpr
+                    "id")
+                  "*"
+                  (NumberExpr
+                    "3"))
+                ","
                 (IdentExpr
                   "id")
-                "*"
-                (NumberExpr
-                  "3"))
-              ","
-              (IdentExpr
-                "id")
-              ")"))
+                ")")))
           "\n"
           "  "
           "}"))
@@ -995,45 +1081,71 @@ reuse {
       "\n"
       "  "
       (UseSpecifier
-        "table"
-        " "
-        "my_table")
+        (IdentExpr
+          (UseSpecifierKind
+            "table"))
+        (IdentExpr
+          (UseSpecifierName
+            " "
+            "my_table")))
       "\n"
       "  "
       (UseSpecifier
-        "tablepartial"
-        " "
-        "my_tablepartial")
+        (IdentExpr
+          (UseSpecifierKind
+            "tablepartial"))
+        (IdentExpr
+          (UseSpecifierName
+            " "
+            "my_tablepartial")))
       "\n"
       "  "
       (UseSpecifier
-        "enum"
-        " "
-        "my_enum"
+        (IdentExpr
+          (UseSpecifierKind
+            "enum"))
+        (IdentExpr
+          (UseSpecifierName
+            " "
+            "my_enum"))
         " "
         "as"
-        " "
-        "MY_ENUM")
+        (IdentExpr
+          (UseSpecifierAlias
+            " "
+            "MY_ENUM")))
       "\n"
       "  "
       (UseSpecifier
-        "tableGROUP"
-        " "
-        "group"
+        (IdentExpr
+          (UseSpecifierKind
+            "tableGROUP"))
+        (IdentExpr
+          (UseSpecifierName
+            " "
+            "group"))
         " "
         "as"
-        " "
-        "G")
+        (IdentExpr
+          (UseSpecifierAlias
+            " "
+            "G")))
       "\n"
       "  "
       (UseSpecifier
-        "note"
-        " "
-        "note"
+        (IdentExpr
+          (UseSpecifierKind
+            "note"))
+        (IdentExpr
+          (UseSpecifierName
+            " "
+            "note"))
         " "
         "as"
-        " "
-        "note")
+        (IdentExpr
+          (UseSpecifierAlias
+            " "
+            "note")))
       "\n"
       "}")
     " "
@@ -1060,45 +1172,71 @@ reuse {
       "\n"
       "  "
       (UseSpecifier
-        "table"
-        " "
-        "my_table")
+        (IdentExpr
+          (UseSpecifierKind
+            "table"))
+        (IdentExpr
+          (UseSpecifierName
+            " "
+            "my_table")))
       "\n"
       "  "
       (UseSpecifier
-        "tablepartial"
-        " "
-        "my_tablepartial")
+        (IdentExpr
+          (UseSpecifierKind
+            "tablepartial"))
+        (IdentExpr
+          (UseSpecifierName
+            " "
+            "my_tablepartial")))
       "\n"
       "  "
       (UseSpecifier
-        "enum"
-        " "
-        "my_enum"
+        (IdentExpr
+          (UseSpecifierKind
+            "enum"))
+        (IdentExpr
+          (UseSpecifierName
+            " "
+            "my_enum"))
         " "
         "as"
-        " "
-        "MY_ENUM")
+        (IdentExpr
+          (UseSpecifierAlias
+            " "
+            "MY_ENUM")))
       "\n"
       "  "
       (UseSpecifier
-        "tableGROUP"
-        " "
-        "group"
+        (IdentExpr
+          (UseSpecifierKind
+            "tableGROUP"))
+        (IdentExpr
+          (UseSpecifierName
+            " "
+            "group"))
         " "
         "as"
-        " "
-        "G")
+        (IdentExpr
+          (UseSpecifierAlias
+            " "
+            "G")))
       "\n"
       "  "
       (UseSpecifier
-        "note"
-        " "
-        "note"
+        (IdentExpr
+          (UseSpecifierKind
+            "note"))
+        (IdentExpr
+          (UseSpecifierName
+            " "
+            "note"))
         " "
         "as"
-        " "
-        "note")
+        (IdentExpr
+          (UseSpecifierAlias
+            " "
+            "note")))
       "\n"
       "}")
     " "

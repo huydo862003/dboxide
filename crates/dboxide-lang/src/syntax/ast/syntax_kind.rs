@@ -8,15 +8,15 @@ pub enum SyntaxKind {
   //   (<element-field> | <element-attribute> | <block-element>)*
   // }
   BlockElementDeclaration,
-  BlockElementDeclarationType,
-  BlockElementDeclarationTargetFragment,
-  BlockElementDeclarationAlias,
   BlockElementDeclarationBody,
 
   // <type> <target>? (as <alias>)? <setting-list>?: <element-field>
   InlineElementDeclaration,
-  InlineElementDeclarationTarget,
   InlineElementDeclarationBody,
+
+  ElementDeclarationType,
+  ElementDeclarationTargetFragment,
+  ElementDeclarationAlias,
 
   // <arg>+ <setting-list>?
   ElementFieldDeclaration,
@@ -37,6 +37,9 @@ pub enum SyntaxKind {
   UseDeclaration,
   UseSpecifierList,
   UseSpecifier,
+  UseSpecifierKind,
+  UseSpecifierName,
+  UseSpecifierAlias,
   Wildcard,
 
   // fn name(params): ReturnType { body }
@@ -51,9 +54,9 @@ pub enum SyntaxKind {
   GetDeclaration,
   GetDeclarationName,
 
-  // type Name [role] { body } | type Name = expr
-  TypeDeclaration,
-  TypeDeclarationName,
+  // type Name = expr
+  EqualityDeclaration,
+  EqualityDeclarationName,
 
   /* Expression nodes */
   CommaExpr,

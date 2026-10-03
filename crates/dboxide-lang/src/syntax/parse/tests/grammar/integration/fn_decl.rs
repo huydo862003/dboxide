@@ -211,14 +211,15 @@ fn fn_with_body_field() {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (InfixExpr
-          (IdentExpr
-            "x")
-          " "
-          "+"
-          (IdentExpr
+        (ElementFieldDeclarationArg
+          (InfixExpr
+            (IdentExpr
+              "x")
             " "
-            "x")))
+            "+"
+            (IdentExpr
+              " "
+              "x"))))
       "\n"
       "}"))
   "")"#;
@@ -233,10 +234,10 @@ fn fn_inside_type_body() {
 }"#,
   );
   let expected = r#"(SourceFile
-  (TypeDeclaration
+  (BlockElementDeclaration
     "type"
     " "
-    (TypeDeclarationName
+    (EqualityDeclarationName
       "T")
     " "
     (BlockElementDeclarationBody
@@ -341,25 +342,27 @@ fn fn_forall_in_body() {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (ForallExpr
-          "forall"
-          " "
-          (IdentExpr
-            "c")
-          " "
-          "of"
-          " "
-          (IdentExpr
-            "columns")
-          " "
-          (BlockElementDeclarationBody
-            "{"
+        (ElementFieldDeclarationArg
+          (ForallExpr
+            "forall"
             " "
-            (ElementFieldDeclaration
-              (IdentExpr
-                "true"))
+            (IdentExpr
+              "c")
             " "
-            "}")))
+            "of"
+            " "
+            (IdentExpr
+              "columns")
+            " "
+            (BlockElementDeclarationBody
+              "{"
+              " "
+              (ElementFieldDeclaration
+                (ElementFieldDeclarationArg
+                  (IdentExpr
+                    "true")))
+              " "
+              "}"))))
       "\n"
       "}"))
   "")"#;
@@ -389,25 +392,27 @@ fn fn_exists_in_body() {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (ExistsExpr
-          "exists"
-          " "
-          (IdentExpr
-            "c")
-          " "
-          "of"
-          " "
-          (IdentExpr
-            "columns")
-          " "
-          (BlockElementDeclarationBody
-            "{"
+        (ElementFieldDeclarationArg
+          (ExistsExpr
+            "exists"
             " "
-            (ElementFieldDeclaration
-              (IdentExpr
-                "true"))
+            (IdentExpr
+              "c")
             " "
-            "}")))
+            "of"
+            " "
+            (IdentExpr
+              "columns")
+            " "
+            (BlockElementDeclarationBody
+              "{"
+              " "
+              (ElementFieldDeclaration
+                (ElementFieldDeclarationArg
+                  (IdentExpr
+                    "true")))
+              " "
+              "}"))))
       "\n"
       "}"))
   "")"#;
@@ -437,29 +442,31 @@ fn fn_forall_dotted_collection() {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (ForallExpr
-          "forall"
-          " "
-          (IdentExpr
-            "c")
-          " "
-          "of"
-          " "
-          (InfixExpr
-            (IdentExpr
-              "table")
-            "."
-            (IdentExpr
-              "columns"))
-          " "
-          (BlockElementDeclarationBody
-            "{"
+        (ElementFieldDeclarationArg
+          (ForallExpr
+            "forall"
             " "
-            (ElementFieldDeclaration
+            (IdentExpr
+              "c")
+            " "
+            "of"
+            " "
+            (InfixExpr
               (IdentExpr
-                "true"))
+                "table")
+              "."
+              (IdentExpr
+                "columns"))
             " "
-            "}")))
+            (BlockElementDeclarationBody
+              "{"
+              " "
+              (ElementFieldDeclaration
+                (ElementFieldDeclarationArg
+                  (IdentExpr
+                    "true")))
+              " "
+              "}"))))
       "\n"
       "}"))
   "")"#;
@@ -510,7 +517,7 @@ fn fn_error_operator_missing_symbol() {
       "operator"))
   " "
   (Error
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "foo"))
   (Error
     "("
@@ -625,23 +632,25 @@ fn fn_error_forall_missing_of() {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (ForallExpr
-          "forall"
-          " "
-          (IdentExpr
-            "c")
-          " "
-          (IdentExpr
-            "columns")
-          " "
-          (BlockElementDeclarationBody
-            "{"
+        (ElementFieldDeclarationArg
+          (ForallExpr
+            "forall"
             " "
-            (ElementFieldDeclaration
-              (IdentExpr
-                "true"))
+            (IdentExpr
+              "c")
             " "
-            "}")))
+            (IdentExpr
+              "columns")
+            " "
+            (BlockElementDeclarationBody
+              "{"
+              " "
+              (ElementFieldDeclaration
+                (ElementFieldDeclarationArg
+                  (IdentExpr
+                    "true")))
+              " "
+              "}"))))
       "\n"
       "}"))
   "")"#;
@@ -671,16 +680,17 @@ fn fn_error_forall_missing_body() {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (ForallExpr
-          "forall"
-          " "
-          (IdentExpr
-            "c")
-          " "
-          "of"
-          " "
-          (IdentExpr
-            "columns")))
+        (ElementFieldDeclarationArg
+          (ForallExpr
+            "forall"
+            " "
+            (IdentExpr
+              "c")
+            " "
+            "of"
+            " "
+            (IdentExpr
+              "columns"))))
       "\n"
       "}"))
   "")"#;
@@ -736,29 +746,31 @@ fn fn_exists_dotted_collection() {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (ExistsExpr
-          "exists"
-          " "
-          (IdentExpr
-            "c")
-          " "
-          "of"
-          " "
-          (InfixExpr
-            (IdentExpr
-              "table")
-            "."
-            (IdentExpr
-              "columns"))
-          " "
-          (BlockElementDeclarationBody
-            "{"
+        (ElementFieldDeclarationArg
+          (ExistsExpr
+            "exists"
             " "
-            (ElementFieldDeclaration
+            (IdentExpr
+              "c")
+            " "
+            "of"
+            " "
+            (InfixExpr
               (IdentExpr
-                "true"))
+                "table")
+              "."
+              (IdentExpr
+                "columns"))
             " "
-            "}")))
+            (BlockElementDeclarationBody
+              "{"
+              " "
+              (ElementFieldDeclaration
+                (ElementFieldDeclarationArg
+                  (IdentExpr
+                    "true")))
+              " "
+              "}"))))
       "\n"
       "}"))
   "")"#;
@@ -791,47 +803,51 @@ fn fn_two_quantifiers_in_body() {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (ForallExpr
-          "forall"
-          " "
-          (IdentExpr
-            "a")
-          " "
-          "of"
-          " "
-          (IdentExpr
-            "xs")
-          " "
-          (BlockElementDeclarationBody
-            "{"
+        (ElementFieldDeclarationArg
+          (ForallExpr
+            "forall"
             " "
-            (ElementFieldDeclaration
-              (IdentExpr
-                "true"))
+            (IdentExpr
+              "a")
             " "
-            "}")))
+            "of"
+            " "
+            (IdentExpr
+              "xs")
+            " "
+            (BlockElementDeclarationBody
+              "{"
+              " "
+              (ElementFieldDeclaration
+                (ElementFieldDeclarationArg
+                  (IdentExpr
+                    "true")))
+              " "
+              "}"))))
       "\n"
       "  "
       (ElementFieldDeclaration
-        (ExistsExpr
-          "exists"
-          " "
-          (IdentExpr
-            "b")
-          " "
-          "of"
-          " "
-          (IdentExpr
-            "ys")
-          " "
-          (BlockElementDeclarationBody
-            "{"
+        (ElementFieldDeclarationArg
+          (ExistsExpr
+            "exists"
             " "
-            (ElementFieldDeclaration
-              (IdentExpr
-                "true"))
+            (IdentExpr
+              "b")
             " "
-            "}")))
+            "of"
+            " "
+            (IdentExpr
+              "ys")
+            " "
+            (BlockElementDeclarationBody
+              "{"
+              " "
+              (ElementFieldDeclaration
+                (ElementFieldDeclarationArg
+                  (IdentExpr
+                    "true")))
+              " "
+              "}"))))
       "\n"
       "}"))
   "")"#;
@@ -944,23 +960,25 @@ fn fn_error_forall_missing_binding() {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (ForallExpr
-          "forall"
-          " "
-          (IdentExpr
-            "of")
-          " "
-          (IdentExpr
-            "columns")
-          " "
-          (BlockElementDeclarationBody
-            "{"
+        (ElementFieldDeclarationArg
+          (ForallExpr
+            "forall"
             " "
-            (ElementFieldDeclaration
-              (IdentExpr
-                "true"))
+            (IdentExpr
+              "of")
             " "
-            "}")))
+            (IdentExpr
+              "columns")
+            " "
+            (BlockElementDeclarationBody
+              "{"
+              " "
+              (ElementFieldDeclaration
+                (ElementFieldDeclarationArg
+                  (IdentExpr
+                    "true")))
+              " "
+              "}"))))
       "\n"
       "}"))
   "")"#;

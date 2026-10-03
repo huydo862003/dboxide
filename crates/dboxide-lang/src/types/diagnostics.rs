@@ -82,7 +82,7 @@ pub enum Diagnostic {
     path: PathBuf,
     start_offset: usize,
     end_offset: usize,
-  }
+  },
 }
 
 impl Diagnostic {

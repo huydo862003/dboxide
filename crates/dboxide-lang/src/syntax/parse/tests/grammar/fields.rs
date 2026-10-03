@@ -9,10 +9,10 @@ fn field_basic() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "t"))
     " "
@@ -21,11 +21,13 @@ fn field_basic() {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
         " "
-        (IdentExpr
-          "integer"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "integer")))
       "\n"
       "}"))
   "")"#;
@@ -41,10 +43,10 @@ fn field_with_settings() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "t"))
     " "
@@ -53,11 +55,13 @@ fn field_with_settings() {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
         " "
-        (IdentExpr
-          "int")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int"))
         " "
         (SettingList
           "["
@@ -81,10 +85,10 @@ fn multiple_fields() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "t"))
     " "
@@ -93,19 +97,23 @@ fn multiple_fields() {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
         " "
-        (IdentExpr
-          "int"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int")))
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "name")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "name"))
         " "
-        (IdentExpr
-          "varchar"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "varchar")))
       "\n"
       "}"))
   "")"#;
@@ -123,10 +131,10 @@ fn field_with_tuple() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "t"))
     " "
@@ -135,7 +143,7 @@ fn field_with_tuple() {
       "\n"
       "  "
       (BlockElementDeclaration
-        (BlockElementDeclarationType
+        (ElementDeclarationType
           "indexes")
         " "
         (BlockElementDeclarationBody
@@ -143,15 +151,16 @@ fn field_with_tuple() {
           "\n"
           "    "
           (ElementFieldDeclaration
-            (TupleExpr
-              "("
-              (IdentExpr
-                "col1")
-              ","
-              (IdentExpr
-                " "
-                "col2")
-              ")")
+            (ElementFieldDeclarationArg
+              (TupleExpr
+                "("
+                (IdentExpr
+                  "col1")
+                ","
+                (IdentExpr
+                  " "
+                  "col2")
+                ")"))
             " "
             (SettingList
               "["
@@ -177,10 +186,10 @@ fn field_call_without_space() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "t"))
     " "
@@ -189,16 +198,18 @@ fn field_call_without_space() {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "name")
-        " "
-        (CallExpr
+        (ElementFieldDeclarationArg
           (IdentExpr
-            "varchar")
-          "("
-          (NumberExpr
-            "255")
-          ")"))
+            "name"))
+        " "
+        (ElementFieldDeclarationArg
+          (CallExpr
+            (IdentExpr
+              "varchar")
+            "("
+            (NumberExpr
+              "255")
+            ")")))
       "\n"
       "}"))
   "")"#;
@@ -214,10 +225,10 @@ fn field_call_with_space_is_not_call() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "t"))
     " "
@@ -226,17 +237,20 @@ fn field_call_with_space_is_not_call() {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "name")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "name"))
         " "
-        (IdentExpr
-          "varchar")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "varchar"))
         " "
-        (ParenExpr
-          "("
-          (NumberExpr
-            "255")
-          ")"))
+        (ElementFieldDeclarationArg
+          (ParenExpr
+            "("
+            (NumberExpr
+              "255")
+            ")")))
       "\n"
       "}"))
   "")"#;
@@ -252,10 +266,10 @@ fn field_index_without_space() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "t"))
     " "
@@ -264,16 +278,18 @@ fn field_index_without_space() {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "arr")
-        " "
-        (IndexExpr
+        (ElementFieldDeclarationArg
           (IdentExpr
-            "int")
-          "["
-          (NumberExpr
-            "10")
-          "]"))
+            "arr"))
+        " "
+        (ElementFieldDeclarationArg
+          (IndexExpr
+            (IdentExpr
+              "int")
+            "["
+            (NumberExpr
+              "10")
+            "]")))
       "\n"
       "}"))
   "")"#;
@@ -289,10 +305,10 @@ fn field_index_with_space_is_setting() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "t"))
     " "
@@ -301,11 +317,13 @@ fn field_index_with_space_is_setting() {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "arr")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "arr"))
         " "
-        (IdentExpr
-          "int")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int"))
         " "
         (SettingList
           "["
@@ -329,10 +347,10 @@ fn field_with_binary_operator() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "t"))
     " "
@@ -341,17 +359,19 @@ fn field_with_binary_operator() {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "id")
-        " "
-        (InfixExpr
+        (ElementFieldDeclarationArg
           (IdentExpr
-            "int")
-          " "
-          "="
-          (NumberExpr
+            "id"))
+        " "
+        (ElementFieldDeclarationArg
+          (InfixExpr
+            (IdentExpr
+              "int")
             " "
-            "1")))
+            "="
+            (NumberExpr
+              " "
+              "1"))))
       "\n"
       "}"))
   "")"#;
@@ -367,10 +387,10 @@ fn field_with_complex_expression() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "t"))
     " "
@@ -379,20 +399,21 @@ fn field_with_complex_expression() {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (InfixExpr
-          (NumberExpr
-            "1")
-          " "
-          "+"
+        (ElementFieldDeclarationArg
           (InfixExpr
             (NumberExpr
-              " "
-              "2")
+              "1")
             " "
-            "*"
-            (NumberExpr
+            "+"
+            (InfixExpr
+              (NumberExpr
+                " "
+                "2")
               " "
-              "3"))))
+              "*"
+              (NumberExpr
+                " "
+                "3")))))
       "\n"
       "}"))
   "")"#;

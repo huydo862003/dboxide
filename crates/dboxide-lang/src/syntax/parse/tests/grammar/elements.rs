@@ -5,10 +5,10 @@ fn block_element_basic() {
   let tree = parse_source("Table users {}");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "users"))
     " "
@@ -24,17 +24,18 @@ fn block_element_with_alias() {
   let tree = parse_source("Table users as u {}");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "users"))
     " "
     "as"
     " "
-    (BlockElementDeclarationAlias
-      "u")
+    (ElementDeclarationAlias
+      (IdentExpr
+        "u"))
     " "
     (BlockElementDeclarationBody
       "{"
@@ -48,10 +49,10 @@ fn block_element_with_settings() {
   let tree = parse_source("Table users [note: 'main'] {}");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "users"))
     " "
@@ -62,8 +63,9 @@ fn block_element_with_settings() {
           "note")
         ":"
         (SettingListItemValue
-          " "
-          "'main'"))
+          (SqStringExpr
+            " "
+            "'main'")))
       "]")
     " "
     (BlockElementDeclarationBody
@@ -78,12 +80,14 @@ fn block_element_qualified_name() {
   let tree = parse_source("public.auth.User {}");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "public"
       "."
-      "auth"
+      (IdentExpr
+        "auth")
       "."
-      "User")
+      (IdentExpr
+        "User"))
     " "
     (BlockElementDeclarationBody
       "{"
@@ -97,27 +101,28 @@ fn inline_element() {
   let tree = parse_source("Ref: orders.user_id > users.id");
   let expected = r#"(SourceFile
   (InlineElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Ref")
     ":"
     " "
     (ElementFieldDeclaration
-      (InfixExpr
+      (ElementFieldDeclarationArg
         (InfixExpr
-          (IdentExpr
-            "orders")
-          "."
-          (IdentExpr
-            "user_id"))
-        " "
-        ">"
-        (InfixExpr
-          (IdentExpr
-            " "
-            "users")
-          "."
-          (IdentExpr
-            "id")))))
+          (InfixExpr
+            (IdentExpr
+              "orders")
+            "."
+            (IdentExpr
+              "user_id"))
+          " "
+          ">"
+          (InfixExpr
+            (IdentExpr
+              " "
+              "users")
+            "."
+            (IdentExpr
+              "id"))))))
   "")"#;
   assert_eq!(tree, expected);
 }
@@ -132,10 +137,10 @@ fn nested_element() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "users"))
     " "
@@ -144,7 +149,7 @@ fn nested_element() {
       "\n"
       "  "
       (BlockElementDeclaration
-        (BlockElementDeclarationType
+        (ElementDeclarationType
           "indexes")
         " "
         (BlockElementDeclarationBody
@@ -163,10 +168,10 @@ fn empty_block_body() {
   let tree = parse_source("Table t {}");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "t"))
     " "
@@ -185,10 +190,10 @@ Table b {}",
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "a"))
     " "
@@ -197,10 +202,10 @@ Table b {}",
       "}"))
   "\n"
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "b"))
     " "
@@ -224,14 +229,14 @@ fn two_target_fragments() {
   let tree = parse_source("Table public users {}");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "public"))
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "users"))
     " "
@@ -247,10 +252,10 @@ fn two_qualified_target_fragments() {
   let tree = parse_source(r#"Table "public"."schema" users {}"#);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (InfixExpr
         (DqStringExpr
           "\"public\"")
@@ -258,7 +263,7 @@ fn two_qualified_target_fragments() {
         (DqStringExpr
           "\"schema\"")))
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "users"))
     " "
@@ -318,13 +323,14 @@ fn block_element_double_quoted_name_and_alias() {
   let (tree, diags) = parse_source_with_diagnostics(r#"Table "my users" as "U" {}"#);
   assert!(diags.is_empty());
   assert!(tree.contains(
-    r#"(BlockElementDeclarationTargetFragment
+    r#"(ElementDeclarationTargetFragment
       (DqStringExpr
         "\"my users\""))"#
   ));
   assert!(tree.contains(
-    r#"(BlockElementDeclarationAlias
-      "\"U\"")"#
+    r#"(ElementDeclarationAlias
+      (DqStringExpr
+        "\"U\""))"#
   ));
 }
 

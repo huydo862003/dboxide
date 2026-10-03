@@ -4,10 +4,10 @@ use crate::syntax::parse::tests::utils::*;
 fn type_block_empty() {
   let tree = parse_source("type Foo {}");
   let expected = r#"(SourceFile
-  (TypeDeclaration
+  (BlockElementDeclaration
     "type"
     " "
-    (TypeDeclarationName
+    (EqualityDeclarationName
       "Foo")
     " "
     (BlockElementDeclarationBody
@@ -21,10 +21,10 @@ fn type_block_empty() {
 fn type_block_with_role() {
   let tree = parse_source("type Foo [element] {}");
   let expected = r#"(SourceFile
-  (TypeDeclaration
+  (BlockElementDeclaration
     "type"
     " "
-    (TypeDeclarationName
+    (EqualityDeclarationName
       "Foo")
     " "
     (SettingList
@@ -45,10 +45,10 @@ fn type_block_with_role() {
 fn type_alias_simple() {
   let tree = parse_source("type Str = string");
   let expected = r#"(SourceFile
-  (TypeDeclaration
+  (EqualityDeclaration
     "type"
     " "
-    (TypeDeclarationName
+    (EqualityDeclarationName
       "Str")
     " "
     "="
@@ -63,10 +63,10 @@ fn type_alias_simple() {
 fn type_alias_union() {
   let tree = parse_source(r#"type Status = "active" | "inactive""#);
   let expected = r#"(SourceFile
-  (TypeDeclaration
+  (EqualityDeclaration
     "type"
     " "
-    (TypeDeclarationName
+    (EqualityDeclarationName
       "Status")
     " "
     "="
@@ -91,10 +91,10 @@ fn type_with_field() {
 }"#,
   );
   let expected = r#"(SourceFile
-  (TypeDeclaration
+  (BlockElementDeclaration
     "type"
     " "
-    (TypeDeclarationName
+    (EqualityDeclarationName
       "Foo")
     " "
     (BlockElementDeclarationBody
@@ -102,11 +102,13 @@ fn type_with_field() {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "name")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "name"))
         " "
-        (IdentExpr
-          "string"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "string")))
       "\n"
       "}"))
   "")"#;
@@ -121,10 +123,10 @@ fn type_with_nested_fn() {
 }"#,
   );
   let expected = r#"(SourceFile
-  (TypeDeclaration
+  (BlockElementDeclaration
     "type"
     " "
-    (TypeDeclarationName
+    (EqualityDeclarationName
       "Foo")
     " "
     (BlockElementDeclarationBody
@@ -162,20 +164,20 @@ fn type_nested_inside_type() {
 }"#,
   );
   let expected = r#"(SourceFile
-  (TypeDeclaration
+  (BlockElementDeclaration
     "type"
     " "
-    (TypeDeclarationName
+    (EqualityDeclarationName
       "Outer")
     " "
     (BlockElementDeclarationBody
       "{"
       "\n"
       "  "
-      (TypeDeclaration
+      (BlockElementDeclaration
         "type"
         " "
-        (TypeDeclarationName
+        (EqualityDeclarationName
           "Inner")
         " "
         (BlockElementDeclarationBody
@@ -191,10 +193,10 @@ fn type_nested_inside_type() {
 fn type_role_multiple_settings() {
   let tree = parse_source("type T [element, on use: expand] {}");
   let expected = r#"(SourceFile
-  (TypeDeclaration
+  (BlockElementDeclaration
     "type"
     " "
-    (TypeDeclarationName
+    (EqualityDeclarationName
       "T")
     " "
     (SettingList
@@ -211,8 +213,9 @@ fn type_role_multiple_settings() {
           "use")
         ":"
         (SettingListItemValue
-          " "
-          "expand"))
+          (IdentExpr
+            " "
+            "expand")))
       "]")
     " "
     (BlockElementDeclarationBody
@@ -226,10 +229,10 @@ fn type_role_multiple_settings() {
 fn type_quoted_name() {
   let tree = parse_source(r#"type "Foo" {}"#);
   let expected = r#"(SourceFile
-  (TypeDeclaration
+  (BlockElementDeclaration
     "type"
     " "
-    (TypeDeclarationName
+    (EqualityDeclarationName
       "\"Foo\"")
     " "
     (BlockElementDeclarationBody
@@ -243,10 +246,10 @@ fn type_quoted_name() {
 fn type_error_missing_name() {
   let tree = parse_source("type {}");
   let expected = r#"(SourceFile
-  (TypeDeclaration
+  (BlockElementDeclaration
     "type"
     " "
-    (TypeDeclarationName)
+    (EqualityDeclarationName)
     (BlockElementDeclarationBody
       "{"
       "}"))
@@ -258,10 +261,10 @@ fn type_error_missing_name() {
 fn type_error_missing_body_or_eq() {
   let tree = parse_source("type Foo");
   let expected = r#"(SourceFile
-  (TypeDeclaration
+  (EqualityDeclaration
     "type"
     " "
-    (TypeDeclarationName
+    (EqualityDeclarationName
       "Foo"))
   "")"#;
   assert_eq!(tree, expected);
@@ -271,10 +274,10 @@ fn type_error_missing_body_or_eq() {
 fn type_alias_call_expr() {
   let tree = parse_source("type T = foo()");
   let expected = r#"(SourceFile
-  (TypeDeclaration
+  (EqualityDeclaration
     "type"
     " "
-    (TypeDeclarationName
+    (EqualityDeclarationName
       "T")
     " "
     "="

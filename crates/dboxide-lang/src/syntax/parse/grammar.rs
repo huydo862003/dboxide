@@ -219,8 +219,10 @@ impl<'a> ParseCtx<'a> {
   pub(in crate::syntax::parse) fn use_specifier(&mut self, skip: usize) -> GreenNode {
     let mut children = Vec::new();
     let peek = self.peek(skip);
+
     if peek.token.kind() == SyntaxKind::Ident {
-      self.advance(&mut children, skip);
+      let kind = self.qualified_name(SKIP_WC, SyntaxKind::UseSpecifierKind);
+      children.push(self.emit(SyntaxKind::IdentExpr, &[kind]));
     } else {
       self.emit_diagnostic(Diagnostic::MissingExpectedToken {
         expected: "import kind specifier (e.g. table, enum)",
@@ -232,7 +234,9 @@ impl<'a> ParseCtx<'a> {
 
     let peek = self.peek(SKIP_WC);
     if matches!(peek.token.kind(), SyntaxKind::Ident | SyntaxKind::DqString) {
-      self.advance(&mut children, SKIP_WC);
+      let name_kind = peek.token.kind();
+      let name = self.qualified_name(SKIP_WC, SyntaxKind::UseSpecifierName);
+      children.push(self.ident_or_dq_expr(&[name], name_kind));
     } else {
       let start_offset = peek.start_offset;
       let end_offset = peek.end_offset;
@@ -256,7 +260,9 @@ impl<'a> ParseCtx<'a> {
       self.advance(&mut children, SKIP_WC); // consume "as"
       let peek = self.peek(SKIP_WC);
       if matches!(peek.token.kind(), SyntaxKind::Ident | SyntaxKind::DqString) {
-        self.advance(&mut children, SKIP_WC);
+        let alias_kind = peek.token.kind();
+        let alias = self.qualified_name(SKIP_WC, SyntaxKind::UseSpecifierAlias);
+        children.push(self.ident_or_dq_expr(&[alias], alias_kind));
       } else {
         self.emit_diagnostic(Diagnostic::MissingExpectedToken {
           expected: "alias name after 'as'",
@@ -276,7 +282,7 @@ impl<'a> ParseCtx<'a> {
     &mut self,
   ) -> (GreenNode, Option<ExprCtx>) {
     let mut children = Vec::new();
-    children.push(self.qualified_name(SKIP_NONE, SyntaxKind::BlockElementDeclarationType));
+    children.push(self.qualified_name(SKIP_NONE, SyntaxKind::ElementDeclarationType));
 
     self.element_target_fragments(&mut children, SKIP_WC);
 
@@ -358,7 +364,7 @@ impl<'a> ParseCtx<'a> {
     let mut children = Vec::new();
 
     self.consume_trivia(&mut children, skip);
-    children.push(self.qualified_name(SKIP_NONE, SyntaxKind::BlockElementDeclarationType));
+    children.push(self.qualified_name(SKIP_NONE, SyntaxKind::ElementDeclarationType));
 
     self.element_target_fragments(&mut children, skip);
 
@@ -582,7 +588,7 @@ impl<'a> ParseCtx<'a> {
         _ => {
           self.consume_trivia(&mut children, skip);
           let (expr_node, exit) = self.expr();
-          children.push(expr_node);
+          children.push(self.emit(SyntaxKind::ElementFieldDeclarationArg, &[expr_node]));
           if exit.is_some() {
             break;
           }
@@ -597,9 +603,14 @@ impl<'a> ParseCtx<'a> {
   // attribute = Ident ":" value
   fn attribute(&mut self, skip: usize) -> GreenNode {
     let mut children = Vec::new();
-    let mut name = Vec::new();
-    self.advance(&mut name, skip);
-    children.push(self.emit(SyntaxKind::ElementAttributeDeclarationName, &name));
+
+    let mut name_children = Vec::new();
+
+    let mut ident_children = Vec::new();
+    self.advance(&mut ident_children, skip);
+    name_children.push(self.emit(SyntaxKind::IdentExpr, &ident_children));
+
+    children.push(self.emit(SyntaxKind::ElementAttributeDeclarationName, &name_children));
 
     let peek = self.peek(SKIP_WC);
     let start_offset = peek.start_offset;
@@ -616,17 +627,9 @@ impl<'a> ParseCtx<'a> {
       },
     );
 
-    let mut value = Vec::new();
-    loop {
-      let peek = self.peek(SKIP_NONE);
-      match peek.token.kind() {
-        SyntaxKind::Newline | SyntaxKind::Eof | SyntaxKind::RBrace => break,
-        _ => {
-          self.advance(&mut value, SKIP_NONE);
-        }
-      }
-    }
-    children.push(self.emit(SyntaxKind::ElementAttributeDeclarationValue, &value));
+    let (value, _) = self.expr();
+    children.push(self.emit(SyntaxKind::ElementAttributeDeclarationValue, &[value]));
+
     self.emit(SyntaxKind::ElementAttributeDeclaration, &children)
   }
 
@@ -643,7 +646,7 @@ impl<'a> ParseCtx<'a> {
       let (expr, exit) = self.expr();
       fragment_children.push(expr);
       parent.push(self.emit(
-        SyntaxKind::BlockElementDeclarationTargetFragment,
+        SyntaxKind::ElementDeclarationTargetFragment,
         &fragment_children,
       ));
       if exit.is_some() {
@@ -669,7 +672,10 @@ impl<'a> ParseCtx<'a> {
           peek_ident.token.kind(),
           SyntaxKind::Ident | SyntaxKind::DqString
         ) {
-          self.advance(&mut children, SKIP_WC);
+          let mut ident_children = vec![];
+          self.advance(&mut ident_children, SKIP_WC);
+          let ident_expr = self.ident_or_dq_expr(&ident_children, peek_ident.token.kind());
+          children.push(ident_expr);
         }
       } else {
         break;
@@ -678,15 +684,27 @@ impl<'a> ParseCtx<'a> {
     self.emit(kind, &children)
   }
 
+  // Emits IdentExpr or DqStringExpr depending on token kind
+  fn ident_or_dq_expr(&mut self, children: &[GreenNode], kind: SyntaxKind) -> GreenNode {
+    let inner_kind = if kind == SyntaxKind::DqString {
+      SyntaxKind::DqStringExpr
+    } else {
+      SyntaxKind::IdentExpr
+    };
+    self.emit(inner_kind, children)
+  }
+
   // alias = "as" (Ident | DqString)
   fn alias(&mut self, parent: &mut Vec<GreenNode>, skip: usize) {
     self.advance(parent, skip); // "as"
     let peek = self.peek(SKIP_WC);
     if matches!(peek.token.kind(), SyntaxKind::Ident | SyntaxKind::DqString) {
       self.consume_trivia(parent, SKIP_WC);
-      let mut alias_children = Vec::new();
-      self.advance(&mut alias_children, SKIP_NONE);
-      parent.push(self.emit(SyntaxKind::BlockElementDeclarationAlias, &alias_children));
+      let peek = self.peek(SKIP_NONE);
+      let mut expr_children = Vec::new();
+      self.advance(&mut expr_children, SKIP_NONE);
+      let expr = self.ident_or_dq_expr(&expr_children, peek.token.kind());
+      parent.push(self.emit(SyntaxKind::ElementDeclarationAlias, &[expr]));
     } else {
       let start_offset = peek.start_offset;
       let end_offset = peek.end_offset;
@@ -813,19 +831,8 @@ impl<'a> ParseCtx<'a> {
     if peek.token.kind() == SyntaxKind::Colon {
       self.consume_trivia(&mut children, SKIP_WC);
       self.advance(&mut children, SKIP_NONE);
-      let mut value_children = Vec::new();
-      loop {
-        let peek_val = self.peek(SKIP_NONE);
-        match peek_val.token.kind() {
-          SyntaxKind::Comma | SyntaxKind::RBracket | SyntaxKind::Eof | SyntaxKind::Newline => {
-            break;
-          }
-          _ => {
-            self.advance(&mut value_children, SKIP_NONE);
-          }
-        }
-      }
-      children.push(self.emit(SyntaxKind::SettingListItemValue, &value_children));
+      let (value_expr, _) = self.expr();
+      children.push(self.emit(SyntaxKind::SettingListItemValue, &[value_expr]));
     }
     self.emit(SyntaxKind::SettingListItem, &children)
   }
@@ -1480,16 +1487,16 @@ impl<'a> ParseCtx<'a> {
         end_offset: peek.end_offset,
       });
     }
-    children.push(self.emit(SyntaxKind::TypeDeclarationName, &name_children));
+    children.push(self.emit(SyntaxKind::EqualityDeclarationName, &name_children));
 
-    // optional role [...]
+    // optional setting [...]
     let peek = self.peek(SKIP_WC);
     if peek.token.kind() == SyntaxKind::LBracket {
       self.consume_trivia(&mut children, SKIP_WC);
       children.push(self.setting_list(SKIP_NONE));
     }
 
-    // either "=" for alias or "{" for block
+    // either "=" for equality or "{" for block element
     let peek = self.peek(SKIP_WCN);
     match peek.token.kind() {
       SyntaxKind::Operator if peek.token.text() == Some("=") => {
@@ -1497,16 +1504,16 @@ impl<'a> ParseCtx<'a> {
         self.advance(&mut children, SKIP_NONE); // "="
         self.consume_trivia(&mut children, SKIP_WC);
         self.expr_ctx_stack.enter(ExprCtx::Field);
-        let (alias_expr, _) = self.expr();
+        let (rhs_expr, _) = self.expr();
         self.expr_ctx_stack.exit(ExprCtx::Field);
-        children.push(alias_expr);
-        (self.emit(SyntaxKind::TypeDeclaration, &children), None)
+        children.push(rhs_expr);
+        (self.emit(SyntaxKind::EqualityDeclaration, &children), None)
       }
       SyntaxKind::LBrace => {
         self.consume_trivia(&mut children, SKIP_WCN);
         let early_exit = self.block_element_body(&mut children, SKIP_NONE);
         (
-          self.emit(SyntaxKind::TypeDeclaration, &children),
+          self.emit(SyntaxKind::BlockElementDeclaration, &children),
           early_exit,
         )
       }
@@ -1516,7 +1523,7 @@ impl<'a> ParseCtx<'a> {
           start_offset: peek.start_offset,
           end_offset: peek.end_offset,
         });
-        (self.emit(SyntaxKind::TypeDeclaration, &children), None)
+        (self.emit(SyntaxKind::EqualityDeclaration, &children), None)
       }
     }
   }

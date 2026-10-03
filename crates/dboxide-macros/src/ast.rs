@@ -88,11 +88,18 @@ pub fn wrapper_ast_node_impl(attr: TokenStream, item: TokenStream) -> TokenStrea
           crate::syntax::ast::AstNode::cast(node.0).ok_or(())
         }
       }
+
+      impl TryFrom<&#name> for #kind {
+        type Error = ();
+        fn try_from(node: &#name) -> Result<Self, ()> {
+          crate::syntax::ast::AstNode::cast(node.0.clone()).ok_or(())
+        }
+      }
     }
   });
 
   let generated = quote! {
-    #[derive(Clone, PartialEq, Eq, Hash)]
+    #[derive(Clone, PartialEq, Eq, Hash, Debug)]
     #item_ast
 
     impl crate::syntax::ast::AstNode for #name {

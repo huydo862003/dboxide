@@ -3,11 +3,12 @@ use std::sync::{Arc, Mutex};
 
 use salsa::{Database, Storage, db};
 
-mod hir;
-mod name_resolver;
-mod parse_file;
+pub mod name_resolver;
+pub mod parse_file;
 mod types;
-mod virtual_module;
+pub mod virtual_module;
+
+pub use types::*;
 
 #[db]
 #[derive(Clone)]

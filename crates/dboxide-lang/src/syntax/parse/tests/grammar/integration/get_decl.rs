@@ -4,17 +4,17 @@ use crate::syntax::parse::tests::utils::*;
 fn get_no_params_with_return() {
   let tree = parse_source("type T { namespace { get items(): Item[] {} } }");
   let expected = r#"(SourceFile
-  (TypeDeclaration
+  (BlockElementDeclaration
     "type"
     " "
-    (TypeDeclarationName
+    (EqualityDeclarationName
       "T")
     " "
     (BlockElementDeclarationBody
       "{"
       " "
       (BlockElementDeclaration
-        (BlockElementDeclarationType
+        (ElementDeclarationType
           "namespace")
         " "
         (BlockElementDeclarationBody
@@ -52,17 +52,17 @@ fn get_no_params_with_return() {
 fn get_with_one_param() {
   let tree = parse_source("type T { namespace { get find(id: int): Item {} } }");
   let expected = r#"(SourceFile
-  (TypeDeclaration
+  (BlockElementDeclaration
     "type"
     " "
-    (TypeDeclarationName
+    (EqualityDeclarationName
       "T")
     " "
     (BlockElementDeclarationBody
       "{"
       " "
       (BlockElementDeclaration
-        (BlockElementDeclarationType
+        (ElementDeclarationType
           "namespace")
         " "
         (BlockElementDeclarationBody
@@ -108,17 +108,17 @@ fn get_with_body() {
 } } }"#,
   );
   let expected = r#"(SourceFile
-  (TypeDeclaration
+  (BlockElementDeclaration
     "type"
     " "
-    (TypeDeclarationName
+    (EqualityDeclarationName
       "T")
     " "
     (BlockElementDeclarationBody
       "{"
       " "
       (BlockElementDeclaration
-        (BlockElementDeclarationType
+        (ElementDeclarationType
           "namespace")
         " "
         (BlockElementDeclarationBody
@@ -143,8 +143,9 @@ fn get_with_body() {
               "\n"
               "  "
               (ElementFieldDeclaration
-                (NumberExpr
-                  "0"))
+                (ElementFieldDeclarationArg
+                  (NumberExpr
+                    "0")))
               "\n"
               "}"))
           " "
@@ -159,17 +160,17 @@ fn get_with_body() {
 fn get_error_missing_body() {
   let tree = parse_source("type T { namespace { get count(): int } }");
   let expected = r#"(SourceFile
-  (TypeDeclaration
+  (BlockElementDeclaration
     "type"
     " "
-    (TypeDeclarationName
+    (EqualityDeclarationName
       "T")
     " "
     (BlockElementDeclarationBody
       "{"
       " "
       (BlockElementDeclaration
-        (BlockElementDeclarationType
+        (ElementDeclarationType
           "namespace")
         " "
         (BlockElementDeclarationBody
@@ -200,17 +201,17 @@ fn get_error_missing_body() {
 fn get_error_missing_name() {
   let tree = parse_source("type T { namespace { get (): int {} } }");
   let expected = r#"(SourceFile
-  (TypeDeclaration
+  (BlockElementDeclaration
     "type"
     " "
-    (TypeDeclarationName
+    (EqualityDeclarationName
       "T")
     " "
     (BlockElementDeclarationBody
       "{"
       " "
       (BlockElementDeclaration
-        (BlockElementDeclarationType
+        (ElementDeclarationType
           "namespace")
         " "
         (BlockElementDeclarationBody
@@ -244,17 +245,17 @@ fn get_error_missing_name() {
 fn get_no_params_no_return_type() {
   let tree = parse_source("type T { namespace { get items() {} } }");
   let expected = r#"(SourceFile
-  (TypeDeclaration
+  (BlockElementDeclaration
     "type"
     " "
-    (TypeDeclarationName
+    (EqualityDeclarationName
       "T")
     " "
     (BlockElementDeclarationBody
       "{"
       " "
       (BlockElementDeclaration
-        (BlockElementDeclarationType
+        (ElementDeclarationType
           "namespace")
         " "
         (BlockElementDeclarationBody

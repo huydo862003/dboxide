@@ -78,10 +78,10 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "users"))
     " "
@@ -90,19 +90,21 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
         " "
-        (IdentExpr
-          "int"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int")))
       "\n"
       "}"))
   "\n"
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "orders"))
     " "
@@ -111,19 +113,21 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "user_id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "user_id"))
         " "
-        (IdentExpr
-          "int"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int")))
       "\n"
       "}"))
   "\n"
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (InfixExpr
         (IdentExpr
           "my_schema")
@@ -136,28 +140,32 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
         " "
-        (IdentExpr
-          "int"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int")))
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "ts")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "ts"))
         " "
-        (IdentExpr
-          "int"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int")))
       "\n"
       "}"))
   "\n"
   "\n"
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (InfixExpr
         (IdentExpr
           "another_schema")
@@ -170,19 +178,23 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
         " "
-        (IdentExpr
-          "int"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int")))
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "ts")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "ts"))
         " "
-        (IdentExpr
-          "int"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int")))
       "\n"
       "}"))
   "\n"
@@ -193,134 +205,12 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
   "// no error"
   "\n"
   (InlineElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Dep")
     ":"
     " "
     (ElementFieldDeclaration
-      (InfixExpr
-        (IdentExpr
-          "users")
-        " "
-        "->"
-        (IdentExpr
-          " "
-          "orders"))))
-  "\n"
-  (InlineElementDeclaration
-    (BlockElementDeclarationType
-      "Dep")
-    ":"
-    " "
-    (ElementFieldDeclaration
-      (InfixExpr
-        (InfixExpr
-          (IdentExpr
-            "orders")
-          "."
-          (IdentExpr
-            "user_id"))
-        " "
-        "<-"
-        (InfixExpr
-          (IdentExpr
-            " "
-            "users")
-          "."
-          (IdentExpr
-            "id")))))
-  "\n"
-  (InlineElementDeclaration
-    (BlockElementDeclarationType
-      "Dep")
-    ":"
-    " "
-    (ElementFieldDeclaration
-      (InfixExpr
-        (InfixExpr
-          (IdentExpr
-            "my_schema")
-          "."
-          (IdentExpr
-            "events"))
-        " "
-        "->"
-        (IdentExpr
-          " "
-          "users"))))
-  "\n"
-  (InlineElementDeclaration
-    (BlockElementDeclarationType
-      "Dep")
-    ":"
-    " "
-    (ElementFieldDeclaration
-      (InfixExpr
-        (InfixExpr
-          (InfixExpr
-            (IdentExpr
-              "my_schema")
-            "."
-            (IdentExpr
-              "events"))
-          "."
-          (IdentExpr
-            "id"))
-        " "
-        "->"
-        (InfixExpr
-          (IdentExpr
-            " "
-            "users")
-          "."
-          (IdentExpr
-            "id")))))
-  "\n"
-  (InlineElementDeclaration
-    (BlockElementDeclarationType
-      "Dep")
-    ":"
-    " "
-    (ElementFieldDeclaration
-      (InfixExpr
-        (InfixExpr
-          (InfixExpr
-            (IdentExpr
-              "my_schema")
-            "."
-            (IdentExpr
-              "events"))
-          "."
-          (IdentExpr
-            "id"))
-        " "
-        "<-"
-        (InfixExpr
-          (InfixExpr
-            (IdentExpr
-              " "
-              "another_schema")
-            "."
-            (IdentExpr
-              "booking"))
-          "."
-          (IdentExpr
-            "id")))))
-  "\n"
-  "\n"
-  "// full-form"
-  "\n"
-  "// no error"
-  "\n"
-  (BlockElementDeclaration
-    (BlockElementDeclarationType
-      "Dep")
-    " "
-    (BlockElementDeclarationBody
-      "{"
-      "\n"
-      "  "
-      (ElementFieldDeclaration
+      (ElementFieldDeclarationArg
         (InfixExpr
           (IdentExpr
             "users")
@@ -328,44 +218,59 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
           "->"
           (IdentExpr
             " "
-            "orders")))
-      "\n"
-      "  "
-      (ElementFieldDeclaration
+            "orders")))))
+  "\n"
+  (InlineElementDeclaration
+    (ElementDeclarationType
+      "Dep")
+    ":"
+    " "
+    (ElementFieldDeclaration
+      (ElementFieldDeclarationArg
         (InfixExpr
           (InfixExpr
             (IdentExpr
-              "my_schema")
-            "."
-            (IdentExpr
-              "events"))
-          " "
-          "->"
-          (IdentExpr
-            " "
-            "users")))
-      "\n"
-      "  "
-      (ElementFieldDeclaration
-        (InfixExpr
-          (InfixExpr
-            (IdentExpr
-              "users")
-            "."
-            (IdentExpr
-              "id"))
-          " "
-          "->"
-          (InfixExpr
-            (IdentExpr
-              " "
               "orders")
             "."
             (IdentExpr
-              "user_id"))))
-      "\n"
-      "  "
-      (ElementFieldDeclaration
+              "user_id"))
+          " "
+          "<-"
+          (InfixExpr
+            (IdentExpr
+              " "
+              "users")
+            "."
+            (IdentExpr
+              "id"))))))
+  "\n"
+  (InlineElementDeclaration
+    (ElementDeclarationType
+      "Dep")
+    ":"
+    " "
+    (ElementFieldDeclaration
+      (ElementFieldDeclarationArg
+        (InfixExpr
+          (InfixExpr
+            (IdentExpr
+              "my_schema")
+            "."
+            (IdentExpr
+              "events"))
+          " "
+          "->"
+          (IdentExpr
+            " "
+            "users")))))
+  "\n"
+  (InlineElementDeclaration
+    (ElementDeclarationType
+      "Dep")
+    ":"
+    " "
+    (ElementFieldDeclaration
+      (ElementFieldDeclarationArg
         (InfixExpr
           (InfixExpr
             (InfixExpr
@@ -385,7 +290,123 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
               "users")
             "."
             (IdentExpr
-              "id"))))
+              "id"))))))
+  "\n"
+  (InlineElementDeclaration
+    (ElementDeclarationType
+      "Dep")
+    ":"
+    " "
+    (ElementFieldDeclaration
+      (ElementFieldDeclarationArg
+        (InfixExpr
+          (InfixExpr
+            (InfixExpr
+              (IdentExpr
+                "my_schema")
+              "."
+              (IdentExpr
+                "events"))
+            "."
+            (IdentExpr
+              "id"))
+          " "
+          "<-"
+          (InfixExpr
+            (InfixExpr
+              (IdentExpr
+                " "
+                "another_schema")
+              "."
+              (IdentExpr
+                "booking"))
+            "."
+            (IdentExpr
+              "id"))))))
+  "\n"
+  "\n"
+  "// full-form"
+  "\n"
+  "// no error"
+  "\n"
+  (BlockElementDeclaration
+    (ElementDeclarationType
+      "Dep")
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (InfixExpr
+            (IdentExpr
+              "users")
+            " "
+            "->"
+            (IdentExpr
+              " "
+              "orders"))))
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (InfixExpr
+            (InfixExpr
+              (IdentExpr
+                "my_schema")
+              "."
+              (IdentExpr
+                "events"))
+            " "
+            "->"
+            (IdentExpr
+              " "
+              "users"))))
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (InfixExpr
+            (InfixExpr
+              (IdentExpr
+                "users")
+              "."
+              (IdentExpr
+                "id"))
+            " "
+            "->"
+            (InfixExpr
+              (IdentExpr
+                " "
+                "orders")
+              "."
+              (IdentExpr
+                "user_id")))))
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (InfixExpr
+            (InfixExpr
+              (InfixExpr
+                (IdentExpr
+                  "my_schema")
+                "."
+                (IdentExpr
+                  "events"))
+              "."
+              (IdentExpr
+                "id"))
+            " "
+            "->"
+            (InfixExpr
+              (IdentExpr
+                " "
+                "users")
+              "."
+              (IdentExpr
+                "id")))))
       "\n"
       "}"))
   "\n"
@@ -395,10 +416,10 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
   "// no error"
   "\n"
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "good_header_bare"))
     " "
@@ -409,9 +430,13 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
           "dep")
         ":"
         (SettingListItemValue
-          " "
-          "<-"
-          " "
+          (Error
+            " "
+            (Error
+              "<-"))))
+      " "
+      (SettingListItem
+        (SettingListItemName
           "users"))
       "]")
     " "
@@ -419,19 +444,21 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
       "{"
       " "
       (ElementFieldDeclaration
-        (IdentExpr
-          "id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
         " "
-        (IdentExpr
-          "int"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int")))
       " "
       "}"))
   "\n"
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "good_header_schema"))
     " "
@@ -442,23 +469,32 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
           "dep")
         ":"
         (SettingListItemValue
-          " "
-          "<-"
-          " "
-          "my_schema"
-          "."
-          "events"))
+          (Error
+            " "
+            (Error
+              "<-"))))
+      " "
+      (SettingListItem
+        (SettingListItemName
+          "my_schema"))
+      (SettingListItem
+        (SettingListItemName
+          (Error
+            "."
+            "events")))
       "]")
     " "
     (BlockElementDeclarationBody
       "{"
       " "
       (ElementFieldDeclaration
-        (IdentExpr
-          "id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
         " "
-        (IdentExpr
-          "int"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int")))
       " "
       "}"))
   "\n"
@@ -468,10 +504,10 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
   "// no error"
   "\n"
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "good_col_bare"))
     " "
@@ -479,11 +515,13 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
       "{"
       " "
       (ElementFieldDeclaration
-        (IdentExpr
-          "id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
         " "
-        (IdentExpr
-          "int")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int"))
         " "
         (SettingList
           "["
@@ -492,21 +530,28 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
               "dep")
             ":"
             (SettingListItemValue
-              " "
-              "->"
-              " "
-              "users"
-              "."
-              "id"))
+              (Error
+                " "
+                (Error
+                  "->"))))
+          " "
+          (SettingListItem
+            (SettingListItemName
+              "users"))
+          (SettingListItem
+            (SettingListItemName
+              (Error
+                "."
+                "id")))
           "]"))
       " "
       "}"))
   "\n"
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "good_col_schema"))
     " "
@@ -514,11 +559,13 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
       "{"
       " "
       (ElementFieldDeclaration
-        (IdentExpr
-          "id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
         " "
-        (IdentExpr
-          "int")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int"))
         " "
         (SettingList
           "["
@@ -527,14 +574,21 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
               "dep")
             ":"
             (SettingListItemValue
-              " "
-              "->"
-              " "
-              "my_schema"
-              "."
-              "events"
-              "."
-              "id"))
+              (Error
+                " "
+                (Error
+                  "->"))))
+          " "
+          (SettingListItem
+            (SettingListItemName
+              "my_schema"))
+          (SettingListItem
+            (SettingListItemName
+              (Error
+                "."
+                "events"
+                "."
+                "id")))
           "]"))
       " "
       "}"))
@@ -545,122 +599,12 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
   "// no error"
   "\n"
   (InlineElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Dep")
     ":"
     " "
     (ElementFieldDeclaration
-      (InfixExpr
-        (IdentExpr
-          "users")
-        " "
-        "->"
-        (IdentExpr
-          " "
-          "unknown_table"))))
-  "\n"
-  (InlineElementDeclaration
-    (BlockElementDeclarationType
-      "Dep")
-    ":"
-    " "
-    (ElementFieldDeclaration
-      (InfixExpr
-        (InfixExpr
-          (IdentExpr
-            "users")
-          "."
-          (IdentExpr
-            "unknown_col"))
-        " "
-        "->"
-        (InfixExpr
-          (IdentExpr
-            " "
-            "users")
-          "."
-          (IdentExpr
-            "id")))))
-  "\n"
-  (InlineElementDeclaration
-    (BlockElementDeclarationType
-      "Dep")
-    ":"
-    " "
-    (ElementFieldDeclaration
-      (InfixExpr
-        (InfixExpr
-          (IdentExpr
-            "unknown_schema")
-          "."
-          (IdentExpr
-            "events"))
-        " "
-        "->"
-        (IdentExpr
-          " "
-          "users"))))
-  "\n"
-  (InlineElementDeclaration
-    (BlockElementDeclarationType
-      "Dep")
-    ":"
-    " "
-    (ElementFieldDeclaration
-      (InfixExpr
-        (InfixExpr
-          (IdentExpr
-            "my_schema")
-          "."
-          (IdentExpr
-            "unknown_table"))
-        " "
-        "->"
-        (IdentExpr
-          " "
-          "users"))))
-  "\n"
-  (InlineElementDeclaration
-    (BlockElementDeclarationType
-      "Dep")
-    ":"
-    " "
-    (ElementFieldDeclaration
-      (InfixExpr
-        (InfixExpr
-          (InfixExpr
-            (IdentExpr
-              "my_schema")
-            "."
-            (IdentExpr
-              "events"))
-          "."
-          (IdentExpr
-            "unknown_col"))
-        " "
-        "->"
-        (InfixExpr
-          (IdentExpr
-            " "
-            "users")
-          "."
-          (IdentExpr
-            "id")))))
-  "\n"
-  "\n"
-  "// full-form"
-  "\n"
-  "// no error"
-  "\n"
-  (BlockElementDeclaration
-    (BlockElementDeclarationType
-      "Dep")
-    " "
-    (BlockElementDeclarationBody
-      "{"
-      "\n"
-      "  "
-      (ElementFieldDeclaration
+      (ElementFieldDeclarationArg
         (InfixExpr
           (IdentExpr
             "users")
@@ -668,44 +612,79 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
           "->"
           (IdentExpr
             " "
-            "unknown_a")))
-      "\n"
-      "  "
-      (ElementFieldDeclaration
-        (InfixExpr
-          (InfixExpr
-            (IdentExpr
-              "my_schema")
-            "."
-            (IdentExpr
-              "events"))
-          " "
-          "->"
-          (IdentExpr
-            " "
-            "unknown_b")))
-      "\n"
-      "  "
-      (ElementFieldDeclaration
+            "unknown_table")))))
+  "\n"
+  (InlineElementDeclaration
+    (ElementDeclarationType
+      "Dep")
+    ":"
+    " "
+    (ElementFieldDeclaration
+      (ElementFieldDeclarationArg
         (InfixExpr
           (InfixExpr
             (IdentExpr
               "users")
             "."
             (IdentExpr
-              "id"))
+              "unknown_col"))
           " "
           "->"
           (InfixExpr
             (IdentExpr
               " "
-              "unknown_c")
+              "users")
             "."
             (IdentExpr
-              "col"))))
-      "\n"
-      "  "
-      (ElementFieldDeclaration
+              "id"))))))
+  "\n"
+  (InlineElementDeclaration
+    (ElementDeclarationType
+      "Dep")
+    ":"
+    " "
+    (ElementFieldDeclaration
+      (ElementFieldDeclarationArg
+        (InfixExpr
+          (InfixExpr
+            (IdentExpr
+              "unknown_schema")
+            "."
+            (IdentExpr
+              "events"))
+          " "
+          "->"
+          (IdentExpr
+            " "
+            "users")))))
+  "\n"
+  (InlineElementDeclaration
+    (ElementDeclarationType
+      "Dep")
+    ":"
+    " "
+    (ElementFieldDeclaration
+      (ElementFieldDeclarationArg
+        (InfixExpr
+          (InfixExpr
+            (IdentExpr
+              "my_schema")
+            "."
+            (IdentExpr
+              "unknown_table"))
+          " "
+          "->"
+          (IdentExpr
+            " "
+            "users")))))
+  "\n"
+  (InlineElementDeclaration
+    (ElementDeclarationType
+      "Dep")
+    ":"
+    " "
+    (ElementFieldDeclaration
+      (ElementFieldDeclarationArg
         (InfixExpr
           (InfixExpr
             (InfixExpr
@@ -716,7 +695,7 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
                 "events"))
             "."
             (IdentExpr
-              "id"))
+              "unknown_col"))
           " "
           "->"
           (InfixExpr
@@ -725,7 +704,91 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
               "users")
             "."
             (IdentExpr
-              "unknown_d"))))
+              "id"))))))
+  "\n"
+  "\n"
+  "// full-form"
+  "\n"
+  "// no error"
+  "\n"
+  (BlockElementDeclaration
+    (ElementDeclarationType
+      "Dep")
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (InfixExpr
+            (IdentExpr
+              "users")
+            " "
+            "->"
+            (IdentExpr
+              " "
+              "unknown_a"))))
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (InfixExpr
+            (InfixExpr
+              (IdentExpr
+                "my_schema")
+              "."
+              (IdentExpr
+                "events"))
+            " "
+            "->"
+            (IdentExpr
+              " "
+              "unknown_b"))))
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (InfixExpr
+            (InfixExpr
+              (IdentExpr
+                "users")
+              "."
+              (IdentExpr
+                "id"))
+            " "
+            "->"
+            (InfixExpr
+              (IdentExpr
+                " "
+                "unknown_c")
+              "."
+              (IdentExpr
+                "col")))))
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (InfixExpr
+            (InfixExpr
+              (InfixExpr
+                (IdentExpr
+                  "my_schema")
+                "."
+                (IdentExpr
+                  "events"))
+              "."
+              (IdentExpr
+                "id"))
+            " "
+            "->"
+            (InfixExpr
+              (IdentExpr
+                " "
+                "users")
+              "."
+              (IdentExpr
+                "unknown_d")))))
       "\n"
       "}"))
   "\n"
@@ -735,10 +798,10 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
   "// no error"
   "\n"
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "bad_header_bare"))
     " "
@@ -749,9 +812,13 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
           "dep")
         ":"
         (SettingListItemValue
-          " "
-          "<-"
-          " "
+          (Error
+            " "
+            (Error
+              "<-"))))
+      " "
+      (SettingListItem
+        (SettingListItemName
           "unknown_source"))
       "]")
     " "
@@ -759,19 +826,21 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
       "{"
       " "
       (ElementFieldDeclaration
-        (IdentExpr
-          "id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
         " "
-        (IdentExpr
-          "int"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int")))
       " "
       "}"))
   "\n"
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "bad_header_schema"))
     " "
@@ -782,23 +851,32 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
           "dep")
         ":"
         (SettingListItemValue
-          " "
-          "<-"
-          " "
-          "unknown_schema"
-          "."
-          "events"))
+          (Error
+            " "
+            (Error
+              "<-"))))
+      " "
+      (SettingListItem
+        (SettingListItemName
+          "unknown_schema"))
+      (SettingListItem
+        (SettingListItemName
+          (Error
+            "."
+            "events")))
       "]")
     " "
     (BlockElementDeclarationBody
       "{"
       " "
       (ElementFieldDeclaration
-        (IdentExpr
-          "id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
         " "
-        (IdentExpr
-          "int"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int")))
       " "
       "}"))
   "\n"
@@ -808,10 +886,10 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
   "// no error"
   "\n"
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "bad_col_bare"))
     " "
@@ -819,11 +897,13 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
       "{"
       " "
       (ElementFieldDeclaration
-        (IdentExpr
-          "id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
         " "
-        (IdentExpr
-          "int")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int"))
         " "
         (SettingList
           "["
@@ -832,21 +912,28 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
               "dep")
             ":"
             (SettingListItemValue
-              " "
-              "->"
-              " "
-              "unknown_table"
-              "."
-              "col"))
+              (Error
+                " "
+                (Error
+                  "->"))))
+          " "
+          (SettingListItem
+            (SettingListItemName
+              "unknown_table"))
+          (SettingListItem
+            (SettingListItemName
+              (Error
+                "."
+                "col")))
           "]"))
       " "
       "}"))
   "\n"
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "bad_col_schema"))
     " "
@@ -854,11 +941,13 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
       "{"
       " "
       (ElementFieldDeclaration
-        (IdentExpr
-          "id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
         " "
-        (IdentExpr
-          "int")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int"))
         " "
         (SettingList
           "["
@@ -867,14 +956,21 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
               "dep")
             ":"
             (SettingListItemValue
-              " "
-              "->"
-              " "
-              "my_schema"
-              "."
-              "unknown_table"
-              "."
-              "col"))
+              (Error
+                " "
+                (Error
+                  "->"))))
+          " "
+          (SettingListItem
+            (SettingListItemName
+              "my_schema"))
+          (SettingListItem
+            (SettingListItemName
+              (Error
+                "."
+                "unknown_table"
+                "."
+                "col")))
           "]"))
       " "
       "}"))
@@ -898,10 +994,10 @@ Table users {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "TablePartial")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "with_timestamp"))
     " "
@@ -910,20 +1006,22 @@ Table users {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (IdentExpr
-          "timestamp")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "timestamp"))
         " "
-        (IdentExpr
-          "uuid"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "uuid")))
       "\n"
       "}"))
   "\n"
   "\n"
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "users"))
     " "
@@ -932,10 +1030,11 @@ Table users {
       "\n"
       "  "
       (ElementFieldDeclaration
-        (PrefixExpr
-          "~"
-          (IdentExpr
-            "with_timestamp")))
+        (ElementFieldDeclarationArg
+          (PrefixExpr
+            "~"
+            (IdentExpr
+              "with_timestamp"))))
       "\n"
       "}"))
   "\n"
@@ -961,10 +1060,10 @@ enum v2.status {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Table")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "Users"))
     " "
@@ -973,23 +1072,27 @@ enum v2.status {
       "\n"
       "\t"
       (ElementFieldDeclaration
-        (IdentExpr
-          "id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
         " "
-        (IdentExpr
-          "integer"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "integer")))
       "\n"
       "    "
       (ElementFieldDeclaration
-        (IdentExpr
-          "status")
-        " "
-        (InfixExpr
-          (IdentExpr
-            "v2")
-          "."
+        (ElementFieldDeclarationArg
           (IdentExpr
             "status"))
+        " "
+        (ElementFieldDeclarationArg
+          (InfixExpr
+            (IdentExpr
+              "v2")
+            "."
+            (IdentExpr
+              "status")))
         " "
         (SettingList
           "["
@@ -998,23 +1101,30 @@ enum v2.status {
               "default")
             ":"
             (SettingListItemValue
-              " "
-              "v2"
-              "."
-              "status"
-              "."
-              "new"))
+              (InfixExpr
+                (InfixExpr
+                  (IdentExpr
+                    " "
+                    "v2")
+                  "."
+                  (IdentExpr
+                    "status"))
+                "."
+                (IdentExpr
+                  "new"))))
           "]"))
       "\n"
       "    "
       "\n"
       "    "
       (ElementFieldDeclaration
-        (IdentExpr
-          "referrer")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "referrer"))
         " "
-        (IdentExpr
-          "integer")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "integer"))
         " "
         (SettingList
           "["
@@ -1023,19 +1133,21 @@ enum v2.status {
               "ref")
             ":"
             (SettingListItemValue
-              " "
-              "-"
-              "id"))
+              (PrefixExpr
+                " "
+                "-"
+                (IdentExpr
+                  "id"))))
           "]"))
       "\n"
       "}"))
   "\n"
   "\n"
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "enum")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (InfixExpr
         (IdentExpr
           "v2")
@@ -1048,13 +1160,15 @@ enum v2.status {
       "\n"
       "\t"
       (ElementFieldDeclaration
-        (IdentExpr
-          "churn"))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "churn")))
       "\n"
       "    "
       (ElementFieldDeclaration
-        (IdentExpr
-          "new")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "new"))
         " "
         (SettingList
           "["
@@ -1063,8 +1177,9 @@ enum v2.status {
               "note")
             ":"
             (SettingListItemValue
-              " "
-              "'This is a new employee'"))
+              (SqStringExpr
+                " "
+                "'This is a new employee'")))
           "]"))
       "\n"
       "}"))

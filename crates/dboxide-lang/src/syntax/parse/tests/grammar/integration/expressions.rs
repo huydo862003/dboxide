@@ -58,10 +58,10 @@ fn comprehensive_expression() {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Test")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "Expression"))
     " "
@@ -70,256 +70,239 @@ fn comprehensive_expression() {
       "\n"
       "    "
       (ElementFieldDeclaration
-        (Error
+        (ElementFieldDeclarationArg
           (Error
-            "**"))
-        (IdentExpr
-          "b"))
+            (Error
+              "**")))
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "b")))
       "\n"
       "    "
       "\n"
       "    "
       (ElementFieldDeclaration
-        (InfixExpr
-          (NumberExpr
-            "1")
-          " "
-          "+"
+        (ElementFieldDeclarationArg
           (InfixExpr
             (NumberExpr
-              " "
-              "2")
+              "1")
             " "
-            "*"
+            "+"
+            (InfixExpr
+              (NumberExpr
+                " "
+                "2")
+              " "
+              "*"
+              (NumberExpr
+                " "
+                "3")))))
+      "\n"
+      "    "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (InfixExpr
+            (InfixExpr
+              (NumberExpr
+                "1")
+              " "
+              "+"
+              (NumberExpr
+                " "
+                "2"))
+            " "
+            "+"
             (NumberExpr
               " "
               "3"))))
       "\n"
       "    "
       (ElementFieldDeclaration
-        (InfixExpr
+        (ElementFieldDeclarationArg
           (InfixExpr
-            (NumberExpr
-              "1")
-            " "
-            "+"
-            (NumberExpr
-              " "
-              "2"))
-          " "
-          "+"
-          (NumberExpr
-            " "
-            "3")))
-      "\n"
-      "    "
-      (ElementFieldDeclaration
-        (InfixExpr
-          (InfixExpr
-            (NumberExpr
-              "1")
-            " "
-            "+"
-            (PrefixExpr
-              " "
-              "-"
-              (NumberExpr
-                "2")))
-          " "
-          "+"
-          (NumberExpr
-            " "
-            "3")))
-      "\n"
-      "    "
-      (ElementFieldDeclaration
-        (InfixExpr
-          (ParenExpr
-            "("
             (InfixExpr
               (NumberExpr
                 "1")
               " "
-              "-"
-              (NumberExpr
+              "+"
+              (PrefixExpr
                 " "
-                "2"))
-            ")")
-          " "
-          "+"
-          (NumberExpr
+                "-"
+                (NumberExpr
+                  "2")))
             " "
-            "3")))
+            "+"
+            (NumberExpr
+              " "
+              "3"))))
       "\n"
       "    "
       (ElementFieldDeclaration
-        (InfixExpr
+        (ElementFieldDeclarationArg
+          (InfixExpr
+            (ParenExpr
+              "("
+              (InfixExpr
+                (NumberExpr
+                  "1")
+                " "
+                "-"
+                (NumberExpr
+                  " "
+                  "2"))
+              ")")
+            " "
+            "+"
+            (NumberExpr
+              " "
+              "3"))))
+      "\n"
+      "    "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (InfixExpr
+            (InfixExpr
+              (NumberExpr
+                "1")
+              " "
+              "+"
+              (NumberExpr
+                " "
+                "2.0"))
+            " "
+            "-"
+            (NumberExpr
+              " "
+              "3.2"))))
+      "\n"
+      "\n"
+      "    "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
           (InfixExpr
             (NumberExpr
               "1")
             " "
             "+"
+            (Error))))
+      "\n"
+      "    "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (InfixExpr
             (NumberExpr
-              " "
-              "2.0"))
-          " "
-          "-"
-          (NumberExpr
+              "2")
             " "
-            "3.2")))
-      "\n"
+            "+"
+            (Error))))
       "\n"
       "    "
       (ElementFieldDeclaration
-        (InfixExpr
+        (ElementFieldDeclarationArg
           (NumberExpr
-            "1")
-          " "
-          "+"
-          (Error)))
-      "\n"
-      "    "
-      (ElementFieldDeclaration
-        (InfixExpr
-          (NumberExpr
-            "2")
-          " "
-          "+"
-          (Error)))
-      "\n"
-      "    "
-      (ElementFieldDeclaration
-        (NumberExpr
-          "3"))
-      "\n"
-      "\n"
-      "    "
-      (ElementFieldDeclaration
-        (NumberExpr
-          "1"))
-      "\n"
-      "    "
-      (ElementFieldDeclaration
-        (PrefixExpr
-          "+"
-          (NumberExpr
-            " "
-            "2")))
-      "\n"
-      "    "
-      (ElementFieldDeclaration
-        (PrefixExpr
-          "+"
-          (NumberExpr
-            " "
             "3")))
       "\n"
       "\n"
       "    "
       (ElementFieldDeclaration
-        (InfixExpr
+        (ElementFieldDeclarationArg
+          (NumberExpr
+            "1")))
+      "\n"
+      "    "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (PrefixExpr
+            "+"
+            (NumberExpr
+              " "
+              "2"))))
+      "\n"
+      "    "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (PrefixExpr
+            "+"
+            (NumberExpr
+              " "
+              "3"))))
+      "\n"
+      "\n"
+      "    "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (InfixExpr
+            (InfixExpr
+              (IdentExpr
+                "a")
+              "."
+              (IdentExpr
+                "b"))
+            "."
+            (IdentExpr
+              "c"))))
+      "\n"
+      "\n"
+      "    "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
           (InfixExpr
             (IdentExpr
               "a")
             "."
+            (Error))))
+      "\n"
+      "    "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (InfixExpr
             (IdentExpr
-              "b"))
-          "."
+              "b")
+            "."
+            (Error))))
+      "\n"
+      "    "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
           (IdentExpr
             "c")))
       "\n"
       "\n"
       "    "
       (ElementFieldDeclaration
-        (InfixExpr
-          (IdentExpr
-            "a")
-          "."
-          (Error)))
-      "\n"
-      "    "
-      (ElementFieldDeclaration
-        (InfixExpr
-          (IdentExpr
-            "b")
-          "."
-          (Error)))
-      "\n"
-      "    "
-      (ElementFieldDeclaration
-        (IdentExpr
-          "c"))
-      "\n"
-      "\n"
-      "    "
-      (ElementFieldDeclaration
-        (InfixExpr
-          (IdentExpr
-            "a")
-          "."
-          (IdentExpr
-            "b")))
+        (ElementFieldDeclarationArg
+          (InfixExpr
+            (IdentExpr
+              "a")
+            "."
+            (IdentExpr
+              "b"))))
       "\n"
       "     "
       (ElementFieldDeclaration
-        (Error
+        (ElementFieldDeclarationArg
           (Error
-            "."))
-        (IdentExpr
-          "c"))
-      "\n"
-      "\n"
-      "    "
-      (ElementFieldDeclaration
-        (CallExpr
+            (Error
+              ".")))
+        (ElementFieldDeclarationArg
           (IdentExpr
-            "f")
-          "("
-          ")"))
+            "c")))
       "\n"
       "\n"
       "    "
       (ElementFieldDeclaration
-        (TupleExpr
-          "("
-          (NumberExpr
-            "1")
-          ","
-          (NumberExpr
-            " "
-            "2")
-          ","
-          (NumberExpr
-            " "
-            "3")
-          ")"))
-      "\n"
-      "    "
-      (ElementFieldDeclaration
-        (TupleExpr
-          "("
-          (NumberExpr
-            "2")
-          ","
-          (NumberExpr
-            " "
-            "3")
-          ","
-          (NumberExpr
-            " "
-            "4")
-          ")"))
-      "\n"
-      "\n"
-      "    "
-      (ElementFieldDeclaration
-        (ParenExpr
-          "("
+        (ElementFieldDeclarationArg
           (CallExpr
             (IdentExpr
               "f")
-            "\n"
-            "     "
+            "("
+            ")")))
+      "\n"
+      "\n"
+      "    "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (TupleExpr
             "("
             (NumberExpr
               "1")
@@ -331,109 +314,111 @@ fn comprehensive_expression() {
             (NumberExpr
               " "
               "3")
-            ")")
-          ")"))
+            ")")))
+      "\n"
+      "    "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (TupleExpr
+            "("
+            (NumberExpr
+              "2")
+            ","
+            (NumberExpr
+              " "
+              "3")
+            ","
+            (NumberExpr
+              " "
+              "4")
+            ")")))
       "\n"
       "\n"
       "    "
       (ElementFieldDeclaration
-        (TupleExpr
-          "("
-          (NumberExpr
-            "1")
-          ","
-          (NumberExpr
-            "\n"
-            "     "
-            "2")
-          ")"))
-      "\n"
-      "\n"
-      "    "
-      (ElementFieldDeclaration
-        (InfixExpr
-          (InfixExpr
-            (InfixExpr
+        (ElementFieldDeclarationArg
+          (ParenExpr
+            "("
+            (CallExpr
+              (IdentExpr
+                "f")
+              "\n"
+              "     "
+              "("
               (NumberExpr
                 "1")
-              " "
-              "*"
-              (NumberExpr
-                " "
-                "2"))
-            " "
-            "/"
-            (NumberExpr
-              " "
-              "3"))
-          " "
-          "!="
-          (InfixExpr
-            (NumberExpr
-              " "
-              "1")
-            " "
-            "*"
-            (ParenExpr
-              " "
-              "("
-              (InfixExpr
-                (NumberExpr
-                  "2")
-                " "
-                "/"
-                (NumberExpr
-                  " "
-                  "3"))
-              ")"))))
-      "\n"
-      "\n"
-      "    "
-      (ElementFieldDeclaration
-        (InfixExpr
-          (NumberExpr
-            "1")
-          " "
-          "=="
-          (NumberExpr
-            " "
-            "1")))
-      "\n"
-      "\n"
-      "    "
-      (ElementFieldDeclaration
-        (InfixExpr
-          (IdentExpr
-            "a")
-          " "
-          "="
-          (InfixExpr
-            (NumberExpr
-              " "
-              "1")
-            " "
-            "<="
-            (InfixExpr
+              ","
               (NumberExpr
                 " "
                 "2")
-              " "
-              "+"
+              ","
               (NumberExpr
                 " "
-                "3")))))
+                "3")
+              ")")
+            ")")))
       "\n"
       "\n"
       "    "
       (ElementFieldDeclaration
-        (InfixExpr
-          (IdentExpr
-            "b")
-          " "
-          "="
+        (ElementFieldDeclarationArg
+          (TupleExpr
+            "("
+            (NumberExpr
+              "1")
+            ","
+            (NumberExpr
+              "\n"
+              "     "
+              "2")
+            ")")))
+      "\n"
+      "\n"
+      "    "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (InfixExpr
+            (InfixExpr
+              (InfixExpr
+                (NumberExpr
+                  "1")
+                " "
+                "*"
+                (NumberExpr
+                  " "
+                  "2"))
+              " "
+              "/"
+              (NumberExpr
+                " "
+                "3"))
+            " "
+            "!="
+            (InfixExpr
+              (NumberExpr
+                " "
+                "1")
+              " "
+              "*"
+              (ParenExpr
+                " "
+                "("
+                (InfixExpr
+                  (NumberExpr
+                    "2")
+                  " "
+                  "/"
+                  (NumberExpr
+                    " "
+                    "3"))
+                ")")))))
+      "\n"
+      "\n"
+      "    "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
           (InfixExpr
             (NumberExpr
-              " "
               "1")
             " "
             "=="
@@ -444,41 +429,91 @@ fn comprehensive_expression() {
       "\n"
       "    "
       (ElementFieldDeclaration
-        (InfixExpr
-          (IdentExpr
-            "a")
-          " "
-          "!="
+        (ElementFieldDeclarationArg
           (InfixExpr
             (IdentExpr
+              "a")
+            " "
+            "="
+            (InfixExpr
+              (NumberExpr
+                " "
+                "1")
               " "
+              "<="
+              (InfixExpr
+                (NumberExpr
+                  " "
+                  "2")
+                " "
+                "+"
+                (NumberExpr
+                  " "
+                  "3"))))))
+      "\n"
+      "\n"
+      "    "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (InfixExpr
+            (IdentExpr
               "b")
             " "
-            "+"
-            (IdentExpr
+            "="
+            (InfixExpr
+              (NumberExpr
+                " "
+                "1")
               " "
-              "c")))
+              "=="
+              (NumberExpr
+                " "
+                "1")))))
+      "\n"
+      "\n"
+      "    "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (InfixExpr
+            (IdentExpr
+              "a")
+            " "
+            "!="
+            (InfixExpr
+              (IdentExpr
+                " "
+                "b")
+              " "
+              "+"
+              (IdentExpr
+                " "
+                "c"))))
         " "
-        (TupleExpr
-          "("
-          ")"))
+        (ElementFieldDeclarationArg
+          (TupleExpr
+            "("
+            ")")))
       "\n"
       "\n"
       "    "
       (ElementFieldDeclaration
-        (Error
+        (ElementFieldDeclarationArg
           (Error
-            "+++----++-"))
-        (NumberExpr
-          "1"))
+            (Error
+              "+++----++-")))
+        (ElementFieldDeclarationArg
+          (NumberExpr
+            "1")))
       "\n"
       "    "
       (ElementFieldDeclaration
-        (Error
+        (ElementFieldDeclarationArg
           (Error
-            "---++---+"))
-        (NumberExpr
-          "1"))
+            (Error
+              "---++---+")))
+        (ElementFieldDeclarationArg
+          (NumberExpr
+            "1")))
       "\n"
       "}"))
   "\n"
@@ -499,10 +534,10 @@ fn comprehensive_list_expression() {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Test")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "ListExpression"))
     " "
@@ -511,11 +546,13 @@ fn comprehensive_list_expression() {
       "\n"
       "    "
       (ElementFieldDeclaration
-        (IdentExpr
-          "id")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
         " "
-        (IdentExpr
-          "integer")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "integer"))
         " "
         (SettingList
           "["
@@ -529,8 +566,9 @@ fn comprehensive_list_expression() {
               "two")
             ":"
             (SettingListItemValue
-              " "
-              "'two'"))
+              (SqStringExpr
+                " "
+                "'two'")))
           ","
           "\n"
           "                "
@@ -539,8 +577,9 @@ fn comprehensive_list_expression() {
               "three")
             ":"
             (SettingListItemValue
-              " "
-              "'three'"))
+              (SqStringExpr
+                " "
+                "'three'")))
           ","
           " "
           (SettingListItem
@@ -565,11 +604,13 @@ fn comprehensive_list_expression() {
       "\n"
       "    "
       (ElementFieldDeclaration
-        (IdentExpr
-          "abc")
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "abc"))
         " "
-        (DqStringExpr
-          "\" gibberish type \"")
+        (ElementFieldDeclarationArg
+          (DqStringExpr
+            "\" gibberish type \""))
         " "
         (SettingList
           "["
@@ -578,10 +619,13 @@ fn comprehensive_list_expression() {
               "ref")
             ":"
             (SettingListItemValue
-              " "
-              "empty"
-              "."
-              " "))
+              (InfixExpr
+                (IdentExpr
+                  " "
+                  "empty")
+                "."
+                (Error))))
+          " "
           "]"))
       "\n"
       "}"))
@@ -608,10 +652,10 @@ fn comprehensive_literal_element_expression() {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Test")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "LiteralElementExpression"))
     " "
@@ -620,7 +664,7 @@ fn comprehensive_literal_element_expression() {
       "\n"
       "    "
       (BlockElementDeclaration
-        (BlockElementDeclarationType
+        (ElementDeclarationType
           "indexes")
         " "
         (SettingList
@@ -630,8 +674,9 @@ fn comprehensive_literal_element_expression() {
               "note")
             ":"
             (SettingListItemValue
-              " "
-              "'this is an index element'"))
+              (SqStringExpr
+                " "
+                "'this is an index element'")))
           "]")
         " "
         (BlockElementDeclarationBody
@@ -639,15 +684,16 @@ fn comprehensive_literal_element_expression() {
           "\n"
           "        "
           (ElementFieldDeclaration
-            (TupleExpr
-              "("
-              (OqStringExpr
-                "`id * 2`")
-              ","
-              (IdentExpr
-                " "
-                "id")
-              ")")
+            (ElementFieldDeclarationArg
+              (TupleExpr
+                "("
+                (OqStringExpr
+                  "`id * 2`")
+                ","
+                (IdentExpr
+                  " "
+                  "id")
+                ")"))
             " "
             (SettingList
               "["
@@ -660,8 +706,9 @@ fn comprehensive_literal_element_expression() {
           "\n"
           "        "
           (ElementFieldDeclaration
-            (IdentExpr
-              "name")
+            (ElementFieldDeclarationArg
+              (IdentExpr
+                "name"))
             " "
             (SettingList
               "["
@@ -676,7 +723,7 @@ fn comprehensive_literal_element_expression() {
       "\n"
       "    "
       (BlockElementDeclaration
-        (BlockElementDeclarationType
+        (ElementDeclarationType
           "Note")
         " "
         (BlockElementDeclarationBody
@@ -684,8 +731,9 @@ fn comprehensive_literal_element_expression() {
           "\n"
           "        "
           (ElementFieldDeclaration
-            (TqStringExpr
-              "'''\n            this is a note\n        '''"))
+            (ElementFieldDeclarationArg
+              (TqStringExpr
+                "'''\n            this is a note\n        '''")))
           "\n"
           "    "
           "}"))
@@ -716,10 +764,10 @@ fn comprehensive_tuple_expression() {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
+    (ElementDeclarationType
       "Test")
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "TupleExpression"))
     " "
@@ -728,106 +776,110 @@ fn comprehensive_tuple_expression() {
       "\n"
       "    "
       (ElementFieldDeclaration
-        (TupleExpr
-          "("
-          ")"))
+        (ElementFieldDeclarationArg
+          (TupleExpr
+            "("
+            ")")))
       "\n"
       "    "
       (ElementFieldDeclaration
-        (TupleExpr
-          "("
-          "\n"
-          "\n"
-          "    "
-          ")"))
-      "\n"
-      "\n"
-      "    "
-      (ElementFieldDeclaration
-        (TupleExpr
-          "("
-          (NumberExpr
-            "1")
-          ","
-          (NumberExpr
-            " "
+        (ElementFieldDeclarationArg
+          (TupleExpr
+            "("
+            "\n"
             "\n"
             "    "
-            "2")
-          ","
-          (NumberExpr
-            "\n"
-            "    "
-            "3")
-          ","
-          ")"))
+            ")")))
       "\n"
       "\n"
       "    "
       (ElementFieldDeclaration
-        (TupleExpr
-          "("
-          (InfixExpr
+        (ElementFieldDeclarationArg
+          (TupleExpr
+            "("
             (NumberExpr
               "1")
-            " "
-            "-"
+            ","
             (NumberExpr
               " "
-              "2"))
-          ","
-          (InfixExpr
+              "\n"
+              "    "
+              "2")
+            ","
             (NumberExpr
-              " "
+              "\n"
+              "    "
               "3")
-            " "
-            "*"
-            (NumberExpr
+            ","
+            ")")))
+      "\n"
+      "\n"
+      "    "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (TupleExpr
+            "("
+            (InfixExpr
+              (NumberExpr
+                "1")
               " "
-              "4"))
-          ","
-          (InfixExpr
-            (NumberExpr
+              "-"
+              (NumberExpr
+                " "
+                "2"))
+            ","
+            (InfixExpr
+              (NumberExpr
+                " "
+                "3")
               " "
-              "5")
-            " "
-            "/"
-            (NumberExpr
+              "*"
+              (NumberExpr
+                " "
+                "4"))
+            ","
+            (InfixExpr
+              (NumberExpr
+                " "
+                "5")
               " "
-              "6"))
-          ","
-          (InfixExpr
-            (NumberExpr
+              "/"
+              (NumberExpr
+                " "
+                "6"))
+            ","
+            (InfixExpr
+              (NumberExpr
+                " "
+                "1")
               " "
-              "1")
-            " "
-            "=="
-            (NumberExpr
+              "=="
+              (NumberExpr
+                " "
+                "2"))
+            ","
+            (InfixExpr
+              (NumberExpr
+                " "
+                "1")
               " "
-              "2"))
-          ","
-          (InfixExpr
-            (NumberExpr
+              ">="
+              (NumberExpr
+                "\n"
+                "    "
+                "3"))
+            ","
+            (InfixExpr
+              (NumberExpr
+                " "
+                "1")
               " "
-              "1")
-            " "
-            ">="
-            (NumberExpr
-              "\n"
-              "    "
-              "3"))
-          ","
-          (InfixExpr
-            (NumberExpr
-              " "
-              "1")
-            " "
-            "<="
-            (NumberExpr
-              "\n"
-              "    "
-              "12"))
-          ")"))
+              "<="
+              (NumberExpr
+                "\n"
+                "    "
+                "12"))
+            ")")))
       "\n"
       "}"))
   "")"#;
