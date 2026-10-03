@@ -4,7 +4,7 @@ version.workspace = true
 edition = "2024"
 
 [dependencies]
-hashbrown = "0.15"
+hashbrown = "0.17"
 itertools = "0.14"
 salsa = "0.28.5"
 utf8-chars = "3.0.7"
