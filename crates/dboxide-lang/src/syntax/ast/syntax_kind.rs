@@ -8,15 +8,15 @@ pub enum SyntaxKind {
   //   (<element-field> | <element-attribute> | <block-element>)*
   // }
   BlockElementDeclaration,
-  BlockElementDeclarationType,
-  BlockElementDeclarationTargetFragment,
-  BlockElementDeclarationAlias,
   BlockElementDeclarationBody,
 
   // <type> <target>? (as <alias>)? <setting-list>?: <element-field>
   InlineElementDeclaration,
-  InlineElementDeclarationTarget,
   InlineElementDeclarationBody,
+
+  ElementDeclarationTyp,
+  ElementDeclarationTargetFragment,
+  ElementDeclarationAlias,
 
   // <arg>+ <setting-list>?
   ElementFieldDeclaration,
@@ -35,25 +35,29 @@ pub enum SyntaxKind {
 
   // use { ... } from '...' | use * from '...'
   UseDeclaration,
+  UseDeclarationTargetFragment,
   UseSpecifierList,
   UseSpecifier,
+  UseSpecifierKind,
+  UseSpecifierName,
+  UseSpecifierAlias,
   Wildcard,
 
   // fn name(params): ReturnType { body }
   // fn operator<sym>(params): ReturnType { body }
-  FnDeclaration,
-  FnDeclarationName,
-  FnDeclarationParams,
-  FnDeclarationParam,
-  FnDeclarationReturnType,
+  FuncDeclaration,
+  FuncDeclarationName,
+  FuncDeclarationParams,
+  FuncDeclarationParam,
+  FuncDeclarationReturnTyp,
 
   // get name(params): ReturnType { body }
   GetDeclaration,
   GetDeclarationName,
 
-  // type Name [role] { body } | type Name = expr
-  TypeDeclaration,
-  TypeDeclarationName,
+  // type Name = expr
+  EqualityDeclaration,
+  EqualityDeclarationName,
 
   /* Expression nodes */
   CommaExpr,
@@ -68,7 +72,9 @@ pub enum SyntaxKind {
 
   ListExpr,
   TupleExpr,
+  CsvExpr,
   NumberExpr,
+  ColorExpr,
   DqStringExpr,
   SqStringExpr,
   TqStringExpr,
@@ -80,6 +86,13 @@ pub enum SyntaxKind {
   ForallExpr,
   ExistsExpr,
 
+  // cond ? then : else
+  TernaryExpr,
+
+  // match subject { pattern => result ... }
+  MatchExpr,
+  MatchArm,
+
   /* Tokens */
   Ident = 400,
   DqString,
@@ -87,6 +100,7 @@ pub enum SyntaxKind {
   TqString, // triple-quoted '''...'''
   OqString,
   Number,
+  ColorLit, // #rgb or #rrggbb
   Colon,    // :
   Comma,    // ,
   LParen,   // (

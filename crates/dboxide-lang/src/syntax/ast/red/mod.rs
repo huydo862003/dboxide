@@ -47,11 +47,11 @@ impl Debug for RedNode {
 }
 
 impl RedNode {
-  pub fn new_root(root: SyntaxNode) -> RedNode {
+  pub fn new_root(root: GreenNode) -> RedNode {
     RedNode(RedNodeData {
       offset: 0,
       parent: None,
-      green: GreenNode::from_node(root),
+      green: root,
     })
   }
 
@@ -80,8 +80,12 @@ impl RedNode {
     }
   }
 
-  pub fn offset(&self) -> usize {
+  pub fn start_offset(&self) -> usize {
     self.0.offset
+  }
+
+  pub fn end_offset(&self) -> usize {
+    self.0.offset + self.0.green.text_len()
   }
 
   pub fn text_len(&self) -> usize {
@@ -110,7 +114,7 @@ impl RedNode {
   pub fn leading_trivia(&self) -> Vec<RedNode> {
     self
       .children()
-      .take_while(|c| c.kind().is_trivia())
+      .take_while(|child| child.kind().is_trivia())
       .collect()
   }
 
@@ -120,7 +124,7 @@ impl RedNode {
     children
       .into_iter()
       .rev()
-      .take_while(|c| c.kind().is_trivia())
+      .take_while(|child| child.kind().is_trivia())
       .collect::<Vec<_>>()
       .into_iter()
       .rev()
@@ -132,14 +136,14 @@ impl RedNode {
     let children: Vec<_> = self.children().collect();
     let start = children
       .iter()
-      .find(|c| !c.kind().is_trivia())
-      .map(|c| c.offset())
-      .unwrap_or(self.offset());
+      .find(|child| !child.kind().is_trivia())
+      .map(|child| child.start_offset())
+      .unwrap_or(self.start_offset());
     let end = children
       .iter()
-      .rfind(|c| !c.kind().is_trivia())
-      .map(|c| c.offset() + c.text_len())
-      .unwrap_or(self.offset() + self.text_len());
+      .rfind(|child| !child.kind().is_trivia())
+      .map(|child| child.end_offset())
+      .unwrap_or(self.end_offset());
     (start, end - start)
   }
 }

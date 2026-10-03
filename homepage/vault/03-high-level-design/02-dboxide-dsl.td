@@ -11,7 +11,7 @@ dboxide keywords are case-insensitive:
 | Block | `namespace`, `constraints` |
 | Module | `use`, `reuse`, `from`, `as` |
 | Expression | `match`, `forall`, `exists`, `of` |
-| Reference | `self`, `super` |
+| Reference | `self` |
 
 ::: note
 The language core is just keywords and operators. Everything else - `Table`, `Ref`, `decl`, `ref`, `[element]`, `[field]`, `string`, `bool` - is provided by the `metatype` module via `use * from 'metatype'`.
@@ -110,7 +110,7 @@ This composition is recursive: a sub-element can itself contain fields and furth
 
 ## Object System
 
-Every construct in dboxide is an object. Every object creates a namespace. `super` is a built-in name in every namespace, pointing to the parent namespace.
+Every construct in dboxide is an object. Every object creates a namespace. Nesting follows lexical scoping: bare names resolve in the current scope first, then walk up through enclosing element scopes.
 
 ### Named and Anonymous Objects
 
@@ -162,13 +162,14 @@ Table@columns   // member access on the type: the field definition itself
 
 Built-in namespace references:
 
-- `self`: the current namespace (the instance being validated).
-- `super`: the parent namespace. Since `super` is a name in every namespace, chaining works: `super.super` for grandparent.
+- `self`: the current element instance being validated
+
+Enclosing element fields are accessible via lexical scoping: if a name is not found in the current scope, resolution walks up through enclosing element scopes automatically.
 
 ```
-self@pk              // pk field of current instance
-super@columns        // all columns on the enclosing Table
-super.super@columns  // grandparent's columns field
+self@pk              // pk field of current instance (explicit)
+pk                   // same, resolved in current scope
+columns              // if not on current element, resolves from enclosing element
 ```
 
 ## Type Definitions
@@ -204,10 +205,10 @@ Two roles are available.
 - `[element]`: a construct with its own named block body. Can appear at the top level or nested inside a parent element as a sub-element (e.g. `indexes { }`, `checks { }`).
 - `[field]`: a construct written as a single line inside a parent block, with arguments parsed positionally or by keyword.
 
-An optional `[on use: expand]` annotation may be added to an `[element]` type. When an instance of that type is imported, all `ref` fields are dereferenced and the namespaces of the referenced instances are injected into the importer - effectively expanding the container into its members.
+An optional `[use: expand namespaces]` annotation may be added to an `[element]` type. When an instance of that type is imported, all `ref` fields are dereferenced and the namespaces of the referenced instances are injected into the importer - effectively expanding the container into its members.
 
 ```
-type TableGroup [element, on use: expand] {
+type TableGroup [element, use: expand namespaces] {
   tables reference[Table][]
 }
 // use { tablegroup auth_core }
@@ -216,8 +217,10 @@ type TableGroup [element, on use: expand] {
 ```
 
 ::: note
-Schemas behave as `[on use: expand]` by definition. Importing a schema injects all elements within that schema's namespace into the importer, without needing explicit annotation.
+Schemas behave as `[use: expand namespaces]` by definition. Importing a schema injects all elements within that schema's namespace into the importer, without needing explicit annotation.
 :::
+
+An optional `[use: follow refs]` annotation may be added to an `[element]` type. Anonymous instances of that type (instances without a label) are implicitly imported during wildcard use, provided all root names they reference are already in scope. This applies both to top-level and nested anonymous instances.
 
 Types may nest: a type defined inside another type's body is scoped to that parent.
 
@@ -279,7 +282,7 @@ All syntax annotations (`[arg]`, `[csv]`, `[label]`, `[attribute]`, `[setting]`)
 | Annotation | Syntax form | Meaning |
 | --- | --- | --- |
 | `[arg: n]` | `field T [arg: 0]` | Binds field to positional arg at index `n` |
-| `[arg: n..]` | `field T [arg: 1..]` | Binds field to all args from index `n` (variadic) |
+| `[arg: n..]` | `field T [arg: 1..]` | Binds field to all args from index `n` onwards (variadic) |
 | `[csv]` | `field T [arg: 0, csv]` | Arg is a comma-separated list parsed inline |
 
 ```
@@ -324,10 +327,10 @@ type Column [field] {
 
 #### Rest Fields
 
-`...name` captures all undeclared body attributes into a typed map field.
+`[name]` captures all undeclared body attributes into a typed map field.
 
 ```
-...metadata: Map[string, any] [attribute]
+[metadata] Map[string, any] [attribute]
 ```
 
 #### Annotation Values as Implicit Strings
@@ -336,7 +339,7 @@ Bare words and multi-word phrases inside `[...]` annotations are implicitly stri
 
 ```
 [setting]              // same as ["setting"]
-[on use: expand]       // same as ["on use": "expand"]
+[use: expand namespaces]          // same as ["use": "expand"]
 [arg: 0]               // numeric value, not a string
 [label alias]          // same as ["label alias"]
 ```
@@ -618,7 +621,8 @@ All types are provided by the `metatype` module. A literal like `"hello"` has ty
 | --- | --- |
 | `[element]` | Block construct with its own body |
 | `[field]` | Line-based construct inside a parent block |
-| `[on use: expand]` | On import, deref all `ref` fields and inject referenced namespaces |
+| `[use: expand namespaces]` | On import, deref all `ref` fields and inject referenced namespaces |
+| `[use: follow refs]` | Implicitly follow refs instances during wildcard use when all referenced names are in scope |
 
 ### Functions
 
@@ -670,17 +674,61 @@ type RefAction = "cascade" | "restrict" | "set null" | "set default" | "no actio
  */
 
 /* binary: Ref [name]: table.col op table.col [settings] */
-fn operator<(from: qualified_reference[Column][], to: qualified_reference[Column][]): RefBinary { RefBinary { from, to, cardinality: "<"    } }
-fn operator>(from: qualified_reference[Column][], to: qualified_reference[Column][]): RefBinary { RefBinary { from, to, cardinality: ">"    } }
-fn operator-(from: qualified_reference[Column][], to: qualified_reference[Column][]): RefBinary { RefBinary { from, to, cardinality: "-"    } }
-fn operator<>(from: qualified_reference[Column][], to: qualified_reference[Column][]): RefBinary { RefBinary { from, to, cardinality: "<>"  } }
+fn operator<(from: qualified_reference[Column][], to: qualified_reference[Column][]): RefBinary {
+  RefBinary {
+    from: from
+    cardinality: '<'
+    to: to
+  }
+}
+fn operator>(from: qualified_reference[Column][], to: qualified_reference[Column][]): RefBinary {
+  RefBinary {
+    from: from
+    cardinality: '>'
+    to: to
+  }
+}
+fn operator-(from: qualified_reference[Column][], to: qualified_reference[Column][]): RefBinary {
+  RefBinary {
+    from: from
+    cardinality: '-'
+    to: to
+  }
+}
+fn operator<>(from: qualified_reference[Column][], to: qualified_reference[Column][]): RefBinary {
+  RefBinary {
+    from: from
+    cardinality: '<>'
+    to: to
+  }
+}
 /* + all nullable binary variants: ?<, <?, ?<?, ?>, >?, ?>?, ?-, -?, ?-?, ?<>, <>?, ?<>? */
 
 /* unary: [ref: > users.id] - from is implicitly the enclosing column */
-fn operator<(to: qualified_reference[Column][]): RefUnary { RefUnary { to, cardinality: "<"    } }
-fn operator>(to: qualified_reference[Column][]): RefUnary { RefUnary { to, cardinality: ">"    } }
-fn operator-(to: qualified_reference[Column][]): RefUnary { RefUnary { to, cardinality: "-"    } }
-fn operator<>(to: qualified_reference[Column][]): RefUnary { RefUnary { to, cardinality: "<>"  } }
+fn operator<(to: qualified_reference[Column][]): RefUnary {
+  RefUnary {
+    cardinality: '<'
+    to: to
+  }
+}
+fn operator>(to: qualified_reference[Column][]): RefUnary {
+  RefUnary {
+    cardinality: '>'
+    to: to
+  }
+}
+fn operator-(to: qualified_reference[Column][]): RefUnary {
+  RefUnary {
+    cardinality: '-'
+    to: to
+  }
+}
+fn operator<>(to: qualified_reference[Column][]): RefUnary {
+  RefUnary {
+    cardinality: '<>'
+    to: to
+  }
+}
 /* + all nullable unary variants */
 
 /* Dep operators - typed dispatch on qualified_reference[Column | Table]
@@ -689,14 +737,40 @@ fn operator<>(to: qualified_reference[Column][]): RefUnary { RefUnary { to, card
  */
 
 /* binary: Dep: raw_orders -> stg_orders */
-fn operator->(from: qualified_reference[Column | Table], to: qualified_reference[Column | Table]): DepBinary { DepBinary { from, direction: "->", to } }
-fn operator<-(to: qualified_reference[Column | Table], from: qualified_reference[Column | Table]): DepBinary { DepBinary { from, direction: "<-", to } }
+fn operator->(from: qualified_reference[Column | Table], to: qualified_reference[Column | Table]): DepBinary {
+  DepBinary {
+    from: from
+    direction: '->'
+    to: to
+  }
+}
+fn operator<-(to: qualified_reference[Column | Table], from: qualified_reference[Column | Table]): DepBinary {
+  DepBinary {
+    from: from
+    direction: '<-'
+    to: to
+  }
+}
 
 /* unary: [dep: -> stg_orders] - from/to is implicitly the enclosing element */
-fn operator->(to: qualified_reference[Column | Table]): DepUnary { DepUnary { direction: "->", target: to } }
-fn operator<-(from: qualified_reference[Column | Table]): DepUnary { DepUnary { direction: "<-", target: from } }
+fn operator->(to: qualified_reference[Column | Table]): DepUnary {
+  DepUnary {
+    direction: '->'
+    target: to
+  }
+}
+fn operator<-(from: qualified_reference[Column | Table]): DepUnary {
+  DepUnary {
+    direction: '<-'
+    target: from
+  }
+}
 
-fn operator~(p: reference[TablePartial]): TablePartialInjection { TablePartialInjection { partial: p } }
+fn operator~(p: reference[TablePartial]): TablePartialInjection {
+  TablePartialInjection {
+    partial: p
+  }
+}
 
 /* Project */
 
@@ -725,9 +799,9 @@ type Enum [element] {
 /* RefBinary - result of binary reference operators (a.col > b.col) */
 
 type RefBinary [field] {
-  from qualified_reference[Column][] [arg: 0]
-  cardinality string [arg: 1]
-  to qualified_reference[Column][] [arg: 2]
+  from qualified_reference[Column][] [arg: 0, attribute]
+  cardinality string [arg: 1, attribute]
+  to qualified_reference[Column][] [arg: 2, attribute]
   delete RefAction? [setting]
   update RefAction? [setting]
   color color? [setting]
@@ -748,8 +822,8 @@ type Ref [element] {
 /* RefUnary - result of unary reference operators ([ref: > users.id]) */
 
 type RefUnary [field] {
-  cardinality string [arg: 0]
-  to qualified_reference[Column][] [arg: 1]
+  cardinality string [arg: 0, attribute]
+  to qualified_reference[Column][] [arg: 1, attribute]
   delete RefAction? [setting]
   update RefAction? [setting]
 }
@@ -757,9 +831,9 @@ type RefUnary [field] {
 /* DepBinary - result of binary dep operators (a -> b) */
 
 type DepBinary [field] {
-  from qualified_reference[Column | Table] [arg: 0]
-  direction "->" | "<-" [arg: 1]
-  to qualified_reference[Column | Table] [arg: 2]
+  from qualified_reference[Column | Table] [arg: 0, attribute]
+  direction "->" | "<-" [arg: 1, attribute]
+  to qualified_reference[Column | Table] [arg: 2, attribute]
 }
 
 /* Dep [name]: a -> b
@@ -775,14 +849,14 @@ type Dep [element] {
   lines DepBinary[]
   color color? [setting]
   note string? [setting]
-  ...metadata: Map[string, any] [attribute]
+  [metadata] Map[string, any] [attribute]
 }
 
 /* DepUnary - result of unary dep operators ([dep: -> stg_orders]) */
 
 type DepUnary [field] {
-  direction "->" | "<-" [arg: 0]
-  target qualified_reference[Column | Table] [arg: 1]
+  direction "->" | "<-" [arg: 0, attribute]
+  target qualified_reference[Column | Table] [arg: 1, attribute]
 }
 
 /* TablePartial name [settings] {
@@ -808,9 +882,9 @@ type TablePartial [element] {
  * }
  */
 
-type TableGroup [element, on use: expand] {
+type TableGroup [element, use: expand namespaces] {
   name declaration[TableGroup] [label, unique]
-  tables reference[Table][] [field: 0..]
+  tables reference[Table][] [arg: 0..]
   note string? [setting]
   color color? [setting]
 }
@@ -837,7 +911,7 @@ type StickyNote [element] {
 
 type Metadata [element] {
   target qualified_reference[Table | Table.Column | Enum | TableGroup] [label]
-  ...metadata: Map[string, any] [attribute]
+  [metadata] Map[string, any] [attribute]
 }
 
 /* DiagramView name {
@@ -853,19 +927,19 @@ type DiagramView [element] {
   name declaration[DiagramView] [label, unique]
 
   type Tables [element] {
-    items (ref[Table] | "*")[] [field: 0..]
+    items (ref[Table] | "*")[] [arg: 0..]
   }
 
   type Notes [element] {
-    items (ref[StickyNote] | "*")[] [field: 0..]
+    items (ref[StickyNote] | "*")[] [arg: 0..]
   }
 
   type TableGroups [element] {
-    items (ref[TableGroup] | "*")[] [field: 0..]
+    items (ref[TableGroup] | "*")[] [arg: 0..]
   }
 
   type Schemas [element] {
-    items (string | "*")[] [field: 0..]
+    items (string | "*")[] [arg: 0..]
   }
 }
 
@@ -881,7 +955,7 @@ type Table [element] {
   checks Check[]
   columns Column[]
   deps DepUnary[] [setting: dep]
-  ...metadata: Map[string, any] [attribute]
+  [metadata] Map[string, any] [attribute]
 
   namespace {
     columns
@@ -916,7 +990,7 @@ type Table [element] {
   }
 
   type Index [element] {
-    columns (ref[Column] | ostring)[] [field: 0.., attribute]
+    columns (ref[Column] | ostring)[] [arg: 0.., attribute]
     pk bool? [setting]
     unique bool? [setting]
     type "btree" | "hash" [setting]
@@ -929,7 +1003,7 @@ type Table [element] {
    * }
    */
   type Check [element] {
-    expression ostring [field: 0, attribute]
+    expression ostring [arg: 0, attribute]
     name string? [setting]
   }
 
@@ -938,18 +1012,47 @@ type Table [element] {
    * }
    */
   type Records [element] {
-    columns reference[Column][]? [field: 0.., label, attribute]
-    row Row[]
+    columns reference[Column][]? [arg: 0.., label, attribute]
 
     type Row [field] {
-      values any[] [field: 0, csv]
+      values any[] [arg: 0, csv]
 
       constraints {
-        type_check: () => typeof(values) <: (columns ?? super.super@columns).map((c) => interpret(c@type))
-        // columns             -> Records@columns (explicit column list, if provided)
-        // super               -> enclosing Records instance
-        // super.super         -> enclosing Table instance (namespace traversal)
-        // super.super@columns -> all columns on the Table
+        /* "columns" resolves via lexical scoping: not on Row, found on enclosing Records */
+        /* "all_columns" resolves further up: not on Row or Records, found on enclosing Table */
+        type_check: () => typeof(values) <: (columns ?? all_columns).map((c) => interpret(c@type))
+        not_null: () => forall i of 0..values.length {
+          !((columns ?? all_columns)[i]@"not null" && values[i] == null)
+          && !((columns ?? all_columns)[i]@increment && values[i] == null)
+          && !((columns ?? all_columns)[i]@pk && values[i] == null)
+        }
+      }
+    }
+
+    constraints {
+      pk_unique: () => {
+        let cols = columns ?? all_columns
+        let pk_indices = cols.indices().filter((i) => cols[i]@pk)
+        forall r1 of 0..@fields.length {
+          forall r2 of (r1 + 1)..@fields.length {
+            exists k of pk_indices {
+              @fields[r1]@values[k] != @fields[r2]@values[k]
+            }
+          }
+        }
+      }
+      unique_check: () => {
+        let cols = columns ?? all_columns
+        let unique_indices = cols.indices().filter((i) => cols[i]@unique)
+        forall ui of unique_indices {
+          forall r1 of 0..@fields.length {
+            forall r2 of (r1 + 1)..@fields.length {
+              @fields[r1]@values[ui] == null
+              || @fields[r2]@values[ui] == null
+              || @fields[r1]@values[ui] != @fields[r2]@values[ui]
+            }
+          }
+        }
       }
     }
   }

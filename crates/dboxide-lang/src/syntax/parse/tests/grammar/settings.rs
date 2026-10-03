@@ -3,82 +3,293 @@ use crate::syntax::parse::tests::utils::*;
 #[test]
 fn setting_simple() {
   let tree = parse_source(
-    "Table t {
+    r#"Table t {
   id int [pk]
-}",
+}"#,
   );
-  assert!(tree.contains(
-    r#"(SettingListItemName
-              "pk")"#
-  ));
+  let expected = r#"(SourceFile
+  (BlockElementDeclaration
+    (ElementDeclarationTyp
+      (IdentExpr
+        "Table"))
+    " "
+    (ElementDeclarationTargetFragment
+      (IdentExpr
+        "t"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
+        " "
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int"))
+        " "
+        (SettingList
+          "["
+          (SettingListItem
+            (SettingListItemName
+              "pk"))
+          "]"))
+      "\n"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
 }
 
 #[test]
 fn setting_with_value() {
   let tree = parse_source(
-    "Table t {
+    r#"Table t {
   id int [default: 0]
-}",
+}"#,
   );
-  assert!(tree.contains("SettingListItemName"));
-  assert!(tree.contains("SettingListItemValue"));
+  let expected = r#"(SourceFile
+  (BlockElementDeclaration
+    (ElementDeclarationTyp
+      (IdentExpr
+        "Table"))
+    " "
+    (ElementDeclarationTargetFragment
+      (IdentExpr
+        "t"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
+        " "
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int"))
+        " "
+        (SettingList
+          "["
+          (SettingListItem
+            (SettingListItemName
+              "default")
+            ":"
+            (SettingListItemValue
+              (NumberExpr
+                " "
+                "0")))
+          "]"))
+      "\n"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
 }
 
 #[test]
 fn setting_multi_word_name() {
   let tree = parse_source(
-    "Table t {
+    r#"Table t {
   id int [not null]
-}",
+}"#,
   );
-  assert!(tree.contains("not"));
-  assert!(tree.contains("null"));
-  // "not null" should be a single setting item
-  let item_count = tree.matches("SettingListItem\n").count();
-  assert_eq!(item_count, 1);
+  let expected = r#"(SourceFile
+  (BlockElementDeclaration
+    (ElementDeclarationTyp
+      (IdentExpr
+        "Table"))
+    " "
+    (ElementDeclarationTargetFragment
+      (IdentExpr
+        "t"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
+        " "
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int"))
+        " "
+        (SettingList
+          "["
+          (SettingListItem
+            (SettingListItemName
+              "not"
+              " "
+              "null"))
+          "]"))
+      "\n"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
 }
 
 #[test]
 fn multiple_settings() {
   let tree = parse_source(
-    "Table t {
+    r#"Table t {
   id int [pk, not null, increment]
-}",
+}"#,
   );
-  let item_count = tree.matches("SettingListItem\n").count();
-  assert_eq!(item_count, 3);
+  let expected = r#"(SourceFile
+  (BlockElementDeclaration
+    (ElementDeclarationTyp
+      (IdentExpr
+        "Table"))
+    " "
+    (ElementDeclarationTargetFragment
+      (IdentExpr
+        "t"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
+        " "
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int"))
+        " "
+        (SettingList
+          "["
+          (SettingListItem
+            (SettingListItemName
+              "pk"))
+          ","
+          " "
+          (SettingListItem
+            (SettingListItemName
+              "not"
+              " "
+              "null"))
+          ","
+          " "
+          (SettingListItem
+            (SettingListItemName
+              "increment"))
+          "]"))
+      "\n"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
 }
 
 #[test]
 fn setting_backtick_value() {
   let tree = parse_source(
-    "Table t {
+    r#"Table t {
   created_at timestamp [default: `now()`]
-}",
+}"#,
   );
-  assert!(tree.contains("`now()`"));
+  let expected = r#"(SourceFile
+  (BlockElementDeclaration
+    (ElementDeclarationTyp
+      (IdentExpr
+        "Table"))
+    " "
+    (ElementDeclarationTargetFragment
+      (IdentExpr
+        "t"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "created_at"))
+        " "
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "timestamp"))
+        " "
+        (SettingList
+          "["
+          (SettingListItem
+            (SettingListItemName
+              "default")
+            ":"
+            (SettingListItemValue
+              (OqStringExpr
+                " "
+                "`now()`")))
+          "]"))
+      "\n"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
 }
 
 #[test]
 fn setting_double_quoted_name() {
-  let (tree, diags) = parse_source_with_diagnostics(
+  let (tree, diagnostics) = parse_source_with_diagnostics(
     r#"Table t {
   id int ["custom name": 'val']
 }"#,
   );
-  assert!(diags.is_empty());
-  assert!(tree.contains("SettingListItemName"));
-  assert!(tree.contains(r#""\"custom name\"""#));
+  assert!(diagnostics.is_empty());
+  let expected = r#"(SourceFile
+  (BlockElementDeclaration
+    (ElementDeclarationTyp
+      (IdentExpr
+        "Table"))
+    " "
+    (ElementDeclarationTargetFragment
+      (IdentExpr
+        "t"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
+        " "
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int"))
+        " "
+        (SettingList
+          "["
+          (SettingListItem
+            (SettingListItemName
+              "\"custom name\"")
+            ":"
+            (SettingListItemValue
+              (SqStringExpr
+                " "
+                "'val'")))
+          "]"))
+      "\n"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
 }
 
 #[test]
 fn setting_rejects_single_quoted_name() {
-  let (_tree, diags) = parse_source_with_diagnostics(
+  let (_tree, diagnostics) = parse_source_with_diagnostics(
     "Table t {
   id int ['custom name': 'val']
 }",
   );
-  assert!(!diags.is_empty());
+  assert!(!diagnostics.is_empty());
 }
 
 #[test]
@@ -88,9 +299,44 @@ fn setting_with_numeric_value() {
   id int [default: 42]
 }"#,
   );
-  assert!(tree.contains("SettingListItemName"));
-  assert!(tree.contains("SettingListItemValue"));
-  assert!(tree.contains("42"));
+  let expected = r#"(SourceFile
+  (BlockElementDeclaration
+    (ElementDeclarationTyp
+      (IdentExpr
+        "Table"))
+    " "
+    (ElementDeclarationTargetFragment
+      (IdentExpr
+        "t"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
+        " "
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "int"))
+        " "
+        (SettingList
+          "["
+          (SettingListItem
+            (SettingListItemName
+              "default")
+            ":"
+            (SettingListItemValue
+              (NumberExpr
+                " "
+                "42")))
+          "]"))
+      "\n"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
 }
 
 #[test]
@@ -100,5 +346,42 @@ fn setting_with_string_value() {
   name varchar [default: 'guest']
 }"#,
   );
-  assert!(tree.contains("'guest'"));
+  let expected = r#"(SourceFile
+  (BlockElementDeclaration
+    (ElementDeclarationTyp
+      (IdentExpr
+        "Table"))
+    " "
+    (ElementDeclarationTargetFragment
+      (IdentExpr
+        "t"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "name"))
+        " "
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "varchar"))
+        " "
+        (SettingList
+          "["
+          (SettingListItem
+            (SettingListItemName
+              "default")
+            ":"
+            (SettingListItemValue
+              (SqStringExpr
+                " "
+                "'guest'")))
+          "]"))
+      "\n"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
 }

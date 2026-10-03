@@ -7,7 +7,7 @@ use std::rc::Rc;
 use crate::syntax::ast::SyntaxKind;
 use crate::syntax::ast::{SyntaxToken, cache::Cache};
 use crate::types::PeekableStream;
-use crate::types::diagnostics::Diagnostic;
+use crate::types::diagnostics::{Diagnostic, DiagnosticKind};
 
 pub struct LexCtx<'a> {
   stream: PeekableStream<'a, char>,
@@ -45,17 +45,17 @@ impl<'a> LexCtx<'a> {
 
   pub fn lex(&mut self) -> LexResult {
     self.buffered_text.clear();
-    let c = match self.peek() {
-      Some(c) => c,
+    let char = match self.peek() {
+      Some(char) => char,
       None => {
         return self.emit(SyntaxKind::Eof);
       }
     };
 
-    match c {
+    match char {
       '\r' => {
         self.advance();
-        if self.peek().is_some_and(|c| c == '\n') {
+        if self.peek().is_some_and(|char| char == '\n') {
           self.advance();
         }
         self.emit(SyntaxKind::Newline)
@@ -64,7 +64,7 @@ impl<'a> LexCtx<'a> {
         self.advance();
         self.emit(SyntaxKind::Newline)
       }
-      _ if c.is_ascii_whitespace() => self.whitespace(),
+      _ if char.is_ascii_whitespace() => self.whitespace(),
       ':' => {
         self.advance();
         self.emit(SyntaxKind::Colon)
@@ -100,21 +100,22 @@ impl<'a> LexCtx<'a> {
       '"' => self.dq_string(),
       '\'' => self.sq_string(),
       '`' => self.oq_string(),
-      _ if c.is_ascii_digit() => self.number(),
-      _ if c == '_' || c.is_ascii_alphabetic() => self.ident(),
-      _ if is_operator_char(c) => self.operator(),
+      _ if char.is_ascii_digit() => self.number(),
+      _ if char == '_' || char.is_ascii_alphabetic() => self.ident(),
+      '#' => self.color_lit(),
+      _ if is_operator_char(char) => self.operator(),
       _ => {
         let offset = self.offset;
         self.advance();
-        let diag = Diagnostic::UnexpectedChar { ch: c, offset };
-        self.emit_with(SyntaxKind::Error, Some(diag))
+        let diagnostic = DiagnosticKind::UnexpectedChar { ch: char }.into_error(offset, offset + 1);
+        self.emit_with(SyntaxKind::Error, Some(diagnostic))
       }
     }
   }
 
   fn whitespace(&mut self) -> LexResult {
-    while let Some(c) = self.peek() {
-      if c == '\n' || !c.is_ascii_whitespace() {
+    while let Some(char) = self.peek() {
+      if char == '\n' || !char.is_ascii_whitespace() {
         break;
       }
       self.advance();
@@ -123,8 +124,8 @@ impl<'a> LexCtx<'a> {
   }
 
   fn ident(&mut self) -> LexResult {
-    while let Some(c) = self.peek() {
-      if !c.is_ascii_alphanumeric() && c != '_' {
+    while let Some(char) = self.peek() {
+      if !char.is_ascii_alphanumeric() && char != '_' {
         break;
       }
       self.advance();
@@ -133,17 +134,17 @@ impl<'a> LexCtx<'a> {
   }
 
   fn number(&mut self) -> LexResult {
-    while let Some(c) = self.peek() {
-      if !c.is_ascii_digit() {
+    while let Some(char) = self.peek() {
+      if !char.is_ascii_digit() {
         break;
       }
       self.advance();
     }
     // fractional: peek 2 chars ahead (`.` then digit)
-    if self.peek() == Some('.') && self.peek_nth(1).is_some_and(|c| c.is_ascii_digit()) {
+    if self.peek() == Some('.') && self.peek_nth(1).is_some_and(|char| char.is_ascii_digit()) {
       self.advance(); // '.'
-      while let Some(c) = self.peek() {
-        if !c.is_ascii_digit() {
+      while let Some(char) = self.peek() {
+        if !char.is_ascii_digit() {
           break;
         }
         self.advance();
@@ -155,14 +156,37 @@ impl<'a> LexCtx<'a> {
       if matches!(self.peek(), Some('+' | '-')) {
         self.advance();
       }
-      while let Some(c) = self.peek() {
-        if !c.is_ascii_digit() {
+      while let Some(char) = self.peek() {
+        if !char.is_ascii_digit() {
           break;
         }
         self.advance();
       }
     }
     self.emit(SyntaxKind::Number)
+  }
+
+  fn color_lit(&mut self) -> LexResult {
+    let start = self.offset;
+    self.advance(); // consume '#'
+    let mut count = 0usize;
+    while let Some(char) = self.peek() {
+      if !char.is_ascii_hexdigit() {
+        break;
+      }
+      self.advance();
+      count += 1;
+    }
+    if count == 0 {
+      let diagnostic = DiagnosticKind::UnexpectedChar { ch: '#' }.into_error(start, start + 1);
+      return self.emit_with(SyntaxKind::Error, Some(diagnostic));
+    }
+    if count != 3 && count != 6 {
+      let end = self.offset;
+      let diagnostic = DiagnosticKind::InvalidColorLitLength { count }.into_error(start, end);
+      return self.emit_with(SyntaxKind::Error, Some(diagnostic));
+    }
+    self.emit(SyntaxKind::ColorLit)
   }
 
   fn operator(&mut self) -> LexResult {
@@ -173,8 +197,8 @@ impl<'a> LexCtx<'a> {
     if first == '/' {
       if self.peek() == Some('/') {
         self.advance();
-        while let Some(c) = self.peek() {
-          if c == '\n' {
+        while let Some(char) = self.peek() {
+          if char == '\n' {
             break;
           }
           self.advance();
@@ -185,12 +209,9 @@ impl<'a> LexCtx<'a> {
         self.advance();
         loop {
           if self.at_end() {
-            let diag = Diagnostic::UnexpectedEof {
-              expected: '/',
-              start_offset: start,
-              end_offset: self.offset,
-            };
-            return self.emit_with(SyntaxKind::Error, Some(diag));
+            let diagnostic =
+              DiagnosticKind::UnexpectedEof { expected: '/' }.into_error(start, self.offset);
+            return self.emit_with(SyntaxKind::Error, Some(diagnostic));
           }
           if self.peek() == Some('*') && self.peek_nth(1) == Some('/') {
             self.advance(); // *
@@ -202,8 +223,8 @@ impl<'a> LexCtx<'a> {
       }
     }
 
-    while let Some(c) = self.peek() {
-      if is_operator_char(c) || c == ':' {
+    while let Some(char) = self.peek() {
+      if is_operator_char(char) || char == ':' {
         self.advance();
       } else {
         break;
@@ -218,11 +239,8 @@ impl<'a> LexCtx<'a> {
     loop {
       match self.peek() {
         None | Some('\n') => {
-          let diag = Diagnostic::UnterminatedString {
-            start_offset: start,
-            end_offset: self.offset,
-          };
-          return self.emit_with(SyntaxKind::Error, Some(diag));
+          let diagnostic = DiagnosticKind::UnterminatedString.into_error(start, self.offset);
+          return self.emit_with(SyntaxKind::Error, Some(diagnostic));
         }
         Some('\\') => {
           self.advance();
@@ -248,11 +266,8 @@ impl<'a> LexCtx<'a> {
         self.advance();
         loop {
           if self.at_end() {
-            let diag = Diagnostic::UnterminatedString {
-              start_offset: start,
-              end_offset: self.offset,
-            };
-            return self.emit_with(SyntaxKind::Error, Some(diag));
+            let diagnostic = DiagnosticKind::UnterminatedString.into_error(start, self.offset);
+            return self.emit_with(SyntaxKind::Error, Some(diagnostic));
           }
           if self.peek() == Some('\'')
             && self.peek_nth(1) == Some('\'')
@@ -271,11 +286,8 @@ impl<'a> LexCtx<'a> {
     loop {
       match self.peek() {
         None | Some('\n') => {
-          let diag = Diagnostic::UnterminatedString {
-            start_offset: start,
-            end_offset: self.offset,
-          };
-          return self.emit_with(SyntaxKind::Error, Some(diag));
+          let diagnostic = DiagnosticKind::UnterminatedString.into_error(start, self.offset);
+          return self.emit_with(SyntaxKind::Error, Some(diagnostic));
         }
         Some('\\') => {
           self.advance();
@@ -298,11 +310,8 @@ impl<'a> LexCtx<'a> {
     loop {
       match self.peek() {
         None => {
-          let diag = Diagnostic::UnterminatedString {
-            start_offset: start,
-            end_offset: self.offset,
-          };
-          return self.emit_with(SyntaxKind::Error, Some(diag));
+          let diagnostic = DiagnosticKind::UnterminatedString.into_error(start, self.offset);
+          return self.emit_with(SyntaxKind::Error, Some(diagnostic));
         }
         Some('\\') if self.peek_nth(1) == Some('`') => {
           self.advance();
@@ -320,18 +329,19 @@ impl<'a> LexCtx<'a> {
   }
 }
 
-fn is_operator_char(c: char) -> bool {
+/// Returns true if the character can appear in an operator token
+fn is_operator_char(char: char) -> bool {
   matches!(
-    c,
+    char,
     '.' | '@' | '|' | '?' | '=' | '<' | '>' | '!' | '-' | '+' | '*' | '/' | '%' | '^' | '&' | '~'
   )
 }
 
 impl<'a> LexCtx<'a> {
   fn advance(&mut self) {
-    if let Some(c) = self.stream.next() {
-      let mut b = [0u8; 4];
-      let encoded = c.encode_utf8(&mut b);
+    if let Some(char) = self.stream.next() {
+      let mut bytes = [0u8; 4];
+      let encoded = char.encode_utf8(&mut bytes);
       self.buffered_text.extend_from_slice(encoded.as_bytes());
       self.offset += encoded.len();
     }

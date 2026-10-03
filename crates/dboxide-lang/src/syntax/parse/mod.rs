@@ -78,8 +78,8 @@ impl<'a> ParseCtx<'a> {
         unreachable!("Token stream is infinite");
       };
 
-      if let Some(diag) = result.diagnostic.take() {
-        self.diagnostics.push(diag);
+      if let Some(diagnostic) = result.diagnostic.take() {
+        self.diagnostics.push(diagnostic);
       }
       self.offset = result.end_offset;
       children.push(GreenNode::from_token(result.token.clone()));
@@ -146,8 +146,8 @@ impl<'a> ParseCtx<'a> {
       self.tokens.reset_peek();
 
       let mut result = self.tokens.next().unwrap();
-      if let Some(diag) = result.diagnostic.take() {
-        self.diagnostics.push(diag);
+      if let Some(diagnostic) = result.diagnostic.take() {
+        self.diagnostics.push(diagnostic);
       }
       self.offset = result.end_offset;
       children.push(GreenNode::from_token(result.token));

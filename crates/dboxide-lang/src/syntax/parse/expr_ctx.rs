@@ -63,7 +63,7 @@ impl ExprCtxStack {
   }
 
   pub(in crate::syntax::parse) fn should_expr_span_newline(&self) -> bool {
-    self.stack.iter().any(|c| c.should_expr_span_newline())
+    self.stack.iter().any(|ctx| ctx.should_expr_span_newline())
   }
 
   /// Find the innermost context on the stack that can handle the given token kind

@@ -2,7 +2,7 @@ pub mod cache;
 pub mod node;
 pub mod token;
 
-use std::fmt::{self, Debug};
+use std::fmt::{Debug, Formatter};
 use std::hash::{Hash, Hasher};
 
 use crate::syntax::ast::SyntaxKind;
@@ -112,11 +112,11 @@ impl PartialEq for GreenNode {
 impl Eq for GreenNode {}
 
 impl Debug for GreenNode {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+  fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
     if self.is_node() {
-      self.as_node().unwrap().fmt(f)
+      self.as_node().unwrap().fmt(formatter)
     } else {
-      self.as_token().unwrap().fmt(f)
+      self.as_token().unwrap().fmt(formatter)
     }
   }
 }

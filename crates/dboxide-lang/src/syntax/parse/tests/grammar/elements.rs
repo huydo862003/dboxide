@@ -5,10 +5,11 @@ fn block_element_basic() {
   let tree = parse_source("Table users {}");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
-      "Table")
+    (ElementDeclarationTyp
+      (IdentExpr
+        "Table"))
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "users"))
     " "
@@ -24,17 +25,19 @@ fn block_element_with_alias() {
   let tree = parse_source("Table users as u {}");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
-      "Table")
+    (ElementDeclarationTyp
+      (IdentExpr
+        "Table"))
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "users"))
     " "
     "as"
     " "
-    (BlockElementDeclarationAlias
-      "u")
+    (ElementDeclarationAlias
+      (IdentExpr
+        "u"))
     " "
     (BlockElementDeclarationBody
       "{"
@@ -48,10 +51,11 @@ fn block_element_with_settings() {
   let tree = parse_source("Table users [note: 'main'] {}");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
-      "Table")
+    (ElementDeclarationTyp
+      (IdentExpr
+        "Table"))
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "users"))
     " "
@@ -62,8 +66,9 @@ fn block_element_with_settings() {
           "note")
         ":"
         (SettingListItemValue
-          " "
-          "'main'"))
+          (SqStringExpr
+            " "
+            "'main'")))
       "]")
     " "
     (BlockElementDeclarationBody
@@ -78,12 +83,17 @@ fn block_element_qualified_name() {
   let tree = parse_source("public.auth.User {}");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
-      "public"
-      "."
-      "auth"
-      "."
-      "User")
+    (ElementDeclarationTyp
+      (InfixExpr
+        (InfixExpr
+          (IdentExpr
+            "public")
+          "."
+          (IdentExpr
+            "auth"))
+        "."
+        (IdentExpr
+          "User")))
     " "
     (BlockElementDeclarationBody
       "{"
@@ -97,27 +107,29 @@ fn inline_element() {
   let tree = parse_source("Ref: orders.user_id > users.id");
   let expected = r#"(SourceFile
   (InlineElementDeclaration
-    (BlockElementDeclarationType
-      "Ref")
+    (ElementDeclarationTyp
+      (IdentExpr
+        "Ref"))
     ":"
     " "
     (ElementFieldDeclaration
-      (InfixExpr
+      (ElementFieldDeclarationArg
         (InfixExpr
-          (IdentExpr
-            "orders")
-          "."
-          (IdentExpr
-            "user_id"))
-        " "
-        ">"
-        (InfixExpr
-          (IdentExpr
-            " "
-            "users")
-          "."
-          (IdentExpr
-            "id")))))
+          (InfixExpr
+            (IdentExpr
+              "orders")
+            "."
+            (IdentExpr
+              "user_id"))
+          " "
+          ">"
+          (InfixExpr
+            (IdentExpr
+              " "
+              "users")
+            "."
+            (IdentExpr
+              "id"))))))
   "")"#;
   assert_eq!(tree, expected);
 }
@@ -132,10 +144,11 @@ fn nested_element() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
-      "Table")
+    (ElementDeclarationTyp
+      (IdentExpr
+        "Table"))
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "users"))
     " "
@@ -144,8 +157,9 @@ fn nested_element() {
       "\n"
       "  "
       (BlockElementDeclaration
-        (BlockElementDeclarationType
-          "indexes")
+        (ElementDeclarationTyp
+          (IdentExpr
+            "indexes"))
         " "
         (BlockElementDeclarationBody
           "{"
@@ -163,10 +177,11 @@ fn empty_block_body() {
   let tree = parse_source("Table t {}");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
-      "Table")
+    (ElementDeclarationTyp
+      (IdentExpr
+        "Table"))
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "t"))
     " "
@@ -185,10 +200,11 @@ Table b {}",
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
-      "Table")
+    (ElementDeclarationTyp
+      (IdentExpr
+        "Table"))
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "a"))
     " "
@@ -197,10 +213,11 @@ Table b {}",
       "}"))
   "\n"
   (BlockElementDeclaration
-    (BlockElementDeclarationType
-      "Table")
+    (ElementDeclarationTyp
+      (IdentExpr
+        "Table"))
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "b"))
     " "
@@ -224,14 +241,15 @@ fn two_target_fragments() {
   let tree = parse_source("Table public users {}");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
-      "Table")
+    (ElementDeclarationTyp
+      (IdentExpr
+        "Table"))
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "public"))
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "users"))
     " "
@@ -247,10 +265,11 @@ fn two_qualified_target_fragments() {
   let tree = parse_source(r#"Table "public"."schema" users {}"#);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
-      "Table")
+    (ElementDeclarationTyp
+      (IdentExpr
+        "Table"))
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (InfixExpr
         (DqStringExpr
           "\"public\"")
@@ -258,7 +277,7 @@ fn two_qualified_target_fragments() {
         (DqStringExpr
           "\"schema\"")))
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "users"))
     " "
@@ -279,10 +298,46 @@ fn deeply_nested() {
   }
 }"#,
   );
-  assert!(tree.contains("BlockElementDeclarationBody"));
-  // 3 levels of nesting = 3 BlockElementDeclaration
-  let count = tree.matches("BlockElementDeclaration\n").count();
-  assert_eq!(count, 3);
+  let expected = r#"(SourceFile
+  (BlockElementDeclaration
+    (ElementDeclarationTyp
+      (IdentExpr
+        "Table"))
+    " "
+    (ElementDeclarationTargetFragment
+      (IdentExpr
+        "t"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (BlockElementDeclaration
+        (ElementDeclarationTyp
+          (IdentExpr
+            "indexes"))
+        " "
+        (BlockElementDeclarationBody
+          "{"
+          "\n"
+          "    "
+          (BlockElementDeclaration
+            (ElementDeclarationTyp
+              (IdentExpr
+                "checks"))
+            " "
+            (BlockElementDeclarationBody
+              "{"
+              "\n"
+              "    "
+              "}"))
+          "\n"
+          "  "
+          "}"))
+      "\n"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
 }
 
 #[test]
@@ -308,28 +363,265 @@ Enum status {
 
 Ref: orders.user_id > users.id"#;
   let tree = parse_source(input);
-  assert!(tree.contains("BlockElementDeclaration"));
-  assert!(tree.contains("InlineElementDeclaration"));
-  assert!(tree.contains("SettingList"));
+  let expected = r#"(SourceFile
+  (BlockElementDeclaration
+    (ElementDeclarationTyp
+      (IdentExpr
+        "Table"))
+    " "
+    (ElementDeclarationTargetFragment
+      (IdentExpr
+        "users"))
+    " "
+    "as"
+    " "
+    (ElementDeclarationAlias
+      (IdentExpr
+        "u"))
+    " "
+    (SettingList
+      "["
+      (SettingListItem
+        (SettingListItemName
+          "note")
+        ":"
+        (SettingListItemValue
+          (SqStringExpr
+            " "
+            "'main'")))
+      "]")
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id"))
+        " "
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "integer"))
+        " "
+        (SettingList
+          "["
+          (SettingListItem
+            (SettingListItemName
+              "pk"))
+          ","
+          " "
+          (SettingListItem
+            (SettingListItemName
+              "increment"))
+          "]"))
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "name"))
+        " "
+        (ElementFieldDeclarationArg
+          (CallExpr
+            (IdentExpr
+              "varchar")
+            "("
+            (NumberExpr
+              "255")
+            ")"))
+        " "
+        (SettingList
+          "["
+          (SettingListItem
+            (SettingListItemName
+              "not"
+              " "
+              "null"))
+          "]"))
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "email"))
+        " "
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "varchar"))
+        " "
+        (SettingList
+          "["
+          (SettingListItem
+            (SettingListItemName
+              "unique"))
+          "]"))
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "created_at"))
+        " "
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "timestamp"))
+        " "
+        (SettingList
+          "["
+          (SettingListItem
+            (SettingListItemName
+              "default")
+            ":"
+            (SettingListItemValue
+              (OqStringExpr
+                " "
+                "`now()`")))
+          "]"))
+      "\n"
+      "  "
+      (ElementAttributeDeclaration
+        (ElementAttributeDeclarationName
+          (IdentExpr
+            "Note"))
+        ":"
+        (ElementAttributeDeclarationValue
+          (SqStringExpr
+            " "
+            "'User accounts'")))
+      "\n"
+      "\n"
+      "  "
+      (BlockElementDeclaration
+        (ElementDeclarationTyp
+          (IdentExpr
+            "indexes"))
+        " "
+        (BlockElementDeclarationBody
+          "{"
+          "\n"
+          "    "
+          (ElementFieldDeclaration
+            (ElementFieldDeclarationArg
+              (IdentExpr
+                "email"))
+            " "
+            (SettingList
+              "["
+              (SettingListItem
+                (SettingListItemName
+                  "unique"))
+              "]"))
+          "\n"
+          "    "
+          (ElementFieldDeclaration
+            (ElementFieldDeclarationArg
+              (TupleExpr
+                "("
+                (IdentExpr
+                  "name")
+                ","
+                (IdentExpr
+                  " "
+                  "email")
+                ")")))
+          "\n"
+          "  "
+          "}"))
+      "\n"
+      "}"))
+  "\n"
+  "\n"
+  (BlockElementDeclaration
+    (ElementDeclarationTyp
+      (IdentExpr
+        "Enum"))
+    " "
+    (ElementDeclarationTargetFragment
+      (IdentExpr
+        "status"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "active")))
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "inactive")))
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "pending")))
+      "\n"
+      "}"))
+  "\n"
+  "\n"
+  (InlineElementDeclaration
+    (ElementDeclarationTyp
+      (IdentExpr
+        "Ref"))
+    ":"
+    " "
+    (ElementFieldDeclaration
+      (ElementFieldDeclarationArg
+        (InfixExpr
+          (InfixExpr
+            (IdentExpr
+              "orders")
+            "."
+            (IdentExpr
+              "user_id"))
+          " "
+          ">"
+          (InfixExpr
+            (IdentExpr
+              " "
+              "users")
+            "."
+            (IdentExpr
+              "id"))))))
+  "")"#;
+  assert_eq!(tree, expected);
 }
 
 #[test]
 fn block_element_double_quoted_name_and_alias() {
-  let (tree, diags) = parse_source_with_diagnostics(r#"Table "my users" as "U" {}"#);
-  assert!(diags.is_empty());
-  assert!(tree.contains(
-    r#"(BlockElementDeclarationTargetFragment
+  let (tree, diagnostics) = parse_source_with_diagnostics(r#"Table "my users" as "U" {}"#);
+  assert!(diagnostics.is_empty());
+  let expected = r#"(SourceFile
+  (BlockElementDeclaration
+    (ElementDeclarationTyp
+      (IdentExpr
+        "Table"))
+    " "
+    (ElementDeclarationTargetFragment
       (DqStringExpr
-        "\"my users\""))"#
-  ));
-  assert!(tree.contains(
-    r#"(BlockElementDeclarationAlias
-      "\"U\"")"#
-  ));
+        "\"my users\""))
+    " "
+    "as"
+    " "
+    (ElementDeclarationAlias
+      (DqStringExpr
+        "\"U\""))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
 }
 
 #[test]
 fn block_element_rejects_single_quoted_name_and_alias() {
-  let (_tree, diags) = parse_source_with_diagnostics("Table 'users' as 'u' {}");
-  assert!(!diags.is_empty());
+  let (_tree, diagnostics) = parse_source_with_diagnostics("Table 'users' as 'u' {}");
+  assert!(!diagnostics.is_empty());
 }

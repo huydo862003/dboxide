@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::fmt::{Debug, Formatter};
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -71,9 +72,14 @@ impl PartialEq for SyntaxToken {
 
 impl Eq for SyntaxToken {}
 
-impl std::fmt::Debug for SyntaxToken {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:?}({:?})", self.kind(), self.text().unwrap_or("?"))
+impl Debug for SyntaxToken {
+  fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
+    write!(
+      formatter,
+      "{:?}({:?})",
+      self.kind(),
+      self.text().unwrap_or("?")
+    )
   }
 }
 

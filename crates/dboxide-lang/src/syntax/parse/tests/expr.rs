@@ -459,3 +459,386 @@ fn parse_ref_operators() {
       "id")))"#;
   assert_eq!(tree, expected);
 }
+
+// Tests using parse_expr_with_diagnostics
+
+#[test]
+fn parse_unclosed_paren_produces_diagnostic() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("(1 + 2");
+  assert!(!diagnostics.is_empty());
+  assert_eq!(
+    tree,
+    r#"(ParenExpr
+  "("
+  (InfixExpr
+    (NumberExpr
+      "1")
+    " "
+    "+"
+    (NumberExpr
+      " "
+      "2"))
+  (Error
+    ""))"#
+  );
+}
+
+#[test]
+fn parse_unclosed_bracket_produces_diagnostic() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("[1, 2");
+  assert!(!diagnostics.is_empty());
+  assert_eq!(
+    tree,
+    r#"(ListExpr
+  "["
+  (NumberExpr
+    "1")
+  ","
+  (NumberExpr
+    " "
+    "2"))"#
+  );
+}
+
+#[test]
+fn parse_empty_expr_produces_diagnostic() {
+  let (_tree, diagnostics) = parse_expr_with_diagnostics("");
+  assert!(!diagnostics.is_empty());
+}
+
+#[test]
+fn parse_valid_closure_no_diagnostic() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("(x) => x + 1");
+  assert!(diagnostics.is_empty());
+  let expected = r#"(ClosureExpr
+  (TupleExpr
+    "("
+    (IdentExpr
+      "x")
+    ")")
+  " "
+  "=>"
+  (InfixExpr
+    (IdentExpr
+      " "
+      "x")
+    " "
+    "+"
+    (NumberExpr
+      " "
+      "1")))"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn parse_valid_call_no_diagnostic() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("foo(1, 2)");
+  assert!(diagnostics.is_empty());
+  let expected = r#"(CallExpr
+  (IdentExpr
+    "foo")
+  "("
+  (NumberExpr
+    "1")
+  ","
+  (NumberExpr
+    " "
+    "2")
+  ")")"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn parse_valid_index_no_diagnostic() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("a[0]");
+  assert!(diagnostics.is_empty());
+  let expected = r#"(IndexExpr
+  (IdentExpr
+    "a")
+  "["
+  (NumberExpr
+    "0")
+  "]")"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn parse_nested_unclosed_paren_produces_diagnostic() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("foo((1 + 2)");
+  assert!(!diagnostics.is_empty());
+  assert_eq!(
+    tree,
+    r#"(CallExpr
+  (IdentExpr
+    "foo")
+  "("
+  (ParenExpr
+    "("
+    (InfixExpr
+      (NumberExpr
+        "1")
+      " "
+      "+"
+      (NumberExpr
+        " "
+        "2"))
+    ")"))"#
+  );
+}
+
+#[test]
+fn parse_valid_forall_no_diagnostic() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("forall c of columns { c }");
+  assert!(diagnostics.is_empty());
+  let expected = r#"(ForallExpr
+  "forall"
+  " "
+  (IdentExpr
+    "c")
+  " "
+  "of"
+  " "
+  (IdentExpr
+    "columns")
+  " "
+  (BlockElementDeclarationBody
+    "{"
+    " "
+    (ElementFieldDeclaration
+      (ElementFieldDeclarationArg
+        (IdentExpr
+          "c")))
+    " "
+    "}"))"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn parse_valid_exists_no_diagnostic() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("exists c of columns { c }");
+  assert!(diagnostics.is_empty());
+  let expected = r#"(ExistsExpr
+  "exists"
+  " "
+  (IdentExpr
+    "c")
+  " "
+  "of"
+  " "
+  (IdentExpr
+    "columns")
+  " "
+  (BlockElementDeclarationBody
+    "{"
+    " "
+    (ElementFieldDeclaration
+      (ElementFieldDeclarationArg
+        (IdentExpr
+          "c")))
+    " "
+    "}"))"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn parse_chained_dot_no_diagnostic() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("a.b.c");
+  assert!(diagnostics.is_empty());
+  let expected = r#"(InfixExpr
+  (InfixExpr
+    (IdentExpr
+      "a")
+    "."
+    (IdentExpr
+      "b"))
+  "."
+  (IdentExpr
+    "c"))"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn parse_at_access_no_diagnostic() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("users@columns");
+  assert!(diagnostics.is_empty());
+  let expected = r#"(InfixExpr
+  (IdentExpr
+    "users")
+  "@"
+  (IdentExpr
+    "columns"))"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn parse_triple_quoted_string_no_diagnostic() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("'''multi\nline'''");
+  assert!(diagnostics.is_empty());
+  let expected = r#"(TqStringExpr
+  "'''multi\nline'''")"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn parse_backtick_expr_no_diagnostic() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("`now()`");
+  assert!(diagnostics.is_empty());
+  let expected = r#"(OqStringExpr
+  "`now()`")"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn parse_ternary_expression() {
+  let tree = parse_expr("a ? b : c");
+  let expected = r#"(TernaryExpr
+  (IdentExpr
+    "a")
+  " "
+  "?"
+  (IdentExpr
+    " "
+    "b")
+  " "
+  ":"
+  (IdentExpr
+    " "
+    "c"))"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn parse_ternary_distinguishes_from_nullable_postfix() {
+  let tree = parse_expr("T?");
+  let expected = r#"(PostfixExpr
+  (IdentExpr
+    "T")
+  "?")"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn parse_ternary_nested() {
+  let tree = parse_expr("a ? b ? c : d : e");
+  let expected = r#"(TernaryExpr
+  (IdentExpr
+    "a")
+  " "
+  "?"
+  (TernaryExpr
+    (IdentExpr
+      " "
+      "b")
+    " "
+    "?"
+    (IdentExpr
+      " "
+      "c")
+    " "
+    ":"
+    (IdentExpr
+      " "
+      "d"))
+  " "
+  ":"
+  (IdentExpr
+    " "
+    "e"))"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn parse_match_expression() {
+  let tree = parse_expr("match x { 1 => 'one' 2 => 'two' }");
+  let expected = r#"(MatchExpr
+  "match"
+  " "
+  (IdentExpr
+    "x")
+  " "
+  "{"
+  " "
+  (MatchArm
+    (NumberExpr
+      "1")
+    " "
+    "=>"
+    (SqStringExpr
+      " "
+      "'one'"))
+  " "
+  (MatchArm
+    (NumberExpr
+      "2")
+    " "
+    "=>"
+    (SqStringExpr
+      " "
+      "'two'"))
+  " "
+  "}")"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn parse_match_expression_single_arm() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("match val { true => 1 }");
+  assert!(diagnostics.is_empty());
+  let expected = r#"(MatchExpr
+  "match"
+  " "
+  (IdentExpr
+    "val")
+  " "
+  "{"
+  " "
+  (MatchArm
+    (IdentExpr
+      "true")
+    " "
+    "=>"
+    (NumberExpr
+      " "
+      "1"))
+  " "
+  "}")"#;
+  assert_eq!(tree, expected);
+}
+
+/* Color literals */
+
+#[test]
+fn parse_color_lit_six_digit() {
+  let tree = parse_expr("#336699");
+  let expected = r##"(ColorExpr
+  "#336699")"##;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn parse_color_lit_three_digit() {
+  let tree = parse_expr("#abc");
+  let expected = r##"(ColorExpr
+  "#abc")"##;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn parse_color_lit_uppercase() {
+  let tree = parse_expr("#FF0000");
+  let expected = r##"(ColorExpr
+  "#FF0000")"##;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn parse_color_lit_bare_hash_is_error() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("#");
+  assert!(!diagnostics.is_empty());
+  assert_eq!(
+    tree,
+    r##"(Error
+  (Error
+    "#"))"##
+  );
+}

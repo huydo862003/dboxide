@@ -1,7 +1,7 @@
 use crate::parse::constants::*;
 use crate::parse::expr_ctx::ExprCtx;
 use crate::syntax::ast::{GreenNode, SyntaxKind};
-use crate::types::diagnostics::Diagnostic;
+use crate::types::diagnostics::DiagnosticKind;
 
 use super::{ParseCtx, Peeker};
 
@@ -26,9 +26,9 @@ impl<'a> ParseCtx<'a> {
             if text.eq_ignore_ascii_case("use") || text.eq_ignore_ascii_case("reuse") {
               self.use_declaration()
             } else if text.eq_ignore_ascii_case("fn") {
-              self.fn_declaration()
+              self.func_declaration()
             } else if text.eq_ignore_ascii_case("type") {
-              self.type_declaration()
+              self.typ_declaration()
             } else {
               self.top_element_declaration()
             };
@@ -38,11 +38,12 @@ impl<'a> ParseCtx<'a> {
           }
         }
         _ => {
-          self.emit_diagnostic(Diagnostic::UnexpectedToken {
-            expected: "element declaration",
-            start_offset: result.start_offset,
-            end_offset: result.end_offset,
-          });
+          self.emit_diagnostic(
+            DiagnosticKind::UnexpectedToken {
+              expected: "element declaration",
+            }
+            .into_error(result.start_offset, result.end_offset),
+          );
           self.synchronize(&mut children);
         }
       }
@@ -83,16 +84,15 @@ impl<'a> ParseCtx<'a> {
       && peek
         .token
         .text()
-        .map(|s| s.eq_ignore_ascii_case("from"))
+        .map(|string| string.eq_ignore_ascii_case("from"))
         .unwrap_or(false)
     {
       self.advance(&mut children, SKIP_WC);
     } else {
-      self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-        expected: "'from'",
-        start_offset,
-        end_offset,
-      });
+      self.emit_diagnostic(
+        DiagnosticKind::MissingExpectedToken { expected: "'from'" }
+          .into_error(start_offset, end_offset),
+      );
     }
 
     let peek = self.peek(SKIP_WC);
@@ -104,11 +104,12 @@ impl<'a> ParseCtx<'a> {
     ) {
       self.advance(&mut children, SKIP_WC);
     } else {
-      self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-        expected: "string literal path",
-        start_offset,
-        end_offset,
-      });
+      self.emit_diagnostic(
+        DiagnosticKind::MissingExpectedToken {
+          expected: "string literal path",
+        }
+        .into_error(start_offset, end_offset),
+      );
     }
 
     (self.emit(SyntaxKind::UseDeclaration, &children), None)
@@ -130,11 +131,8 @@ impl<'a> ParseCtx<'a> {
       &mut children,
       SKIP_NONE,
       SyntaxKind::LBrace,
-      Diagnostic::MissingExpectedToken {
-        expected: "'{'",
-        start_offset: peek.start_offset,
-        end_offset: peek.end_offset,
-      },
+      DiagnosticKind::MissingExpectedToken { expected: "'{'" }
+        .into_error(peek.start_offset, peek.end_offset),
     ) {
       self.expr_ctx_stack.exit(ExprCtx::Block);
       return self.emit(SyntaxKind::UseSpecifierList, &children);
@@ -149,17 +147,17 @@ impl<'a> ParseCtx<'a> {
           break;
         }
         SyntaxKind::Eof => {
-          self.emit_diagnostic(Diagnostic::UnclosedDelimiter {
-            delimiter: "{",
-            open_offset,
-          });
+          self.emit_diagnostic(
+            DiagnosticKind::UnclosedDelimiter { delimiter: "{" }
+              .into_error(open_offset, open_offset),
+          );
           break;
         }
         SyntaxKind::Ident
           if peek
             .token
             .text()
-            .map(|s| s.eq_ignore_ascii_case("from"))
+            .map(|string| string.eq_ignore_ascii_case("from"))
             .unwrap_or(false) =>
         {
           break;
@@ -168,11 +166,12 @@ impl<'a> ParseCtx<'a> {
           children.push(self.use_specifier(SKIP_NONE));
         }
         _ => {
-          self.emit_diagnostic(Diagnostic::UnexpectedToken {
-            expected: "import specifier",
-            start_offset: peek.start_offset,
-            end_offset: peek.end_offset,
-          });
+          self.emit_diagnostic(
+            DiagnosticKind::UnexpectedToken {
+              expected: "import specifier",
+            }
+            .into_error(peek.start_offset, peek.end_offset),
+          );
           self.synchronize_use_specifier_list(&mut children);
         }
       }
@@ -203,7 +202,7 @@ impl<'a> ParseCtx<'a> {
         && peek
           .token
           .text()
-          .map(|s| s.eq_ignore_ascii_case("from"))
+          .map(|string| string.eq_ignore_ascii_case("from"))
           .unwrap_or(false))
       {
         break;
@@ -215,33 +214,54 @@ impl<'a> ParseCtx<'a> {
     }
   }
 
-  // use_specifier = import_kind name ("as" alias)?
+  // use_specifier = target_fragment target_fragment ("as" alias)?
+  // Two ElementDeclarationTargetFragment nodes: kind and name
   pub(in crate::syntax::parse) fn use_specifier(&mut self, skip: usize) -> GreenNode {
     let mut children = Vec::new();
-    let peek = self.peek(skip);
-    if peek.token.kind() == SyntaxKind::Ident {
-      self.advance(&mut children, skip);
-    } else {
-      self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-        expected: "import kind specifier (e.g. table, enum)",
-        start_offset: peek.start_offset,
-        end_offset: peek.end_offset,
-      });
-      return self.emit(SyntaxKind::UseSpecifier, &children);
+    let mut fragment_count = 0;
+    let mut first_fragment_name: Option<String> = None;
+    let mut first_fragment_start: usize = 0;
+    let mut first_fragment_end: usize = 0;
+
+    for _ in 0..2 {
+      if !self.is_element_target(SKIP_NONE) {
+        break;
+      }
+      let skip_trivia = if fragment_count == 0 { skip } else { SKIP_WC };
+      self.consume_trivia(&mut children, skip_trivia);
+      if fragment_count == 0 {
+        let peek = self.peek(SKIP_NONE);
+        first_fragment_name = peek.token.text().map(|string| string.to_string());
+        first_fragment_start = peek.start_offset;
+        first_fragment_end = peek.end_offset;
+      }
+      let mut fragment_children = Vec::new();
+      let (expr, exit) = self.expr();
+      fragment_children.push(expr);
+      children.push(self.emit(SyntaxKind::UseDeclarationTargetFragment, &fragment_children));
+      fragment_count += 1;
+      if exit.is_some() {
+        break;
+      }
     }
 
-    let peek = self.peek(SKIP_WC);
-    if matches!(peek.token.kind(), SyntaxKind::Ident | SyntaxKind::DqString) {
-      self.advance(&mut children, SKIP_WC);
-    } else {
-      let start_offset = peek.start_offset;
-      let end_offset = peek.end_offset;
-      self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-        expected: "element name",
-        start_offset,
-        end_offset,
-      });
-      self.synchronize_use_specifier_list(&mut children);
+    if fragment_count == 0 {
+      let peek = self.peek(SKIP_WC);
+      self.emit_diagnostic(
+        DiagnosticKind::MissingExpectedToken {
+          expected: "import kind specifier (e.g. schema, type)",
+        }
+        .into_error(peek.start_offset, peek.end_offset),
+      );
+      return self.emit(SyntaxKind::UseSpecifier, &children);
+    }
+    if fragment_count == 1 {
+      /* Only one fragment - the user wrote a bare name without a kind specifier */
+      let name = first_fragment_name.unwrap_or_default();
+      self.emit_diagnostic(
+        DiagnosticKind::MissingImportKind { name }
+          .into_error(first_fragment_start, first_fragment_end),
+      );
       return self.emit(SyntaxKind::UseSpecifier, &children);
     }
 
@@ -250,19 +270,22 @@ impl<'a> ParseCtx<'a> {
       && peek
         .token
         .text()
-        .map(|s| s.eq_ignore_ascii_case("as"))
+        .map(|string| string.eq_ignore_ascii_case("as"))
         .unwrap_or(false)
     {
       self.advance(&mut children, SKIP_WC); // consume "as"
       let peek = self.peek(SKIP_WC);
       if matches!(peek.token.kind(), SyntaxKind::Ident | SyntaxKind::DqString) {
-        self.advance(&mut children, SKIP_WC);
+        let alias_kind = peek.token.kind();
+        let alias = self.qualified_name(SKIP_WC, SyntaxKind::UseSpecifierAlias);
+        children.push(self.ident_or_dq_expr(&[alias], alias_kind));
       } else {
-        self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-          expected: "alias name after 'as'",
-          start_offset: peek.start_offset,
-          end_offset: peek.end_offset,
-        });
+        self.emit_diagnostic(
+          DiagnosticKind::MissingExpectedToken {
+            expected: "alias name after 'as'",
+          }
+          .into_error(peek.start_offset, peek.end_offset),
+        );
         self.synchronize_use_specifier_list(&mut children);
       }
     }
@@ -276,7 +299,7 @@ impl<'a> ParseCtx<'a> {
     &mut self,
   ) -> (GreenNode, Option<ExprCtx>) {
     let mut children = Vec::new();
-    children.push(self.qualified_name(SKIP_NONE, SyntaxKind::BlockElementDeclarationType));
+    children.push(self.qualified_name(SKIP_NONE, SyntaxKind::ElementDeclarationTyp));
 
     self.element_target_fragments(&mut children, SKIP_WC);
 
@@ -285,7 +308,7 @@ impl<'a> ParseCtx<'a> {
       && peek
         .token
         .text()
-        .map(|s| s.eq_ignore_ascii_case("as"))
+        .map(|string| string.eq_ignore_ascii_case("as"))
         .unwrap_or(false)
     {
       self.consume_trivia(&mut children, SKIP_WC);
@@ -306,11 +329,8 @@ impl<'a> ParseCtx<'a> {
           &mut children,
           SKIP_NONE,
           SyntaxKind::Colon,
-          Diagnostic::MissingExpectedToken {
-            expected: "':'",
-            start_offset: peek.start_offset,
-            end_offset: peek.end_offset,
-          },
+          DiagnosticKind::MissingExpectedToken { expected: "':'" }
+            .into_error(peek.start_offset, peek.end_offset),
         );
         self.consume_trivia(&mut children, SKIP_WC);
         if self.is_block_element_head() {
@@ -339,11 +359,12 @@ impl<'a> ParseCtx<'a> {
       _ => {
         let start_offset = peek.start_offset;
         let end_offset = peek.end_offset;
-        self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-          expected: "'{' or ':'",
-          start_offset,
-          end_offset,
-        });
+        self.emit_diagnostic(
+          DiagnosticKind::MissingExpectedToken {
+            expected: "'{' or ':'",
+          }
+          .into_error(start_offset, end_offset),
+        );
         (self.emit(SyntaxKind::Error, &children), None)
       }
     }
@@ -358,7 +379,7 @@ impl<'a> ParseCtx<'a> {
     let mut children = Vec::new();
 
     self.consume_trivia(&mut children, skip);
-    children.push(self.qualified_name(SKIP_NONE, SyntaxKind::BlockElementDeclarationType));
+    children.push(self.qualified_name(SKIP_NONE, SyntaxKind::ElementDeclarationTyp));
 
     self.element_target_fragments(&mut children, skip);
 
@@ -367,7 +388,7 @@ impl<'a> ParseCtx<'a> {
       && peek
         .token
         .text()
-        .map(|s| s.eq_ignore_ascii_case("as"))
+        .map(|string| string.eq_ignore_ascii_case("as"))
         .unwrap_or(false)
     {
       self.consume_trivia(&mut children, skip);
@@ -391,7 +412,15 @@ impl<'a> ParseCtx<'a> {
 
   pub(in crate::syntax::parse) fn is_block_element_head(&mut self) -> bool {
     let mut peeker = self.peeker();
-    if peeker.next_token(SKIP_WC).token.kind() != SyntaxKind::Ident {
+    let first = peeker.next_token(SKIP_WC);
+    if first.token.kind() != SyntaxKind::Ident {
+      return false;
+    }
+    if first
+      .token
+      .text()
+      .is_some_and(|token| token.eq_ignore_ascii_case("match"))
+    {
       return false;
     }
 
@@ -472,11 +501,7 @@ impl<'a> ParseCtx<'a> {
       &mut children,
       skip,
       SyntaxKind::LBrace,
-      Diagnostic::MissingExpectedToken {
-        expected: "'{'",
-        start_offset,
-        end_offset,
-      },
+      DiagnosticKind::MissingExpectedToken { expected: "'{'" }.into_error(start_offset, end_offset),
     ) {
       self.expr_ctx_stack.exit(ExprCtx::Block);
       parent.push(self.emit(SyntaxKind::BlockElementDeclarationBody, &children));
@@ -493,10 +518,10 @@ impl<'a> ParseCtx<'a> {
           break;
         }
         SyntaxKind::Eof => {
-          self.emit_diagnostic(Diagnostic::UnclosedDelimiter {
-            delimiter: "{",
-            open_offset,
-          });
+          self.emit_diagnostic(
+            DiagnosticKind::UnclosedDelimiter { delimiter: "{" }
+              .into_error(open_offset, open_offset),
+          );
           break;
         }
         _ => {
@@ -504,16 +529,16 @@ impl<'a> ParseCtx<'a> {
           if let Some(handler) = self.expr_ctx_stack.find_handler(kind)
             && handler != ExprCtx::Block
           {
-            self.emit_diagnostic(Diagnostic::UnclosedDelimiter {
-              delimiter: "{",
-              open_offset,
-            });
+            self.emit_diagnostic(
+              DiagnosticKind::UnclosedDelimiter { delimiter: "{" }
+                .into_error(open_offset, open_offset),
+            );
             early_exit = Some(handler);
             break;
           }
 
-          if self.is_fn_head() {
-            let (node, exit) = self.fn_declaration();
+          if self.is_func_head() {
+            let (node, exit) = self.func_declaration();
             children.push(node);
             if let Some(ctx) = exit
               && ctx != ExprCtx::Block
@@ -530,8 +555,8 @@ impl<'a> ParseCtx<'a> {
               early_exit = Some(ctx);
               break;
             }
-          } else if self.is_type_head() {
-            let (node, exit) = self.type_declaration();
+          } else if self.is_typ_head() {
+            let (node, exit) = self.typ_declaration();
             children.push(node);
             if let Some(ctx) = exit
               && ctx != ExprCtx::Block
@@ -566,23 +591,42 @@ impl<'a> ParseCtx<'a> {
   /* Field and attribute declarations */
 
   // field = expr+ setting_list?
+  // A leading `[...]` before any args is parsed as a ListExpr arg (rest attribute syntax)
+  // A `[...]` after at least one arg is the trailing setting list
   pub(in crate::syntax::parse) fn field_declaration(&mut self, initial_skip: usize) -> GreenNode {
     self.expr_ctx_stack.enter(ExprCtx::Field);
     let mut children = Vec::new();
     let mut skip = initial_skip;
+    let mut can_be_settings = false;
     loop {
       let peek = self.peek(skip);
       match peek.token.kind() {
         SyntaxKind::Newline | SyntaxKind::Eof | SyntaxKind::RBrace => break,
-        SyntaxKind::LBracket => {
+        SyntaxKind::LBracket if can_be_settings => {
           self.consume_trivia(&mut children, skip);
           children.push(self.setting_list(SKIP_NONE));
           break;
         }
+        // Leading comma starts a CSV with empty first slot
+        SyntaxKind::Comma => {
+          self.consume_trivia(&mut children, skip);
+          let tuple = self.csv_body(Vec::new());
+          children.push(self.emit(SyntaxKind::ElementFieldDeclarationArg, &[tuple]));
+          can_be_settings = true;
+        }
         _ => {
           self.consume_trivia(&mut children, skip);
           let (expr_node, exit) = self.expr();
-          children.push(expr_node);
+          can_be_settings = true;
+
+          // Comma after an expr starts CSV mode
+          if self.peek(SKIP_WC).token.kind() == SyntaxKind::Comma {
+            let tuple = self.csv_body(vec![expr_node]);
+            children.push(self.emit(SyntaxKind::ElementFieldDeclarationArg, &[tuple]));
+          } else {
+            children.push(self.emit(SyntaxKind::ElementFieldDeclarationArg, &[expr_node]));
+          }
+
           if exit.is_some() {
             break;
           }
@@ -594,12 +638,44 @@ impl<'a> ParseCtx<'a> {
     self.emit(SyntaxKind::ElementFieldDeclaration, &children)
   }
 
+  // Parses the comma-separated body of a CSV expression
+  // `initial` contains exprs parsed before the first comma (may be empty for leading comma)
+  fn csv_body(&mut self, initial: Vec<GreenNode>) -> GreenNode {
+    let mut tuple_children = initial;
+    while self.peek(SKIP_WC).token.kind() == SyntaxKind::Comma {
+      self.advance(&mut tuple_children, SKIP_WC); // consume comma
+      let next_peek = self.peek(SKIP_WC);
+      if matches!(
+        next_peek.token.kind(),
+        SyntaxKind::Newline
+          | SyntaxKind::Eof
+          | SyntaxKind::RBrace
+          | SyntaxKind::LBracket
+          | SyntaxKind::Comma
+      ) {
+        // Trailing comma or empty field: no expr to parse for this slot
+        continue;
+      }
+      let (next_expr, next_exit) = self.expr();
+      tuple_children.push(next_expr);
+      if next_exit.is_some() {
+        break;
+      }
+    }
+    self.emit(SyntaxKind::CsvExpr, &tuple_children)
+  }
+
   // attribute = Ident ":" value
   fn attribute(&mut self, skip: usize) -> GreenNode {
     let mut children = Vec::new();
-    let mut name = Vec::new();
-    self.advance(&mut name, skip);
-    children.push(self.emit(SyntaxKind::ElementAttributeDeclarationName, &name));
+
+    let mut name_children = Vec::new();
+
+    let mut ident_children = Vec::new();
+    self.advance(&mut ident_children, skip);
+    name_children.push(self.emit(SyntaxKind::IdentExpr, &ident_children));
+
+    children.push(self.emit(SyntaxKind::ElementAttributeDeclarationName, &name_children));
 
     let peek = self.peek(SKIP_WC);
     let start_offset = peek.start_offset;
@@ -609,24 +685,12 @@ impl<'a> ParseCtx<'a> {
       &mut children,
       SKIP_NONE,
       SyntaxKind::Colon,
-      Diagnostic::MissingExpectedToken {
-        expected: "':'",
-        start_offset,
-        end_offset,
-      },
+      DiagnosticKind::MissingExpectedToken { expected: "':'" }.into_error(start_offset, end_offset),
     );
 
-    let mut value = Vec::new();
-    loop {
-      let peek = self.peek(SKIP_NONE);
-      match peek.token.kind() {
-        SyntaxKind::Newline | SyntaxKind::Eof | SyntaxKind::RBrace => break,
-        _ => {
-          self.advance(&mut value, SKIP_NONE);
-        }
-      }
-    }
-    children.push(self.emit(SyntaxKind::ElementAttributeDeclarationValue, &value));
+    let (value, _) = self.expr();
+    children.push(self.emit(SyntaxKind::ElementAttributeDeclarationValue, &[value]));
+
     self.emit(SyntaxKind::ElementAttributeDeclaration, &children)
   }
 
@@ -643,7 +707,7 @@ impl<'a> ParseCtx<'a> {
       let (expr, exit) = self.expr();
       fragment_children.push(expr);
       parent.push(self.emit(
-        SyntaxKind::BlockElementDeclarationTargetFragment,
+        SyntaxKind::ElementDeclarationTargetFragment,
         &fragment_children,
       ));
       if exit.is_some() {
@@ -658,24 +722,47 @@ impl<'a> ParseCtx<'a> {
     skip: usize,
     kind: SyntaxKind,
   ) -> GreenNode {
-    let mut children = Vec::new();
-    self.advance(&mut children, skip);
+    let mut outer = Vec::new();
+    let first_kind = self.peek(skip).token.kind();
+    let mut first_children = Vec::new();
+    self.advance(&mut first_children, skip);
+    let mut lhs = Some(self.ident_or_dq_expr(&first_children, first_kind));
     loop {
       let peek = self.peek(SKIP_WC);
       if peek.token.kind() == SyntaxKind::Operator && peek.token.text() == Some(".") {
-        self.advance(&mut children, SKIP_WC);
+        let mut infix_children = vec![lhs.take().unwrap()];
+        self.advance(&mut infix_children, SKIP_WC);
         let peek_ident = self.peek(SKIP_WC);
         if matches!(
           peek_ident.token.kind(),
           SyntaxKind::Ident | SyntaxKind::DqString
         ) {
-          self.advance(&mut children, SKIP_WC);
+          let mut ident_children = vec![];
+          self.advance(&mut ident_children, SKIP_WC);
+          let rhs = self.ident_or_dq_expr(&ident_children, peek_ident.token.kind());
+          infix_children.push(rhs);
+          lhs = Some(self.emit(SyntaxKind::InfixExpr, &infix_children));
+        } else {
+          outer.extend(infix_children);
+          break;
         }
       } else {
         break;
       }
     }
-    self.emit(kind, &children)
+    if let Some(remaining) = lhs {
+      outer.push(remaining);
+    }
+    self.emit(kind, &outer)
+  }
+  // Emits IdentExpr or DqStringExpr depending on token kind
+  fn ident_or_dq_expr(&mut self, children: &[GreenNode], kind: SyntaxKind) -> GreenNode {
+    let inner_kind = if kind == SyntaxKind::DqString {
+      SyntaxKind::DqStringExpr
+    } else {
+      SyntaxKind::IdentExpr
+    };
+    self.emit(inner_kind, children)
   }
 
   // alias = "as" (Ident | DqString)
@@ -684,17 +771,20 @@ impl<'a> ParseCtx<'a> {
     let peek = self.peek(SKIP_WC);
     if matches!(peek.token.kind(), SyntaxKind::Ident | SyntaxKind::DqString) {
       self.consume_trivia(parent, SKIP_WC);
-      let mut alias_children = Vec::new();
-      self.advance(&mut alias_children, SKIP_NONE);
-      parent.push(self.emit(SyntaxKind::BlockElementDeclarationAlias, &alias_children));
+      let peek = self.peek(SKIP_NONE);
+      let mut expr_children = Vec::new();
+      self.advance(&mut expr_children, SKIP_NONE);
+      let expr = self.ident_or_dq_expr(&expr_children, peek.token.kind());
+      parent.push(self.emit(SyntaxKind::ElementDeclarationAlias, &[expr]));
     } else {
       let start_offset = peek.start_offset;
       let end_offset = peek.end_offset;
-      self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-        expected: "alias name after 'as'",
-        start_offset,
-        end_offset,
-      });
+      self.emit_diagnostic(
+        DiagnosticKind::MissingExpectedToken {
+          expected: "alias name after 'as'",
+        }
+        .into_error(start_offset, end_offset),
+      );
       self.synchronize_element_alias(parent);
     }
   }
@@ -739,10 +829,10 @@ impl<'a> ParseCtx<'a> {
           break;
         }
         SyntaxKind::Eof => {
-          self.emit_diagnostic(Diagnostic::UnclosedDelimiter {
-            delimiter: "[",
-            open_offset,
-          });
+          self.emit_diagnostic(
+            DiagnosticKind::UnclosedDelimiter { delimiter: "[" }
+              .into_error(open_offset, open_offset),
+          );
           break;
         }
         SyntaxKind::Comma => {
@@ -754,10 +844,10 @@ impl<'a> ParseCtx<'a> {
           if let Some(handler) = self.expr_ctx_stack.find_handler(kind)
             && handler != ExprCtx::List
           {
-            self.emit_diagnostic(Diagnostic::UnclosedDelimiter {
-              delimiter: "[",
-              open_offset,
-            });
+            self.emit_diagnostic(
+              DiagnosticKind::UnclosedDelimiter { delimiter: "[" }
+                .into_error(open_offset, open_offset),
+            );
             break;
           }
           children.push(self.setting_item());
@@ -775,16 +865,13 @@ impl<'a> ParseCtx<'a> {
     loop {
       let peek = self.peek(SKIP_WC);
       match peek.token.kind() {
-        SyntaxKind::Ident | SyntaxKind::DqString => {
+        SyntaxKind::Ident => {
           self.consume_trivia(&mut name_children, SKIP_WC);
           self.advance(&mut name_children, SKIP_NONE);
           let after = self.peek(SKIP_WC);
-          if matches!(after.token.kind(), SyntaxKind::Ident | SyntaxKind::DqString) {
+          if matches!(after.token.kind(), SyntaxKind::Ident) {
             let peek_after = self.peek_nth(1, SKIP_WC);
-            if !matches!(
-              peek_after.token.kind(),
-              SyntaxKind::Ident | SyntaxKind::DqString
-            ) {
+            if !matches!(peek_after.token.kind(), SyntaxKind::Ident,) {
               // Next word is the last one, include it
               self.consume_trivia(&mut name_children, SKIP_WC);
               self.advance(&mut name_children, SKIP_NONE);
@@ -794,14 +881,20 @@ impl<'a> ParseCtx<'a> {
           }
           break;
         }
+        SyntaxKind::DqString => {
+          self.consume_trivia(&mut name_children, SKIP_WC);
+          self.advance(&mut name_children, SKIP_NONE);
+          break;
+        }
         _ => {
           let start_offset = peek.start_offset;
           let end_offset = peek.end_offset;
-          self.emit_diagnostic(Diagnostic::UnexpectedToken {
-            expected: "setting name",
-            start_offset,
-            end_offset,
-          });
+          self.emit_diagnostic(
+            DiagnosticKind::UnexpectedToken {
+              expected: "setting name",
+            }
+            .into_error(start_offset, end_offset),
+          );
           self.synchronize(&mut name_children);
           break;
         }
@@ -813,15 +906,19 @@ impl<'a> ParseCtx<'a> {
     if peek.token.kind() == SyntaxKind::Colon {
       self.consume_trivia(&mut children, SKIP_WC);
       self.advance(&mut children, SKIP_NONE);
-      let mut value_children = Vec::new();
-      loop {
-        let peek_val = self.peek(SKIP_NONE);
-        match peek_val.token.kind() {
-          SyntaxKind::Comma | SyntaxKind::RBracket | SyntaxKind::Eof | SyntaxKind::Newline => {
+      let (value_expr, _) = self.expr();
+      let is_ident_expr = value_expr.kind() == SyntaxKind::IdentExpr;
+      let mut value_children = vec![value_expr];
+      if is_ident_expr {
+        loop {
+          let peek = self.peek(SKIP_WC);
+          if peek.token.kind() == SyntaxKind::Ident {
+            let mut ident_children = vec![];
+            self.consume_trivia(&mut ident_children, SKIP_WC);
+            self.advance(&mut ident_children, SKIP_NONE);
+            value_children.push(self.emit(SyntaxKind::IdentExpr, &ident_children));
+          } else {
             break;
-          }
-          _ => {
-            self.advance(&mut value_children, SKIP_NONE);
           }
         }
       }
@@ -915,13 +1012,56 @@ impl<'a> ParseCtx<'a> {
 
       // Check postfix (e.g. `?` or `..` without following operand)
       if op_text == "?" {
-        if let Some((left_bp, ())) = postfix_binding_power(&op_text) {
-          if left_bp < min_bp {
-            break;
+        // `?` is postfix nullable if it's optional chaining (`x?[i]`, `x?(a)`), or if there's no `:` ahead (ruling out ternary `x ? y : z`)
+        let is_optional_chaining = {
+          let skip = self.expr_skip_flags();
+          let mut peeker = self.peeker();
+          _ = peeker.next_token(skip); // skip `?`
+          matches!(
+            peeker.next_token(SKIP_NONE).token.kind(),
+            SyntaxKind::LBracket | SyntaxKind::LParen
+          )
+        };
+        let is_ternary = {
+          let skip = self.expr_skip_flags();
+          let mut peeker = self.peeker();
+          _ = peeker.next_token(skip); // skip `?`
+          let mut depth: i32 = 0;
+          loop {
+            let result = peeker.next_token(SKIP_WC);
+            match result.token.kind() {
+              SyntaxKind::Eof | SyntaxKind::Newline | SyntaxKind::RBrace => break false,
+              SyntaxKind::LParen | SyntaxKind::LBracket => depth += 1,
+              SyntaxKind::RParen | SyntaxKind::RBracket => {
+                depth -= 1;
+                if depth < 0 {
+                  break false;
+                }
+              }
+              SyntaxKind::Colon if depth == 0 => break true,
+              _ => {}
+            }
           }
+        };
+
+        if is_optional_chaining || !is_ternary {
+          if let Some((left_bp, ())) = postfix_binding_power(&op_text) {
+            if left_bp < min_bp {
+              break;
+            }
+            let mut children = vec![lhs];
+            self.advance(&mut children, self.expr_skip_flags());
+            lhs = self.emit(SyntaxKind::PostfixExpr, &children);
+            continue;
+          }
+        } else {
           let mut children = vec![lhs];
           self.advance(&mut children, self.expr_skip_flags());
-          lhs = self.emit(SyntaxKind::PostfixExpr, &children);
+          let (then_node, exit) = self.ternary_expr(&mut children);
+          lhs = then_node;
+          if exit.is_some() {
+            return (lhs, exit);
+          }
           continue;
         }
       } else if op_text == ".." {
@@ -1021,12 +1161,19 @@ impl<'a> ParseCtx<'a> {
         self.advance(&mut children, skip);
         (self.emit(SyntaxKind::OqStringExpr, &children), None)
       }
+      SyntaxKind::ColorLit => {
+        let mut children = children;
+        self.advance(&mut children, skip);
+        (self.emit(SyntaxKind::ColorExpr, &children), None)
+      }
       SyntaxKind::Ident => {
         let text = peek.token.text().unwrap_or("").to_string();
         if text.eq_ignore_ascii_case("forall") {
           self.quantifier_expr(SyntaxKind::ForallExpr, children, skip)
         } else if text.eq_ignore_ascii_case("exists") {
           self.quantifier_expr(SyntaxKind::ExistsExpr, children, skip)
+        } else if text.eq_ignore_ascii_case("match") {
+          self.match_expr(children, skip)
         } else {
           let mut children = children;
           self.advance(&mut children, skip);
@@ -1038,22 +1185,24 @@ impl<'a> ParseCtx<'a> {
       _ => {
         let handler = self.expr_ctx_stack.find_handler(peek.token.kind());
         if handler.is_some() {
-          self.diagnostics.push(Diagnostic::MissingSyntaxNode {
-            expected: SyntaxKind::IdentExpr,
-            start_offset: self.offset,
-            end_offset: self.offset,
-          });
+          self.diagnostics.push(
+            DiagnosticKind::MissingSyntaxNode {
+              expected: SyntaxKind::IdentExpr,
+            }
+            .into_error(self.offset, self.offset),
+          );
           (self.emit(SyntaxKind::Error, &children), handler)
         } else {
           let mut children = children;
           self.advance(&mut children, skip);
           let bad = children.pop().unwrap();
           children.push(self.emit(SyntaxKind::Error, &[bad]));
-          self.diagnostics.push(Diagnostic::MissingSyntaxNode {
-            expected: SyntaxKind::IdentExpr,
-            start_offset: self.offset,
-            end_offset: self.offset,
-          });
+          self.diagnostics.push(
+            DiagnosticKind::MissingSyntaxNode {
+              expected: SyntaxKind::IdentExpr,
+            }
+            .into_error(self.offset, self.offset),
+          );
           (self.emit(SyntaxKind::Error, &children), None)
         }
       }
@@ -1076,11 +1225,10 @@ impl<'a> ParseCtx<'a> {
       &mut children,
       self.expr_skip_flags(),
       SyntaxKind::LParen,
-      Diagnostic::MissingSyntaxNode {
+      DiagnosticKind::MissingSyntaxNode {
         expected: SyntaxKind::LParen,
-        start_offset: offset,
-        end_offset: self.offset,
-      },
+      }
+      .into_error(offset, self.offset),
     );
 
     // Empty parens `()` -> TupleExpr
@@ -1095,10 +1243,9 @@ impl<'a> ParseCtx<'a> {
     let (first, early_exit) = self.expr();
     children.push(first);
     if early_exit.is_some_and(|ctx| ctx != ExprCtx::Tuple) {
-      self.emit_diagnostic(Diagnostic::UnclosedDelimiter {
-        delimiter: "(",
-        open_offset: offset,
-      });
+      self.emit_diagnostic(
+        DiagnosticKind::UnclosedDelimiter { delimiter: "(" }.into_error(offset, offset),
+      );
       self.expr_ctx_stack.exit(ExprCtx::Tuple);
       return (self.emit(SyntaxKind::ParenExpr, &children), early_exit);
     }
@@ -1122,29 +1269,26 @@ impl<'a> ParseCtx<'a> {
             }
             let (item, exit) = self.expr();
             children.push(item);
-            if exit.is_some_and(|c| c != ExprCtx::Tuple) {
-              self.emit_diagnostic(Diagnostic::UnclosedDelimiter {
-                delimiter: "(",
-                open_offset: offset,
-              });
+            if exit.is_some_and(|child| child != ExprCtx::Tuple) {
+              self.emit_diagnostic(
+                DiagnosticKind::UnclosedDelimiter { delimiter: "(" }.into_error(offset, offset),
+              );
               self.expr_ctx_stack.exit(ExprCtx::Tuple);
               return (self.emit(SyntaxKind::TupleExpr, &children), exit);
             }
           }
           SyntaxKind::Eof => {
-            self.emit_diagnostic(Diagnostic::UnclosedDelimiter {
-              delimiter: "(",
-              open_offset: offset,
-            });
+            self.emit_diagnostic(
+              DiagnosticKind::UnclosedDelimiter { delimiter: "(" }.into_error(offset, offset),
+            );
             break;
           }
           _ => {
             let handler = self.expr_ctx_stack.find_handler(peek.token.kind());
-            if handler.is_some_and(|c| c != ExprCtx::Tuple) {
-              self.emit_diagnostic(Diagnostic::UnclosedDelimiter {
-                delimiter: "(",
-                open_offset: offset,
-              });
+            if handler.is_some_and(|ctx| ctx != ExprCtx::Tuple) {
+              self.emit_diagnostic(
+                DiagnosticKind::UnclosedDelimiter { delimiter: "(" }.into_error(offset, offset),
+              );
               self.expr_ctx_stack.exit(ExprCtx::Tuple);
               return (self.emit(SyntaxKind::TupleExpr, &children), handler);
             }
@@ -1167,11 +1311,10 @@ impl<'a> ParseCtx<'a> {
       &mut children,
       SKIP_ALL_TRIVIA,
       SyntaxKind::RParen,
-      Diagnostic::MissingSyntaxNode {
+      DiagnosticKind::MissingSyntaxNode {
         expected: SyntaxKind::RParen,
-        start_offset: offset,
-        end_offset: self.offset,
-      },
+      }
+      .into_error(offset, self.offset),
     );
     self.expr_ctx_stack.exit(ExprCtx::Tuple);
     (self.emit(SyntaxKind::ParenExpr, &children), None)
@@ -1193,13 +1336,12 @@ impl<'a> ParseCtx<'a> {
       &mut children,
       self.expr_skip_flags(),
       SyntaxKind::LBracket,
-      Diagnostic::MissingSyntaxNode {
+      DiagnosticKind::MissingSyntaxNode {
         expected: SyntaxKind::LBracket,
-        start_offset: offset,
-        end_offset: self.offset,
-      },
+      }
+      .into_error(offset, self.offset),
     );
-    let early_exit = self.parse_comma_delimited(&mut children, ExprCtx::List, SyntaxKind::RBracket);
+    let early_exit = self.comma_delimited(&mut children, ExprCtx::List, SyntaxKind::RBracket);
     self.expr_ctx_stack.exit(ExprCtx::List);
     (self.emit(SyntaxKind::ListExpr, &children), early_exit)
   }
@@ -1217,13 +1359,12 @@ impl<'a> ParseCtx<'a> {
       &mut children,
       self.expr_skip_flags(),
       SyntaxKind::LParen,
-      Diagnostic::MissingSyntaxNode {
+      DiagnosticKind::MissingSyntaxNode {
         expected: SyntaxKind::LParen,
-        start_offset: offset,
-        end_offset: self.offset,
-      },
+      }
+      .into_error(offset, self.offset),
     );
-    let early_exit = self.parse_comma_delimited(&mut children, ExprCtx::Tuple, SyntaxKind::RParen);
+    let early_exit = self.comma_delimited(&mut children, ExprCtx::Tuple, SyntaxKind::RParen);
     self.expr_ctx_stack.exit(ExprCtx::Tuple);
     (self.emit(SyntaxKind::CallExpr, &children), early_exit)
   }
@@ -1241,13 +1382,12 @@ impl<'a> ParseCtx<'a> {
       &mut children,
       self.expr_skip_flags(),
       SyntaxKind::LBracket,
-      Diagnostic::MissingSyntaxNode {
+      DiagnosticKind::MissingSyntaxNode {
         expected: SyntaxKind::LBracket,
-        start_offset: offset,
-        end_offset: self.offset,
-      },
+      }
+      .into_error(offset, self.offset),
     );
-    let early_exit = self.parse_comma_delimited(&mut children, ExprCtx::List, SyntaxKind::RBracket);
+    let early_exit = self.comma_delimited(&mut children, ExprCtx::List, SyntaxKind::RBracket);
     self.expr_ctx_stack.exit(ExprCtx::List);
     (self.emit(SyntaxKind::IndexExpr, &children), early_exit)
   }
@@ -1268,7 +1408,7 @@ impl<'a> ParseCtx<'a> {
         }
         _ => {
           let handler = self.expr_ctx_stack.find_handler(peek.token.kind());
-          if handler.is_some_and(|c| c != ctx) {
+          if handler.is_some_and(|handler_ctx| handler_ctx != ctx) {
             break handler;
           }
           self.advance(&mut error_children, SKIP_NONE);
@@ -1283,7 +1423,7 @@ impl<'a> ParseCtx<'a> {
 
   /// Parse a comma-separated list inside delimiters: open (item ("," item)*)? close
   /// Used by call_expr, index_expr, paren_or_tuple_expr, list_expr
-  fn parse_comma_delimited(
+  fn comma_delimited(
     &mut self,
     children: &mut Vec<GreenNode>,
     ctx: ExprCtx,
@@ -1299,7 +1439,7 @@ impl<'a> ParseCtx<'a> {
     // First item
     let (first, early_exit) = self.expr();
     children.push(first);
-    if early_exit.is_some_and(|c| c != ctx) {
+    if early_exit.is_some_and(|handler_ctx| handler_ctx != ctx) {
       return early_exit;
     }
 
@@ -1320,21 +1460,20 @@ impl<'a> ParseCtx<'a> {
           }
           let (item, early_exit) = self.expr();
           children.push(item);
-          if early_exit.is_some_and(|c| c != ctx) {
+          if early_exit.is_some_and(|handler_ctx| handler_ctx != ctx) {
             return early_exit;
           }
         }
         SyntaxKind::Eof => {
-          self.diagnostics.push(Diagnostic::MissingSyntaxNode {
-            expected: closer,
-            start_offset: self.offset,
-            end_offset: self.offset,
-          });
+          self.diagnostics.push(
+            DiagnosticKind::MissingSyntaxNode { expected: closer }
+              .into_error(self.offset, self.offset),
+          );
           break;
         }
         _ => {
           let handler = self.expr_ctx_stack.find_handler(peek.token.kind());
-          if handler.is_some_and(|c| c != ctx) {
+          if handler.is_some_and(|handler_ctx| handler_ctx != ctx) {
             return handler;
           }
           if let Some(exit) = self.synchronize_delimited(ctx, closer, children) {
@@ -1348,7 +1487,7 @@ impl<'a> ParseCtx<'a> {
 
   /* fn / get / type declarations */
 
-  pub(in crate::syntax::parse) fn fn_declaration(&mut self) -> (GreenNode, Option<ExprCtx>) {
+  pub(in crate::syntax::parse) fn func_declaration(&mut self) -> (GreenNode, Option<ExprCtx>) {
     let mut children = Vec::new();
     self.advance(&mut children, SKIP_NONE); // "fn"
 
@@ -1357,47 +1496,49 @@ impl<'a> ParseCtx<'a> {
     let mut name_children = Vec::new();
     let peek = self.peek(SKIP_NONE);
     if peek.token.kind() == SyntaxKind::Ident {
-      let is_operator_kw = peek
+      let is_operator_keyword = peek
         .token
         .text()
-        .map(|t| t.eq_ignore_ascii_case("operator"))
+        .map(|token| token.eq_ignore_ascii_case("operator"))
         .unwrap_or(false);
       self.advance(&mut name_children, SKIP_NONE);
-      if is_operator_kw {
+      if is_operator_keyword {
         // consume the operator symbol (allow optional whitespace)
         let peek2 = self.peek(SKIP_WC);
         if peek2.token.kind() == SyntaxKind::Operator {
           self.consume_trivia(&mut name_children, SKIP_WC);
           self.advance(&mut name_children, SKIP_NONE);
         } else {
-          self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-            expected: "operator symbol after 'operator'",
-            start_offset: peek2.start_offset,
-            end_offset: peek2.end_offset,
-          });
+          self.emit_diagnostic(
+            DiagnosticKind::MissingExpectedToken {
+              expected: "operator symbol after 'operator'",
+            }
+            .into_error(peek2.start_offset, peek2.end_offset),
+          );
         }
       }
     } else {
-      self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-        expected: "function name or 'operator<sym>'",
-        start_offset: peek.start_offset,
-        end_offset: peek.end_offset,
-      });
+      self.emit_diagnostic(
+        DiagnosticKind::MissingExpectedToken {
+          expected: "function name or 'operator<sym>'",
+        }
+        .into_error(peek.start_offset, peek.end_offset),
+      );
     }
-    children.push(self.emit(SyntaxKind::FnDeclarationName, &name_children));
+    children.push(self.emit(SyntaxKind::FuncDeclarationName, &name_children));
 
     // optional params
     let peek = self.peek(SKIP_WC);
     if peek.token.kind() == SyntaxKind::LParen {
       self.consume_trivia(&mut children, SKIP_WC);
-      children.push(self.fn_declaration_params());
+      children.push(self.func_declaration_params());
     }
 
     // optional return type
     let peek = self.peek(SKIP_WCN);
     if peek.token.kind() == SyntaxKind::Colon {
       self.consume_trivia(&mut children, SKIP_WCN);
-      children.push(self.fn_return_type());
+      children.push(self.func_return_typ());
     }
 
     // block body
@@ -1405,14 +1546,16 @@ impl<'a> ParseCtx<'a> {
     if peek.token.kind() == SyntaxKind::LBrace {
       self.consume_trivia(&mut children, SKIP_WCN);
       let early_exit = self.block_element_body(&mut children, SKIP_NONE);
-      return (self.emit(SyntaxKind::FnDeclaration, &children), early_exit);
+      return (
+        self.emit(SyntaxKind::FuncDeclaration, &children),
+        early_exit,
+      );
     }
-    self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-      expected: "'{'",
-      start_offset: peek.start_offset,
-      end_offset: peek.end_offset,
-    });
-    (self.emit(SyntaxKind::FnDeclaration, &children), None)
+    self.emit_diagnostic(
+      DiagnosticKind::MissingExpectedToken { expected: "'{'" }
+        .into_error(peek.start_offset, peek.end_offset),
+    );
+    (self.emit(SyntaxKind::FuncDeclaration, &children), None)
   }
 
   pub(in crate::syntax::parse) fn get_declaration(&mut self) -> (GreenNode, Option<ExprCtx>) {
@@ -1426,26 +1569,38 @@ impl<'a> ParseCtx<'a> {
     if peek.token.kind() == SyntaxKind::Ident {
       self.advance(&mut name_children, SKIP_NONE);
     } else {
-      self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-        expected: "getter name",
-        start_offset: peek.start_offset,
-        end_offset: peek.end_offset,
-      });
+      self.emit_diagnostic(
+        DiagnosticKind::MissingExpectedToken {
+          expected: "getter name",
+        }
+        .into_error(peek.start_offset, peek.end_offset),
+      );
     }
     children.push(self.emit(SyntaxKind::GetDeclarationName, &name_children));
 
-    // optional params
+    // params are not allowed on getters - parse for error recovery but emit a diagnostic when non-empty
     let peek = self.peek(SKIP_WC);
     if peek.token.kind() == SyntaxKind::LParen {
+      let lparen_start = peek.start_offset;
+      let lparen_end = peek.end_offset;
       self.consume_trivia(&mut children, SKIP_WC);
-      children.push(self.fn_declaration_params());
+      let params_node = self.func_declaration_params();
+      if params_node.as_node().is_some_and(|node| {
+        node
+          .children()
+          .iter()
+          .any(|child| child.kind() == SyntaxKind::FuncDeclarationParam)
+      }) {
+        self.emit_diagnostic(DiagnosticKind::GetterWithParams.into_error(lparen_start, lparen_end));
+      }
+      children.push(params_node);
     }
 
     // optional return type
     let peek = self.peek(SKIP_WCN);
     if peek.token.kind() == SyntaxKind::Colon {
       self.consume_trivia(&mut children, SKIP_WCN);
-      children.push(self.fn_return_type());
+      children.push(self.func_return_typ());
     }
 
     // block body
@@ -1455,41 +1610,55 @@ impl<'a> ParseCtx<'a> {
       let early_exit = self.block_element_body(&mut children, SKIP_NONE);
       return (self.emit(SyntaxKind::GetDeclaration, &children), early_exit);
     }
-    self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-      expected: "'{'",
-      start_offset: peek.start_offset,
-      end_offset: peek.end_offset,
-    });
+    self.emit_diagnostic(
+      DiagnosticKind::MissingExpectedToken { expected: "'{'" }
+        .into_error(peek.start_offset, peek.end_offset),
+    );
     (self.emit(SyntaxKind::GetDeclaration, &children), None)
   }
 
-  pub(in crate::syntax::parse) fn type_declaration(&mut self) -> (GreenNode, Option<ExprCtx>) {
+  pub(in crate::syntax::parse) fn typ_declaration(&mut self) -> (GreenNode, Option<ExprCtx>) {
     let mut children = Vec::new();
-    self.advance(&mut children, SKIP_NONE); // "type"
+
+    // Wrap "type" in ElementDeclarationTyp like other element declarations
+    let mut typ_ident_children = Vec::new();
+    self.advance(&mut typ_ident_children, SKIP_NONE); // "type"
+    let typ_ident_expr = self.emit(SyntaxKind::IdentExpr, &typ_ident_children);
+    children.push(self.emit(SyntaxKind::ElementDeclarationTyp, &[typ_ident_expr]));
 
     // name
     self.consume_trivia(&mut children, SKIP_WC);
     let mut name_children = Vec::new();
     let peek = self.peek(SKIP_NONE);
-    if matches!(peek.token.kind(), SyntaxKind::Ident | SyntaxKind::DqString) {
+    let name_token_kind = peek.token.kind();
+    if matches!(name_token_kind, SyntaxKind::Ident | SyntaxKind::DqString) {
       self.advance(&mut name_children, SKIP_NONE);
     } else {
-      self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-        expected: "type name",
-        start_offset: peek.start_offset,
-        end_offset: peek.end_offset,
-      });
+      self.emit_diagnostic(
+        DiagnosticKind::MissingExpectedToken {
+          expected: "type name",
+        }
+        .into_error(peek.start_offset, peek.end_offset),
+      );
     }
-    children.push(self.emit(SyntaxKind::TypeDeclarationName, &name_children));
+    let inner_name_expr = if name_token_kind == SyntaxKind::DqString {
+      self.emit(SyntaxKind::DqStringExpr, &name_children)
+    } else {
+      self.emit(SyntaxKind::IdentExpr, &name_children)
+    };
+    children.push(self.emit(
+      SyntaxKind::ElementDeclarationTargetFragment,
+      &[inner_name_expr],
+    ));
 
-    // optional role [...]
+    // optional setting [...]
     let peek = self.peek(SKIP_WC);
     if peek.token.kind() == SyntaxKind::LBracket {
       self.consume_trivia(&mut children, SKIP_WC);
       children.push(self.setting_list(SKIP_NONE));
     }
 
-    // either "=" for alias or "{" for block
+    // either "=" for equality or "{" for block element
     let peek = self.peek(SKIP_WCN);
     match peek.token.kind() {
       SyntaxKind::Operator if peek.token.text() == Some("=") => {
@@ -1497,46 +1666,47 @@ impl<'a> ParseCtx<'a> {
         self.advance(&mut children, SKIP_NONE); // "="
         self.consume_trivia(&mut children, SKIP_WC);
         self.expr_ctx_stack.enter(ExprCtx::Field);
-        let (alias_expr, _) = self.expr();
+        let (rhs_expr, _) = self.expr();
         self.expr_ctx_stack.exit(ExprCtx::Field);
-        children.push(alias_expr);
-        (self.emit(SyntaxKind::TypeDeclaration, &children), None)
+        children.push(rhs_expr);
+        (self.emit(SyntaxKind::EqualityDeclaration, &children), None)
       }
       SyntaxKind::LBrace => {
         self.consume_trivia(&mut children, SKIP_WCN);
         let early_exit = self.block_element_body(&mut children, SKIP_NONE);
         (
-          self.emit(SyntaxKind::TypeDeclaration, &children),
+          self.emit(SyntaxKind::BlockElementDeclaration, &children),
           early_exit,
         )
       }
       _ => {
-        self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-          expected: "'{' or '='",
-          start_offset: peek.start_offset,
-          end_offset: peek.end_offset,
-        });
-        (self.emit(SyntaxKind::TypeDeclaration, &children), None)
+        self.emit_diagnostic(
+          DiagnosticKind::MissingExpectedToken {
+            expected: "'{' or '='",
+          }
+          .into_error(peek.start_offset, peek.end_offset),
+        );
+        (self.emit(SyntaxKind::EqualityDeclaration, &children), None)
       }
     }
   }
 
-  fn fn_return_type(&mut self) -> GreenNode {
-    let mut rt_children = Vec::new();
-    self.advance(&mut rt_children, SKIP_NONE); // ":"
-    self.consume_trivia(&mut rt_children, SKIP_WC);
+  fn func_return_typ(&mut self) -> GreenNode {
+    let mut return_typ_children = Vec::new();
+    self.advance(&mut return_typ_children, SKIP_NONE); // ":"
+    self.consume_trivia(&mut return_typ_children, SKIP_WC);
     self.expr_ctx_stack.enter(ExprCtx::Field);
-    let (type_expr, _) = self.expr();
+    let (typ_expr, _) = self.expr();
     self.expr_ctx_stack.exit(ExprCtx::Field);
-    rt_children.push(type_expr);
-    self.emit(SyntaxKind::FnDeclarationReturnType, &rt_children)
+    return_typ_children.push(typ_expr);
+    self.emit(SyntaxKind::FuncDeclarationReturnTyp, &return_typ_children)
   }
 
-  fn fn_declaration_params(&mut self) -> GreenNode {
+  fn func_declaration_params(&mut self) -> GreenNode {
     debug_assert_eq!(
       self.peek(SKIP_NONE).token.kind(),
       SyntaxKind::LParen,
-      "[ParseCtx::fn_declaration_params] Expected next token to be LParen"
+      "[ParseCtx::func_declaration_params] Expected next token to be LParen"
     );
     let mut children = Vec::new();
     let open_offset = self.offset;
@@ -1552,40 +1722,41 @@ impl<'a> ParseCtx<'a> {
           break;
         }
         SyntaxKind::Eof => {
-          self.emit_diagnostic(Diagnostic::UnclosedDelimiter {
-            delimiter: "(",
-            open_offset,
-          });
+          self.emit_diagnostic(
+            DiagnosticKind::UnclosedDelimiter { delimiter: "(" }
+              .into_error(open_offset, open_offset),
+          );
           break;
         }
         SyntaxKind::Comma => {
           self.advance(&mut children, SKIP_NONE);
         }
         SyntaxKind::Ident => {
-          children.push(self.fn_declaration_param());
+          children.push(self.func_declaration_param());
         }
         _ => {
           let start_offset = peek.start_offset;
           let end_offset = peek.end_offset;
-          self.emit_diagnostic(Diagnostic::UnexpectedToken {
-            expected: "parameter name",
-            start_offset,
-            end_offset,
-          });
+          self.emit_diagnostic(
+            DiagnosticKind::UnexpectedToken {
+              expected: "parameter name",
+            }
+            .into_error(start_offset, end_offset),
+          );
           self.advance(&mut children, SKIP_NONE);
         }
       }
     }
 
     self.expr_ctx_stack.exit(ExprCtx::Tuple);
-    self.emit(SyntaxKind::FnDeclarationParams, &children)
+    self.emit(SyntaxKind::FuncDeclarationParams, &children)
   }
 
-  fn fn_declaration_param(&mut self) -> GreenNode {
+  fn func_declaration_param(&mut self) -> GreenNode {
     debug_assert_eq!(
       self.peek(SKIP_NONE).token.kind(),
       SyntaxKind::Ident,
-      "[ParseCtx::fn_declaration_param] Expected next token to be Ident"
+      "[ParseCtx::func_declaration_param] Expected next token to be Ident"
     );
     let mut children = Vec::new();
     // param name: wrap in IdentExpr for consistency
@@ -1598,16 +1769,17 @@ impl<'a> ParseCtx<'a> {
       self.consume_trivia(&mut children, SKIP_WC);
       self.advance(&mut children, SKIP_NONE); // ":"
       self.consume_trivia(&mut children, SKIP_WC);
-      let (type_expr, _) = self.expr();
-      children.push(type_expr);
+      let (typ_expr, _) = self.expr();
+      children.push(typ_expr);
     } else {
-      self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-        expected: "':' after parameter name",
-        start_offset: peek.start_offset,
-        end_offset: peek.end_offset,
-      });
+      self.emit_diagnostic(
+        DiagnosticKind::MissingExpectedToken {
+          expected: "':' after parameter name",
+        }
+        .into_error(peek.start_offset, peek.end_offset),
+      );
     }
-    self.emit(SyntaxKind::FnDeclarationParam, &children)
+    self.emit(SyntaxKind::FuncDeclarationParam, &children)
   }
 
   // quantifier_expr = ("forall" | "exists") binding "of" collection body
@@ -1628,11 +1800,12 @@ impl<'a> ParseCtx<'a> {
       self.advance(&mut binding_children, SKIP_NONE);
       children.push(self.emit(SyntaxKind::IdentExpr, &binding_children));
     } else {
-      self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-        expected: "binding variable name",
-        start_offset: peek.start_offset,
-        end_offset: peek.end_offset,
-      });
+      self.emit_diagnostic(
+        DiagnosticKind::MissingExpectedToken {
+          expected: "binding variable name",
+        }
+        .into_error(peek.start_offset, peek.end_offset),
+      );
     }
 
     // "of" keyword
@@ -1641,17 +1814,16 @@ impl<'a> ParseCtx<'a> {
       && peek
         .token
         .text()
-        .map(|t| t.eq_ignore_ascii_case("of"))
+        .map(|token| token.eq_ignore_ascii_case("of"))
         .unwrap_or(false)
     {
       self.consume_trivia(&mut children, SKIP_WC);
       self.advance(&mut children, SKIP_NONE);
     } else {
-      self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-        expected: "'of'",
-        start_offset: peek.start_offset,
-        end_offset: peek.end_offset,
-      });
+      self.emit_diagnostic(
+        DiagnosticKind::MissingExpectedToken { expected: "'of'" }
+          .into_error(peek.start_offset, peek.end_offset),
+      );
     }
 
     // collection expression - stops naturally before `{`
@@ -1661,19 +1833,122 @@ impl<'a> ParseCtx<'a> {
     self.expr_ctx_stack.exit(ExprCtx::Field);
     children.push(collection);
 
-    // body block
+    // body: `{ expr }` parsed as a block with a single expression
     let peek = self.peek(SKIP_WCN);
     if peek.token.kind() == SyntaxKind::LBrace {
       self.consume_trivia(&mut children, SKIP_WCN);
-      let early_exit = self.block_element_body(&mut children, SKIP_NONE);
-      return (self.emit(kind, &children), early_exit);
+      let mut body_children = Vec::new();
+      self.advance(&mut body_children, SKIP_NONE); // `{`
+      self.consume_trivia(&mut body_children, SKIP_WCN);
+      let (expr, _) = self.expr();
+      let arg = self.emit(SyntaxKind::ElementFieldDeclarationArg, &[expr]);
+      let field = self.emit(SyntaxKind::ElementFieldDeclaration, &[arg]);
+      body_children.push(field);
+      let peek = self.peek(SKIP_WCN);
+      if peek.token.kind() == SyntaxKind::RBrace {
+        self.consume_trivia(&mut body_children, SKIP_WCN);
+        self.advance(&mut body_children, SKIP_NONE); // `}`
+      }
+      children.push(self.emit(SyntaxKind::BlockElementDeclarationBody, &body_children));
+      return (self.emit(kind, &children), None);
     }
-    self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-      expected: "'{'",
-      start_offset: peek.start_offset,
-      end_offset: peek.end_offset,
-    });
+    self.emit_diagnostic(
+      DiagnosticKind::MissingExpectedToken { expected: "'{'" }
+        .into_error(peek.start_offset, peek.end_offset),
+    );
     (self.emit(kind, &children), None)
+  }
+
+  /// Parse the then and else branches of a ternary expression
+  /// `?` has already been consumed; children contains [condition]
+  fn ternary_expr(&mut self, children: &mut Vec<GreenNode>) -> (GreenNode, Option<ExprCtx>) {
+    let (then_expr, exit) = self.pratt_expr(0, vec![]);
+    children.push(then_expr);
+    if exit.is_some() {
+      return (self.emit(SyntaxKind::TernaryExpr, children), exit);
+    }
+
+    let peek = self.peek(self.expr_skip_flags());
+    if peek.token.kind() == SyntaxKind::Colon {
+      self.advance(children, self.expr_skip_flags());
+      let (else_expr, exit) = self.pratt_expr(0, vec![]);
+      children.push(else_expr);
+      return (self.emit(SyntaxKind::TernaryExpr, children), exit);
+    }
+
+    (self.emit(SyntaxKind::TernaryExpr, children), None)
+  }
+
+  /// Parse a match expression: `match subject { pattern => result ... }`
+  fn match_expr(&mut self, children: Vec<GreenNode>, skip: usize) -> (GreenNode, Option<ExprCtx>) {
+    let mut children = children;
+    self.advance(&mut children, skip); // consume "match"
+
+    // Parse subject expression
+    self.consume_trivia(&mut children, SKIP_WC);
+    self.expr_ctx_stack.enter(ExprCtx::Field);
+    let (subject, _) = self.expr();
+    self.expr_ctx_stack.exit(ExprCtx::Field);
+    children.push(subject);
+
+    // Expect `{`
+    let peek = self.peek(SKIP_WCN);
+    if peek.token.kind() != SyntaxKind::LBrace {
+      self.emit_diagnostic(
+        DiagnosticKind::MissingExpectedToken { expected: "'{'" }
+          .into_error(peek.start_offset, peek.end_offset),
+      );
+      return (self.emit(SyntaxKind::MatchExpr, &children), None);
+    }
+    self.advance(&mut children, SKIP_WCN); // consume `{`
+    let open_offset = self.offset;
+
+    // Parse arms
+    loop {
+      self.consume_trivia(&mut children, SKIP_WCN);
+      let peek = self.peek(SKIP_NONE);
+      match peek.token.kind() {
+        SyntaxKind::RBrace => {
+          self.advance(&mut children, SKIP_NONE);
+          break;
+        }
+        SyntaxKind::Eof => {
+          self.emit_diagnostic(
+            DiagnosticKind::UnclosedDelimiter { delimiter: "{" }
+              .into_error(open_offset, open_offset),
+          );
+          break;
+        }
+        _ => {
+          // Parse arm: pattern => result
+          let mut arm_children = Vec::new();
+          // Pattern: parse at binding power 5 to stop before `=>`
+          let (pattern, _) = self.pratt_expr(5, vec![]);
+          arm_children.push(pattern);
+
+          // Expect `=>`
+          let peek = self.peek(SKIP_WC);
+          if peek.token.kind() == SyntaxKind::Operator && peek.token.text() == Some("=>") {
+            self.advance(&mut arm_children, SKIP_WC);
+          } else {
+            self.emit_diagnostic(
+              DiagnosticKind::MissingExpectedToken { expected: "'=>'" }
+                .into_error(peek.start_offset, peek.end_offset),
+            );
+          }
+
+          // Result expression
+          self.expr_ctx_stack.enter(ExprCtx::Field);
+          let (result, _) = self.expr();
+          self.expr_ctx_stack.exit(ExprCtx::Field);
+          arm_children.push(result);
+
+          children.push(self.emit(SyntaxKind::MatchArm, &arm_children));
+        }
+      }
+    }
+
+    (self.emit(SyntaxKind::MatchExpr, &children), None)
   }
 
   /* Utils */
@@ -1682,7 +1957,7 @@ impl<'a> ParseCtx<'a> {
     self.next_is_keyword("forall") || self.next_is_keyword("exists")
   }
 
-  pub(in crate::syntax::parse) fn is_fn_head(&mut self) -> bool {
+  pub(in crate::syntax::parse) fn is_func_head(&mut self) -> bool {
     self.next_is_keyword("fn")
   }
 
@@ -1690,7 +1965,7 @@ impl<'a> ParseCtx<'a> {
     self.next_is_keyword("get")
   }
 
-  pub(in crate::syntax::parse) fn is_type_head(&mut self) -> bool {
+  pub(in crate::syntax::parse) fn is_typ_head(&mut self) -> bool {
     self.next_is_keyword("type")
   }
 
@@ -1700,7 +1975,7 @@ impl<'a> ParseCtx<'a> {
       && peek
         .token
         .text()
-        .map(|t| t.eq_ignore_ascii_case(keyword))
+        .map(|token| token.eq_ignore_ascii_case(keyword))
         .unwrap_or(false)
   }
 
@@ -1717,7 +1992,7 @@ impl<'a> ParseCtx<'a> {
       && peek
         .token
         .text()
-        .map(|s| s.eq_ignore_ascii_case("as"))
+        .map(|string| string.eq_ignore_ascii_case("as"))
         .unwrap_or(false)
     {
       return false;

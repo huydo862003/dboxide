@@ -9,10 +9,11 @@ fn attribute_basic() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (BlockElementDeclarationType
-      "Project")
+    (ElementDeclarationTyp
+      (IdentExpr
+        "Project"))
     " "
-    (BlockElementDeclarationTargetFragment
+    (ElementDeclarationTargetFragment
       (IdentExpr
         "p"))
     " "
@@ -22,11 +23,13 @@ fn attribute_basic() {
       "  "
       (ElementAttributeDeclaration
         (ElementAttributeDeclarationName
-          "database_type")
+          (IdentExpr
+            "database_type"))
         ":"
         (ElementAttributeDeclarationValue
-          " "
-          "'PostgreSQL'"))
+          (SqStringExpr
+            " "
+            "'PostgreSQL'")))
       "\n"
       "}"))
   "")"#;
@@ -40,6 +43,31 @@ fn attribute_string_value() {
   Note: 'hello world'
 }",
   );
-  assert!(tree.contains("ElementAttributeDeclaration"));
-  assert!(tree.contains("'hello world'"));
+  let expected = r#"(SourceFile
+  (BlockElementDeclaration
+    (ElementDeclarationTyp
+      (IdentExpr
+        "Project"))
+    " "
+    (ElementDeclarationTargetFragment
+      (IdentExpr
+        "p"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (ElementAttributeDeclaration
+        (ElementAttributeDeclarationName
+          (IdentExpr
+            "Note"))
+        ":"
+        (ElementAttributeDeclarationValue
+          (SqStringExpr
+            " "
+            "'hello world'")))
+      "\n"
+      "}"))
+  "")"#;
+  assert_eq!(tree, expected);
 }

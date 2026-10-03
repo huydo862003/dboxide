@@ -43,7 +43,7 @@ impl FileIterator {
   fn new(reader: BufReader<File>) -> Self {
     let reader = Box::leak(Box::new(reader));
     let reader_ptr = reader as *mut BufReader<File>;
-    let iter = Box::new(reader.chars().filter_map(|c| c.ok()));
+    let iter = Box::new(reader.chars().filter_map(|char| char.ok()));
 
     FileIterator { reader_ptr, iter }
   }

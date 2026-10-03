@@ -14,20 +14,30 @@ fn lex(input: &str) -> (Vec<(SyntaxKind, String)>, Vec<Diagnostic>) {
   let mut lexer = LexCtx::new(stream, cache);
 
   let mut tokens = Vec::new();
-  let mut diags = Vec::new();
+  let mut diagnostics = Vec::new();
   loop {
     let result = lexer.lex();
     let kind = result.token.kind();
     let text = result.token.text().unwrap_or("").to_string();
-    if let Some(diag) = result.diagnostic {
-      diags.push(diag);
+    if let Some(diagnostic) = result.diagnostic {
+      diagnostics.push(diagnostic);
     }
     tokens.push((kind, text));
     if kind == SyntaxKind::Eof {
       break;
     }
   }
-  (tokens, diags)
+  (tokens, diagnostics)
+}
+
+/// Render all tokens as a multiline string: `Kind "text"\n` per token
+fn render_lex_result(input: &str) -> String {
+  let (tokens, _) = lex(input);
+  tokens
+    .iter()
+    .map(|(kind, text)| format!("{kind:?} {text:?}"))
+    .collect::<Vec<_>>()
+    .join("\n")
 }
 
 /* Basic (tokens, _) */
@@ -90,6 +100,47 @@ fn colon_is_punctuation_not_operator() {
 }
 
 /* Whitespace and newlines */
+
+#[test]
+fn cr_alone_is_newline() {
+  assert_eq!(
+    render_lex_result("\r"),
+    r#"Newline "\r"
+Eof """#
+  );
+}
+
+#[test]
+fn crlf_is_single_newline_token() {
+  assert_eq!(
+    render_lex_result("\r\n"),
+    r#"Newline "\r\n"
+Eof """#
+  );
+}
+
+#[test]
+fn cr_not_followed_by_lf_does_not_consume_next() {
+  assert_eq!(
+    render_lex_result("\ra"),
+    r#"Newline "\r"
+Ident "a"
+Eof """#
+  );
+}
+
+#[test]
+fn mixed_crlf_and_lf() {
+  assert_eq!(
+    render_lex_result("a\r\nb\nc"),
+    r#"Ident "a"
+Newline "\r\n"
+Ident "b"
+Newline "\n"
+Ident "c"
+Eof """#
+  );
+}
 
 #[test]
 fn whitespace_only() {
@@ -321,37 +372,37 @@ fn oq_string_other_escape_not_treated_as_escape() {
 
 #[test]
 fn unterminated_dq_string() {
-  let (tokens, diags) = lex("\"hello");
+  let (tokens, diagnostics) = lex("\"hello");
   assert_eq!(tokens[0].0, SyntaxKind::Error);
-  assert_eq!(diags.len(), 1);
+  assert_eq!(diagnostics.len(), 1);
 }
 
 #[test]
 fn unterminated_sq_string() {
-  let (tokens, diags) = lex("'hello");
+  let (tokens, diagnostics) = lex("'hello");
   assert_eq!(tokens[0].0, SyntaxKind::Error);
-  assert_eq!(diags.len(), 1);
+  assert_eq!(diagnostics.len(), 1);
 }
 
 #[test]
 fn unterminated_oq_string() {
-  let (tokens, diags) = lex("`hello");
+  let (tokens, diagnostics) = lex("`hello");
   assert_eq!(tokens[0].0, SyntaxKind::Error);
-  assert_eq!(diags.len(), 1);
+  assert_eq!(diagnostics.len(), 1);
 }
 
 #[test]
 fn unterminated_triple_sq_string() {
-  let (tokens, diags) = lex("'''hello");
+  let (tokens, diagnostics) = lex("'''hello");
   assert_eq!(tokens[0].0, SyntaxKind::Error);
-  assert_eq!(diags.len(), 1);
+  assert_eq!(diagnostics.len(), 1);
 }
 
 #[test]
 fn dq_string_newline_terminates_with_error() {
-  let (tokens, diags) = lex("\"hello\n");
+  let (tokens, diagnostics) = lex("\"hello\n");
   assert_eq!(tokens[0].0, SyntaxKind::Error);
-  assert_eq!(diags.len(), 1);
+  assert_eq!(diagnostics.len(), 1);
 }
 
 /* Comments */
@@ -375,9 +426,9 @@ fn block_comment() {
 
 #[test]
 fn unterminated_block_comment() {
-  let (tokens, diags) = lex("/* unclosed");
+  let (tokens, diagnostics) = lex("/* unclosed");
   assert_eq!(tokens[0].0, SyntaxKind::Error);
-  assert_eq!(diags.len(), 1);
+  assert_eq!(diagnostics.len(), 1);
 }
 
 #[test]
@@ -391,9 +442,53 @@ fn nested_block_comment_not_supported() {
 
 #[test]
 fn unexpected_char() {
-  let (tokens, diags) = lex("#");
+  let (tokens, diagnostics) = lex("#");
   assert_eq!(tokens[0].0, SyntaxKind::Error);
-  assert_eq!(diags.len(), 1);
+  assert_eq!(diagnostics.len(), 1);
+}
+
+/* Color literals */
+
+#[test]
+fn color_lit_six_digit() {
+  let (tokens, diagnostics) = lex("#336699");
+  assert_eq!(tokens[0], (SyntaxKind::ColorLit, "#336699".into()));
+  assert!(diagnostics.is_empty());
+}
+
+#[test]
+fn color_lit_three_digit() {
+  let (tokens, diagnostics) = lex("#abc");
+  assert_eq!(tokens[0], (SyntaxKind::ColorLit, "#abc".into()));
+  assert!(diagnostics.is_empty());
+}
+
+#[test]
+fn color_lit_uppercase() {
+  let (tokens, diagnostics) = lex("#FF0000");
+  assert_eq!(tokens[0], (SyntaxKind::ColorLit, "#FF0000".into()));
+  assert!(diagnostics.is_empty());
+}
+
+#[test]
+fn color_lit_bare_hash_is_error() {
+  let (tokens, diagnostics) = lex("#");
+  assert_eq!(tokens[0].0, SyntaxKind::Error);
+  assert_eq!(diagnostics.len(), 1);
+}
+
+#[test]
+fn color_lit_invalid_length_two_digits_is_error() {
+  let (tokens, diagnostics) = lex("#ab");
+  assert_eq!(tokens[0].0, SyntaxKind::Error);
+  assert_eq!(diagnostics.len(), 1);
+}
+
+#[test]
+fn color_lit_invalid_length_seven_digits_is_error() {
+  let (tokens, diagnostics) = lex("#1234567");
+  assert_eq!(tokens[0].0, SyntaxKind::Error);
+  assert_eq!(diagnostics.len(), 1);
 }
 
 /* Integration: DBML surface syntax */
