@@ -1,9 +1,11 @@
-use std::{collections::HashMap, path::PathBuf, time::SystemTime};
+use std::collections::HashMap;
+use std::path::PathBuf;
+use std::time::SystemTime;
 
+use itertools::Either;
 use salsa::input;
 
-use crate::FileHandle;
-
+use crate::{FileHandle, VirtualModuleKind};
 #[input]
 pub struct File {
   #[returns(deref)]
@@ -17,10 +19,8 @@ pub struct File {
 
   #[returns(copy)]
   pub mtime: SystemTime,
-}
 
-#[input]
-pub struct Project {
+  /// Host-resolved imports: specifier string -> resolved Module
   #[returns(ref)]
-  pub files: HashMap<PathBuf, File>,
+  pub uses: HashMap<String, Either<VirtualModuleKind, File>>,
 }

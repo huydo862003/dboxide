@@ -78,7 +78,7 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -101,7 +101,7 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
       "}"))
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -124,7 +124,7 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
       "}"))
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -162,7 +162,7 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
   "\n"
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -205,7 +205,7 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
   "// no error"
   "\n"
   (InlineElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Dep")
     ":"
     " "
@@ -221,7 +221,7 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
             "orders")))))
   "\n"
   (InlineElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Dep")
     ":"
     " "
@@ -245,7 +245,7 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
               "id"))))))
   "\n"
   (InlineElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Dep")
     ":"
     " "
@@ -265,7 +265,7 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
             "users")))))
   "\n"
   (InlineElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Dep")
     ":"
     " "
@@ -293,7 +293,7 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
               "id"))))))
   "\n"
   (InlineElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Dep")
     ":"
     " "
@@ -330,7 +330,7 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
   "// no error"
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Dep")
     " "
     (BlockElementDeclarationBody
@@ -416,7 +416,7 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
   "// no error"
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -455,7 +455,7 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
       "}"))
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -504,7 +504,7 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
   "// no error"
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -548,7 +548,7 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
       "}"))
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -599,7 +599,7 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
   "// no error"
   "\n"
   (InlineElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Dep")
     ":"
     " "
@@ -615,7 +615,7 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
             "unknown_table")))))
   "\n"
   (InlineElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Dep")
     ":"
     " "
@@ -639,7 +639,7 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
               "id"))))))
   "\n"
   (InlineElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Dep")
     ":"
     " "
@@ -659,7 +659,7 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
             "users")))))
   "\n"
   (InlineElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Dep")
     ":"
     " "
@@ -679,7 +679,7 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
             "users")))))
   "\n"
   (InlineElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Dep")
     ":"
     " "
@@ -712,7 +712,7 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
   "// no error"
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Dep")
     " "
     (BlockElementDeclarationBody
@@ -798,7 +798,7 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
   "// no error"
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -837,7 +837,7 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
       "}"))
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -886,7 +886,7 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
   "// no error"
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -930,7 +930,7 @@ Table bad_col_schema { id int [dep: -> my_schema.unknown_table.col] }
       "}"))
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -994,7 +994,7 @@ Table users {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "TablePartial")
     " "
     (ElementDeclarationTargetFragment
@@ -1018,7 +1018,7 @@ Table users {
   "\n"
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -1060,7 +1060,7 @@ enum v2.status {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -1144,7 +1144,7 @@ enum v2.status {
   "\n"
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "enum")
     " "
     (ElementDeclarationTargetFragment

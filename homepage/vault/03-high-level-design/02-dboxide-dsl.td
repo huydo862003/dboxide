@@ -279,7 +279,7 @@ All syntax annotations (`[arg]`, `[csv]`, `[label]`, `[attribute]`, `[setting]`)
 | Annotation | Syntax form | Meaning |
 | --- | --- | --- |
 | `[arg: n]` | `field T [arg: 0]` | Binds field to positional arg at index `n` |
-| `[arg: n..]` | `field T [arg: 1..]` | Binds field to all args from index `n` (variadic) |
+| `[arg: n..]` | `field T [arg: 1..]` | Binds field to all args from index `n` onwards (variadic) |
 | `[csv]` | `field T [arg: 0, csv]` | Arg is a comma-separated list parsed inline |
 
 ```
@@ -324,10 +324,10 @@ type Column [field] {
 
 #### Rest Fields
 
-`...name` captures all undeclared body attributes into a typed map field.
+`[name]` captures all undeclared body attributes into a typed map field.
 
 ```
-...metadata: Map[string, any] [attribute]
+[metadata] Map[string, any] [attribute]
 ```
 
 #### Annotation Values as Implicit Strings
@@ -775,7 +775,7 @@ type Dep [element] {
   lines DepBinary[]
   color color? [setting]
   note string? [setting]
-  ...metadata: Map[string, any] [attribute]
+  [metadata] Map[string, any] [attribute]
 }
 
 /* DepUnary - result of unary dep operators ([dep: -> stg_orders]) */
@@ -810,7 +810,7 @@ type TablePartial [element] {
 
 type TableGroup [element, on use: expand] {
   name declaration[TableGroup] [label, unique]
-  tables reference[Table][] [field: 0..]
+  tables reference[Table][] [arg: 0..]
   note string? [setting]
   color color? [setting]
 }
@@ -837,7 +837,7 @@ type StickyNote [element] {
 
 type Metadata [element] {
   target qualified_reference[Table | Table.Column | Enum | TableGroup] [label]
-  ...metadata: Map[string, any] [attribute]
+  [metadata] Map[string, any] [attribute]
 }
 
 /* DiagramView name {
@@ -853,19 +853,19 @@ type DiagramView [element] {
   name declaration[DiagramView] [label, unique]
 
   type Tables [element] {
-    items (ref[Table] | "*")[] [field: 0..]
+    items (ref[Table] | "*")[] [arg: 0..]
   }
 
   type Notes [element] {
-    items (ref[StickyNote] | "*")[] [field: 0..]
+    items (ref[StickyNote] | "*")[] [arg: 0..]
   }
 
   type TableGroups [element] {
-    items (ref[TableGroup] | "*")[] [field: 0..]
+    items (ref[TableGroup] | "*")[] [arg: 0..]
   }
 
   type Schemas [element] {
-    items (string | "*")[] [field: 0..]
+    items (string | "*")[] [arg: 0..]
   }
 }
 
@@ -881,7 +881,7 @@ type Table [element] {
   checks Check[]
   columns Column[]
   deps DepUnary[] [setting: dep]
-  ...metadata: Map[string, any] [attribute]
+  [metadata] Map[string, any] [attribute]
 
   namespace {
     columns
@@ -916,7 +916,7 @@ type Table [element] {
   }
 
   type Index [element] {
-    columns (ref[Column] | ostring)[] [field: 0.., attribute]
+    columns (ref[Column] | ostring)[] [arg: 0.., attribute]
     pk bool? [setting]
     unique bool? [setting]
     type "btree" | "hash" [setting]
@@ -929,7 +929,7 @@ type Table [element] {
    * }
    */
   type Check [element] {
-    expression ostring [field: 0, attribute]
+    expression ostring [arg: 0, attribute]
     name string? [setting]
   }
 
@@ -938,11 +938,11 @@ type Table [element] {
    * }
    */
   type Records [element] {
-    columns reference[Column][]? [field: 0.., label, attribute]
+    columns reference[Column][]? [arg: 0.., label, attribute]
     row Row[]
 
     type Row [field] {
-      values any[] [field: 0, csv]
+      values any[] [arg: 0, csv]
 
       constraints {
         type_check: () => typeof(values) <: (columns ?? super.super@columns).map((c) => interpret(c@type))

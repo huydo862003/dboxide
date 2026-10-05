@@ -30,6 +30,16 @@ fn lex(input: &str) -> (Vec<(SyntaxKind, String)>, Vec<Diagnostic>) {
   (tokens, diags)
 }
 
+/// Render all tokens as a multiline string: `Kind "text"\n` per token
+fn render_lex_result(input: &str) -> String {
+  let (tokens, _) = lex(input);
+  tokens
+    .iter()
+    .map(|(kind, text)| format!("{kind:?} {text:?}"))
+    .collect::<Vec<_>>()
+    .join("\n")
+}
+
 /* Basic (tokens, _) */
 
 #[test]
@@ -90,6 +100,47 @@ fn colon_is_punctuation_not_operator() {
 }
 
 /* Whitespace and newlines */
+
+#[test]
+fn cr_alone_is_newline() {
+  assert_eq!(
+    render_lex_result("\r"),
+    r#"Newline "\r"
+Eof """#
+  );
+}
+
+#[test]
+fn crlf_is_single_newline_token() {
+  assert_eq!(
+    render_lex_result("\r\n"),
+    r#"Newline "\r\n"
+Eof """#
+  );
+}
+
+#[test]
+fn cr_not_followed_by_lf_does_not_consume_next() {
+  assert_eq!(
+    render_lex_result("\ra"),
+    r#"Newline "\r"
+Ident "a"
+Eof """#
+  );
+}
+
+#[test]
+fn mixed_crlf_and_lf() {
+  assert_eq!(
+    render_lex_result("a\r\nb\nc"),
+    r#"Ident "a"
+Newline "\r\n"
+Ident "b"
+Newline "\n"
+Ident "c"
+Eof """#
+  );
+}
 
 #[test]
 fn whitespace_only() {

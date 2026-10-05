@@ -1,8 +1,6 @@
 use crate::syntax::parse::tests::utils::*;
 use crate::types::diagnostics::Diagnostic;
 
-// ---- fn declaration diagnostics ----
-
 #[test]
 fn fn_missing_name_diag() {
   let (tree, diags) = parse_source_with_diagnostics("fn {}");
@@ -15,10 +13,10 @@ fn fn_missing_name_diag() {
     }]
   );
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName)
+    (FuncDeclarationName)
     (BlockElementDeclarationBody
       "{"
       "}"))
@@ -38,12 +36,12 @@ fn fn_missing_body_diag() {
     }]
   );
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "foo")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
       ")"))
   "")"#;
@@ -69,9 +67,9 @@ fn fn_only_keyword_diag() {
     ]
   );
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
-    (FnDeclarationName))
+    (FuncDeclarationName))
   "")"#;
   assert_eq!(tree, expected);
 }
@@ -159,8 +157,6 @@ fn fn_bad_token_in_params_diag() {
   );
 }
 
-// ---- quantifier diagnostics ----
-
 #[test]
 fn forall_missing_of_diag() {
   let input = "fn check(): bool {\n  forall c columns { true }\n}";
@@ -205,8 +201,6 @@ fn forall_missing_binding_diag() {
   );
 }
 
-// ---- type declaration diagnostics ----
-
 #[test]
 fn type_missing_name_diag() {
   let (tree, diags) = parse_source_with_diagnostics("type {}");
@@ -220,7 +214,8 @@ fn type_missing_name_diag() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    "type"
+    (ElementDeclarationTyp
+      "type")
     " "
     (EqualityDeclarationName)
     (BlockElementDeclarationBody
@@ -243,15 +238,14 @@ fn type_missing_body_or_eq_diag() {
   );
   let expected = r#"(SourceFile
   (EqualityDeclaration
-    "type"
+    (ElementDeclarationTyp
+      "type")
     " "
     (EqualityDeclarationName
       "Foo"))
   "")"#;
   assert_eq!(tree, expected);
 }
-
-// ---- get declaration diagnostics ----
 
 #[test]
 fn get_missing_name_diag() {
@@ -281,8 +275,6 @@ fn get_missing_body_diag() {
   );
 }
 
-// ---- error recovery: parser continues after broken declarations ----
-
 #[test]
 fn fn_missing_name_then_valid_fn() {
   let (tree, diags) = parse_source_with_diagnostics("fn {}\nfn ok() {}");
@@ -295,20 +287,20 @@ fn fn_missing_name_then_valid_fn() {
     }]
   );
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName)
+    (FuncDeclarationName)
     (BlockElementDeclarationBody
       "{"
       "}"))
   "\n"
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "ok")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
       ")")
     " "
@@ -331,21 +323,21 @@ fn fn_missing_body_then_valid_fn() {
     }]
   );
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "foo")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
       ")"))
   "\n"
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "bar")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
       ")")
     " "
@@ -369,17 +361,18 @@ fn type_missing_body_then_fn() {
   );
   let expected = r#"(SourceFile
   (EqualityDeclaration
-    "type"
+    (ElementDeclarationTyp
+      "type")
     " "
     (EqualityDeclarationName
       "Foo"))
   "\n"
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "ok")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
       ")")
     " "
@@ -388,4 +381,152 @@ fn type_missing_body_then_fn() {
       "}"))
   "")"#;
   assert_eq!(tree, expected);
+}
+
+#[test]
+fn element_alias_garbage_tokens_recover_at_brace() {
+  // Invalid tokens in alias position - should be wrapped in Error, then parse the body
+  let (tree, diags) = parse_source_with_diagnostics("Table users as 123 garbage {}");
+  assert!(!diags.is_empty());
+  // Error node created for garbage tokens
+  assert!(tree.contains("Error"));
+  // Body still parsed
+  assert!(tree.contains("BlockElementDeclarationBody"));
+}
+
+#[test]
+fn element_alias_garbage_stops_at_setting_list() {
+  // Alias recovery stops at `[`
+  let (tree, diags) = parse_source_with_diagnostics("Table users as 123 [pk] {}");
+  assert!(!diags.is_empty());
+  assert!(tree.contains("SettingList"));
+  assert!(tree.contains("BlockElementDeclarationBody"));
+}
+
+#[test]
+fn element_alias_garbage_stops_at_newline() {
+  // Alias recovery stops at newline - next line is a separate declaration
+  let (tree, _diags) = parse_source_with_diagnostics(
+    r#"Table users as 123
+Table other {}"#,
+  );
+  // Both elements should appear in the tree
+  assert!(tree.contains("other"));
+}
+
+#[test]
+fn paren_expr_eof_inside() {
+  // Unclosed `(` at EOF
+  let (_tree, diags) = parse_source_with_diagnostics(
+    r#"T E {
+  val (1, 2
+}"#,
+  );
+  assert!(diags.iter().any(|d| matches!(
+    d,
+    Diagnostic::UnclosedDelimiter { delimiter, .. } if *delimiter == "("
+  )));
+}
+
+#[test]
+fn tuple_eof_inside() {
+  // Unclosed tuple paren at EOF
+  let (_tree, diags) = parse_source_with_diagnostics("T E {\n  val (1, 2");
+  assert!(diags.iter().any(|d| matches!(
+    d,
+    Diagnostic::UnclosedDelimiter { delimiter, .. } if *delimiter == "("
+  )));
+}
+
+#[test]
+fn setting_list_unclosed_at_eof() {
+  // `[pk` without closing `]` at EOF
+  let (_tree, diags) = parse_source_with_diagnostics("T E {\n  id int [pk");
+  assert!(diags.iter().any(|d| matches!(
+    d,
+    Diagnostic::UnclosedDelimiter { delimiter, .. } if *delimiter == "["
+  )));
+}
+
+#[test]
+fn setting_list_unclosed_at_outer_brace() {
+  // `[pk` without `]`, but `}` closes outer block
+  let (tree, diags) = parse_source_with_diagnostics("T E {\n  id int [pk\n}");
+  assert!(!diags.is_empty());
+  // SettingList should still exist
+  assert!(tree.contains("SettingList"));
+}
+
+#[test]
+fn block_body_unclosed_at_eof() {
+  let (_tree, diags) = parse_source_with_diagnostics("T E {");
+  assert!(diags.iter().any(|d| matches!(
+    d,
+    Diagnostic::UnclosedDelimiter { delimiter, .. } if *delimiter == "{"
+  )));
+}
+
+#[test]
+fn nested_block_unclosed_exits_parent() {
+  // Nested block missing closing `}` - should exit parent context
+  let (_tree, diags) = parse_source_with_diagnostics(
+    r#"T Outer {
+  indexes {
+    id
+}"#,
+  );
+  // Should emit diagnostic for unclosed inner or outer block
+  assert!(!diags.is_empty());
+}
+
+#[test]
+fn fn_multiple_params_with_comma() {
+  let tree = parse_source("fn check(a: int, b: string, c: bool): bool {}");
+  assert_eq!(
+    tree,
+    r#"(SourceFile
+  (FuncDeclaration
+    "fn"
+    " "
+    (FuncDeclarationName
+      "check")
+    (FuncDeclarationParams
+      "("
+      (FuncDeclarationParam
+        (IdentExpr
+          "a")
+        ":"
+        " "
+        (IdentExpr
+          "int"))
+      ","
+      " "
+      (FuncDeclarationParam
+        (IdentExpr
+          "b")
+        ":"
+        " "
+        (IdentExpr
+          "string"))
+      ","
+      " "
+      (FuncDeclarationParam
+        (IdentExpr
+          "c")
+        ":"
+        " "
+        (IdentExpr
+          "bool"))
+      ")")
+    (FuncDeclarationReturnTyp
+      ":"
+      " "
+      (IdentExpr
+        "bool"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "}"))
+  "")"#
+  );
 }

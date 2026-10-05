@@ -1,5 +1,5 @@
 mod db;
-mod syntax;
+pub mod syntax;
 mod types;
 
 pub use db::*;
