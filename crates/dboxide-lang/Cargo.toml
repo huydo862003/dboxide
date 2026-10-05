@@ -4,6 +4,7 @@ version.workspace = true
 edition = "2024"
 
 [dependencies]
+derive_more = { version = "2", features = ["from"] }
 hashbrown = "0.15"
 itertools = "0.14"
 salsa = "0.28.5"

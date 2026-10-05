@@ -65,13 +65,17 @@ impl SourceFile {
   pub fn equality_declarations(&self) -> impl Iterator<Item = EqualityDeclaration> {
     self.children::<EqualityDeclaration>()
   }
+
+  pub fn fn_declarations(&self) -> impl Iterator<Item = FnDeclaration> {
+    self.children::<FnDeclaration>()
+  }
 }
 
 #[wrapper_ast_node(SyntaxKind = [
   BlockElementDeclaration,
   InlineElementDeclaration,
   UseDeclaration,
-  FnDeclaration,
+  FuncDeclaration,
   GetDeclaration,
   EqualityDeclaration,
 ])]
@@ -83,8 +87,8 @@ pub struct Declaration(RedNode);
 pub struct ElementDeclaration(RedNode);
 
 impl ElementDeclaration {
-  pub fn typ(&self) -> Option<ElementDeclarationType> {
-    self.child::<ElementDeclarationType>()
+  pub fn typ(&self) -> Option<ElementDeclarationTyp> {
+    self.child::<ElementDeclarationTyp>()
   }
 
   pub fn alias(&self) -> Option<ElementDeclarationAlias> {
@@ -116,15 +120,62 @@ impl ElementDeclaration {
       exprs.into_iter().next()
     }
   }
+
+  pub fn declaration_name(&self) -> Option<String> {
+    if let Some(target) = self.target_name() {
+      return Some(target.text().trim().to_string());
+    }
+    if let Some(eq_name) = self.child::<EqualityDeclarationName>() {
+      return Some(eq_name.text().trim().to_string());
+    }
+    None
+  }
 }
 
 // Declaration type
 #[derive(Clone, PartialEq, Eq, Hash, Debug, AstNode)]
-pub struct ElementDeclarationType(RedNode);
+pub struct ElementDeclarationTyp(RedNode);
 
-impl ElementDeclarationType {
+impl ElementDeclarationTyp {
   pub fn path_fragments(&self) -> impl Iterator<Item = NameExpr> {
     self.children::<NameExpr>()
+  }
+
+  /// Collect all path fragments, skipping dot operators
+  /// `auth.sub.Table` -> ["auth", "sub", "Table"]
+  pub fn collect_path_fragments(&self) -> Vec<String> {
+    self
+      .syntax()
+      .children()
+      .filter(|child| {
+        child.kind() == SyntaxKind::Ident
+          || child.kind() == SyntaxKind::IdentExpr
+          || child.kind() == SyntaxKind::DqStringExpr
+      })
+      .map(|child| child.text().trim().to_string())
+      .collect()
+  }
+
+  /// Extract schema chain and type keyword from the type path
+  /// Bare `Table` gets implicit "public": (["public"], "table")
+  /// Qualified `auth.sub.Table` -> (["auth", "sub"], "table")
+  /// Explicit `public.Table` -> (["public"], "table"), same as bare
+  pub fn collect_schema_chain(&self) -> (Vec<String>, String) {
+    let fragments = self.collect_path_fragments();
+    if fragments.len() > 1 {
+      (
+        fragments[..fragments.len() - 1].to_vec(),
+        fragments.last().unwrap().to_lowercase(),
+      )
+    } else {
+      (
+        vec!["public".to_string()],
+        fragments
+          .first()
+          .map(|s| s.to_lowercase())
+          .unwrap_or_default(),
+      )
+    }
   }
 }
 
@@ -199,7 +250,7 @@ impl BlockElementDeclarationBody {
   ElementFieldDeclaration,
   ElementAttributeDeclaration,
   BlockElementDeclaration,
-  FnDeclaration,
+  FuncDeclaration,
   GetDeclaration,
   EqualityDeclaration,
 ])]
@@ -464,22 +515,22 @@ impl UseSpecifierAlias {
   }
 }
 
-/* fn / get / type Declarations */
+/* func / get / type Declarations */
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug, AstNode)]
-pub struct FnDeclaration(RedNode);
+pub struct FuncDeclaration(RedNode);
 
-impl FnDeclaration {
-  pub fn name(&self) -> Option<FnDeclarationName> {
-    self.child::<FnDeclarationName>()
+impl FuncDeclaration {
+  pub fn name(&self) -> Option<FuncDeclarationName> {
+    self.child::<FuncDeclarationName>()
   }
 
-  pub fn params(&self) -> Option<FnDeclarationParams> {
-    self.child::<FnDeclarationParams>()
+  pub fn params(&self) -> Option<FuncDeclarationParams> {
+    self.child::<FuncDeclarationParams>()
   }
 
-  pub fn return_type(&self) -> Option<FnDeclarationReturnType> {
-    self.child::<FnDeclarationReturnType>()
+  pub fn return_typ(&self) -> Option<FuncDeclarationReturnTyp> {
+    self.child::<FuncDeclarationReturnTyp>()
   }
 
   pub fn body(&self) -> Option<BlockElementDeclarationBody> {
@@ -487,22 +538,49 @@ impl FnDeclaration {
   }
 }
 
-#[derive(Clone, PartialEq, Eq, Hash, Debug, AstNode)]
-pub struct FnDeclarationName(RedNode);
+pub type FnDeclaration = FuncDeclaration;
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug, AstNode)]
-pub struct FnDeclarationParams(RedNode);
+pub struct FuncDeclarationName(RedNode);
 
-impl FnDeclarationParams {
-  pub fn params(&self) -> impl Iterator<Item = FnDeclarationParam> {
-    self.children::<FnDeclarationParam>()
+impl FuncDeclarationName {
+  pub fn is_operator_declaration(&self) -> bool {
+    self.0.children().any(|child| {
+      child.kind() == SyntaxKind::Ident && child.text().trim().eq_ignore_ascii_case("operator")
+    })
+  }
+
+  pub fn operator_symbol(&self) -> Option<String> {
+    if !self.is_operator_declaration() {
+      return None;
+    }
+    self.0.children().find_map(|child| {
+      if child.kind() == SyntaxKind::Operator {
+        Some(child.text().trim().to_string())
+      } else {
+        None
+      }
+    })
   }
 }
 
-#[derive(Clone, PartialEq, Eq, Hash, Debug, AstNode)]
-pub struct FnDeclarationParam(RedNode);
+pub type FnDeclarationName = FuncDeclarationName;
 
-impl FnDeclarationParam {
+#[derive(Clone, PartialEq, Eq, Hash, Debug, AstNode)]
+pub struct FuncDeclarationParams(RedNode);
+
+impl FuncDeclarationParams {
+  pub fn params(&self) -> impl Iterator<Item = FuncDeclarationParam> {
+    self.children::<FuncDeclarationParam>()
+  }
+}
+
+pub type FnDeclarationParams = FuncDeclarationParams;
+
+#[derive(Clone, PartialEq, Eq, Hash, Debug, AstNode)]
+pub struct FuncDeclarationParam(RedNode);
+
+impl FuncDeclarationParam {
   pub fn name(&self) -> Option<IdentExpr> {
     self.child::<IdentExpr>()
   }
@@ -512,14 +590,18 @@ impl FnDeclarationParam {
   }
 }
 
-#[derive(Clone, PartialEq, Eq, Hash, Debug, AstNode)]
-pub struct FnDeclarationReturnType(RedNode);
+pub type FnDeclarationParam = FuncDeclarationParam;
 
-impl FnDeclarationReturnType {
+#[derive(Clone, PartialEq, Eq, Hash, Debug, AstNode)]
+pub struct FuncDeclarationReturnTyp(RedNode);
+
+impl FuncDeclarationReturnTyp {
   pub fn type_expr(&self) -> Option<Expr> {
     self.child::<Expr>()
   }
 }
+
+pub type FnDeclarationReturnTyp = FuncDeclarationReturnTyp;
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug, AstNode)]
 pub struct GetDeclaration(RedNode);
@@ -529,12 +611,12 @@ impl GetDeclaration {
     self.child::<GetDeclarationName>()
   }
 
-  pub fn params(&self) -> Option<FnDeclarationParams> {
-    self.child::<FnDeclarationParams>()
+  pub fn params(&self) -> Option<FuncDeclarationParams> {
+    self.child::<FuncDeclarationParams>()
   }
 
-  pub fn return_type(&self) -> Option<FnDeclarationReturnType> {
-    self.child::<FnDeclarationReturnType>()
+  pub fn return_typ(&self) -> Option<FuncDeclarationReturnTyp> {
+    self.child::<FuncDeclarationReturnTyp>()
   }
 
   pub fn body(&self) -> Option<BlockElementDeclarationBody> {
@@ -715,6 +797,16 @@ impl NumberExpr {
 
 #[wrapper_ast_node(SyntaxKind = [IdentExpr, DqStringExpr])]
 pub struct NameExpr(RedNode);
+
+impl NameExpr {
+  pub fn as_name(&self) -> Option<String> {
+    if let Some(ident) = IdentExpr::cast(self.0.clone()) {
+      Some(ident.name())
+    } else {
+      DqStringExpr::cast(self.0.clone()).map(|dq| dq.value())
+    }
+  }
+}
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug, AstNode)]
 pub struct IdentExpr(RedNode);
@@ -995,7 +1087,7 @@ impl ErrorNode {
   ClosureExpr,
   CommaExpr,
   ForallExpr,
-  ExistsExpr
+  ExistsExpr,
 ])]
 pub struct Expr(RedNode);
 
@@ -1012,7 +1104,7 @@ impl Expr {
     current
   }
 
-  pub fn as_ident(&self) -> Option<String> {
+  pub fn as_name(&self) -> Option<String> {
     let unwrapped = self.unwrap_parens();
     if let Some(ident) = IdentExpr::cast(unwrapped.0.clone()) {
       Some(ident.name())
@@ -1021,15 +1113,15 @@ impl Expr {
     }
   }
 
-  pub fn as_path(&self) -> Option<Vec<String>> {
+  pub fn as_name_path(&self) -> Option<Vec<String>> {
     let unwrapped = self.unwrap_parens();
-    if let Some(id) = unwrapped.as_ident() {
+    if let Some(id) = unwrapped.as_name() {
       return Some(vec![id]);
     }
     let infix = InfixExpr::cast(unwrapped.0)?;
     if infix.op().as_deref() == Some(".") {
-      let mut left_path = infix.left()?.as_path()?;
-      let right_path = infix.right()?.as_path()?;
+      let mut left_path = infix.left()?.as_name_path()?;
+      let right_path = infix.right()?.as_name_path()?;
       left_path.extend(right_path);
       return Some(left_path);
     }
@@ -1052,7 +1144,7 @@ impl Expr {
   }
 
   pub fn as_bool(&self) -> Option<bool> {
-    let ident = self.as_ident()?;
+    let ident = self.as_name()?;
     match ident.as_str() {
       "true" => Some(true),
       "false" => Some(false),
@@ -1084,8 +1176,8 @@ mod tests {
     let stream: PeekableStream<'_, char> =
       itertools::multipeek(Box::new(input.chars()) as Box<dyn Iterator<Item = char> + '_>);
     let ctx = ParseCtx::new(stream, cache);
-    let res = ctx.parse();
-    let root = RedNode::new_root(res.ast);
+    let result = ctx.parse();
+    let root = RedNode::new_root(result.ast);
     let source_file = SourceFile::cast(root).expect("SourceFile cast");
 
     let table: BlockElementDeclaration = source_file
@@ -1147,27 +1239,28 @@ mod tests {
       r"select `col` from tbl where c = '\n'"
     );
 
-    let num = parse_expr_node("42");
-    let num_expr = NumberExpr::cast(num).expect("NumberExpr");
-    assert_eq!(num_expr.value(), Some(42.0));
-    assert_eq!(num_expr.int_value(), Some(42));
+    let number = parse_expr_node("42");
+    let number_expr = NumberExpr::cast(number).expect("NumberExpr");
+    assert_eq!(number_expr.value(), Some(42.0));
+    assert_eq!(number_expr.int_value(), Some(42));
 
-    let float_num = parse_expr_node("12.5");
-    let float_expr = NumberExpr::cast(float_num).expect("NumberExpr float");
+    let float_number = parse_expr_node("12.5");
+    let float_expr = NumberExpr::cast(float_number).expect("NumberExpr float");
     assert_eq!(float_expr.value(), Some(12.5));
     assert_eq!(float_expr.int_value(), None);
 
     // Verify robustness against trivia inside or surrounding expressions
-    let num_with_trivia = parse_expr_node("/* comment */ 100");
-    let num_trivia_expr = NumberExpr::cast(num_with_trivia).expect("NumberExpr with trivia");
-    assert_eq!(num_trivia_expr.raw_text(), "100");
-    assert_eq!(num_trivia_expr.value(), Some(100.0));
-    assert_eq!(num_trivia_expr.int_value(), Some(100));
+    let number_with_trivia = parse_expr_node("/* comment */ 100");
+    let number_trivia_expr = NumberExpr::cast(number_with_trivia).expect("NumberExpr with trivia");
+    assert_eq!(number_trivia_expr.raw_text(), "100");
+    assert_eq!(number_trivia_expr.value(), Some(100.0));
+    assert_eq!(number_trivia_expr.int_value(), Some(100));
 
-    let str_with_trivia = parse_expr_node("/* note */ \"escaped\\ncontent\"");
-    let str_trivia_expr = DqStringExpr::cast(str_with_trivia).expect("DqStringExpr with trivia");
-    assert_eq!(str_trivia_expr.raw_text(), "\"escaped\\ncontent\"");
-    assert_eq!(str_trivia_expr.value(), "escaped\ncontent");
+    let string_with_trivia = parse_expr_node("/* note */ \"escaped\\ncontent\"");
+    let string_trivia_expr =
+      DqStringExpr::cast(string_with_trivia).expect("DqStringExpr with trivia");
+    assert_eq!(string_trivia_expr.raw_text(), "\"escaped\\ncontent\"");
+    assert_eq!(string_trivia_expr.value(), "escaped\ncontent");
   }
 
   #[test]
@@ -1192,20 +1285,21 @@ type UserId = int
     let stream: PeekableStream<'_, char> =
       itertools::multipeek(Box::new(input.chars()) as Box<dyn Iterator<Item = char> + '_>);
     let ctx = ParseCtx::new(stream, cache);
-    let res = ctx.parse();
-    let root = RedNode::new_root(res.ast);
+    let result = ctx.parse();
+    let root = RedNode::new_root(result.ast);
     let source_file = SourceFile::cast(root).expect("SourceFile cast");
 
-    let all_decls: Vec<_> = source_file.declarations().collect();
-    assert_eq!(all_decls.len(), 3);
-    assert!(UseDeclaration::try_from(all_decls[0].clone()).is_ok());
-    assert!(BlockElementDeclaration::try_from(all_decls[1].clone()).is_ok());
-    assert!(EqualityDeclaration::try_from(all_decls[2].clone()).is_ok());
+    let all_declarations: Vec<_> = source_file.declarations().collect();
+    assert_eq!(all_declarations.len(), 3);
+    assert!(UseDeclaration::try_from(all_declarations[0].clone()).is_ok());
+    assert!(BlockElementDeclaration::try_from(all_declarations[1].clone()).is_ok());
+    assert!(EqualityDeclaration::try_from(all_declarations[2].clone()).is_ok());
 
-    let use_decl_ref: Result<UseDeclaration, _> = (&all_decls[0]).try_into();
-    assert!(use_decl_ref.is_ok());
-    let elem_decl_ref: Result<BlockElementDeclaration, _> = (&all_decls[1]).try_into();
-    assert!(elem_decl_ref.is_ok());
+    let use_declaration_ref: Result<UseDeclaration, _> = (&all_declarations[0]).try_into();
+    assert!(use_declaration_ref.is_ok());
+    let elem_declaration_ref: Result<BlockElementDeclaration, _> =
+      (&all_declarations[1]).try_into();
+    assert!(elem_declaration_ref.is_ok());
   }
 
   #[test]
@@ -1234,25 +1328,37 @@ type UserId = int
     let root = RedNode::new_root(res.ast);
     let source_file = SourceFile::cast(root).expect("SourceFile cast");
 
-    let use_decl = source_file.use_declarations().next().expect("use decl");
-    assert_eq!(use_decl.module_path().as_deref(), Some("./users.dbml"));
-    assert!(!use_decl.is_reuse());
-    let spec = use_decl
+    let use_declaration = source_file.use_declarations().next().expect("use decl");
+    assert_eq!(
+      use_declaration.module_path().as_deref(),
+      Some("./users.dbml")
+    );
+    assert!(!use_declaration.is_reuse());
+    let specifier = use_declaration
       .specifier_list()
       .expect("specifier list")
       .specifiers()
       .next()
       .expect("specifier");
     assert_eq!(
-      spec.kind().map(|k| k.text().trim().to_string()).as_deref(),
+      specifier
+        .kind()
+        .map(|k| k.text().trim().to_string())
+        .as_deref(),
       Some("table")
     );
     assert_eq!(
-      spec.name().map(|n| n.text().trim().to_string()).as_deref(),
+      specifier
+        .name()
+        .map(|n| n.text().trim().to_string())
+        .as_deref(),
       Some("users")
     );
     assert_eq!(
-      spec.alias().map(|a| a.text().trim().to_string()).as_deref(),
+      specifier
+        .alias()
+        .map(|a| a.text().trim().to_string())
+        .as_deref(),
       Some("u")
     );
   }
@@ -1279,8 +1385,8 @@ type UserId = int
     let stream: PeekableStream<'_, char> =
       itertools::multipeek(Box::new(input.chars()) as Box<dyn Iterator<Item = char> + '_>);
     let ctx = ParseCtx::new(stream, cache);
-    let res = ctx.parse();
-    let root = RedNode::new_root(res.ast);
+    let result = ctx.parse();
+    let root = RedNode::new_root(result.ast);
     let source_file = SourceFile::cast(root).expect("SourceFile cast");
 
     let element = source_file.element_declarations().next().expect("element");
@@ -1327,8 +1433,8 @@ type UserId = int
     let stream: PeekableStream<'_, char> =
       itertools::multipeek(Box::new(input.chars()) as Box<dyn Iterator<Item = char> + '_>);
     let ctx = ParseCtx::new(stream, cache);
-    let res = ctx.parse();
-    let root = RedNode::new_root(res.ast);
+    let result = ctx.parse();
+    let root = RedNode::new_root(result.ast);
     let source_file = SourceFile::cast(root).expect("SourceFile cast");
 
     let element = source_file.element_declarations().next().expect("element");
@@ -1371,9 +1477,14 @@ type UserId = int
       Some("user note")
     );
 
-    let fn_decl = body.fn_declarations().next().expect("fn decl");
-    assert_eq!(fn_decl.name().unwrap().text().trim(), "calculate");
-    let param = fn_decl.params().unwrap().params().next().expect("param");
+    let func_declaration = body.fn_declarations().next().expect("fn decl");
+    assert_eq!(func_declaration.name().unwrap().text().trim(), "calculate");
+    let param = func_declaration
+      .params()
+      .unwrap()
+      .params()
+      .next()
+      .expect("param");
     assert_eq!(
       param.name().map(|e| e.text().trim().to_string()).as_deref(),
       Some("x")
@@ -1386,8 +1497,8 @@ type UserId = int
       Some("int")
     );
     assert_eq!(
-      fn_decl
-        .return_type()
+      func_declaration
+        .return_typ()
         .and_then(|rt| rt.type_expr())
         .unwrap()
         .text()
@@ -1395,11 +1506,11 @@ type UserId = int
       "int"
     );
 
-    let type_decl = source_file
+    let type_declaration = source_file
       .equality_declarations()
       .next()
       .expect("type decl");
-    assert_eq!(type_decl.name().unwrap().text().trim(), "UserId");
+    assert_eq!(type_declaration.name().unwrap().text().trim(), "UserId");
   }
 
   #[test]
@@ -1407,7 +1518,7 @@ type UserId = int
     let path_node = parse_expr_node("schema.users.id");
     let path_expr = Expr::cast(path_node).expect("Expr cast");
     assert_eq!(
-      path_expr.as_path(),
+      path_expr.as_name_path(),
       Some(vec![
         "schema".to_string(),
         "users".to_string(),
@@ -1417,8 +1528,8 @@ type UserId = int
 
     let single_node = parse_expr_node("users");
     let single_expr = Expr::cast(single_node).expect("Expr cast");
-    assert_eq!(single_expr.as_path(), Some(vec!["users".to_string()]));
-    assert_eq!(single_expr.as_ident().as_deref(), Some("users"));
+    assert_eq!(single_expr.as_name_path(), Some(vec!["users".to_string()]));
+    assert_eq!(single_expr.as_name().as_deref(), Some("users"));
 
     let paren_node = parse_expr_node("((42))");
     let paren_expr = Expr::cast(paren_node).expect("Expr cast");

@@ -5,7 +5,8 @@ fn type_block_empty() {
   let tree = parse_source("type Foo {}");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    "type"
+    (ElementDeclarationTyp
+      "type")
     " "
     (EqualityDeclarationName
       "Foo")
@@ -22,7 +23,8 @@ fn type_block_with_role() {
   let tree = parse_source("type Foo [element] {}");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    "type"
+    (ElementDeclarationTyp
+      "type")
     " "
     (EqualityDeclarationName
       "Foo")
@@ -46,7 +48,8 @@ fn type_alias_simple() {
   let tree = parse_source("type Str = string");
   let expected = r#"(SourceFile
   (EqualityDeclaration
-    "type"
+    (ElementDeclarationTyp
+      "type")
     " "
     (EqualityDeclarationName
       "Str")
@@ -64,7 +67,8 @@ fn type_alias_union() {
   let tree = parse_source(r#"type Status = "active" | "inactive""#);
   let expected = r#"(SourceFile
   (EqualityDeclaration
-    "type"
+    (ElementDeclarationTyp
+      "type")
     " "
     (EqualityDeclarationName
       "Status")
@@ -92,7 +96,8 @@ fn type_with_field() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    "type"
+    (ElementDeclarationTyp
+      "type")
     " "
     (EqualityDeclarationName
       "Foo")
@@ -124,7 +129,8 @@ fn type_with_nested_fn() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    "type"
+    (ElementDeclarationTyp
+      "type")
     " "
     (EqualityDeclarationName
       "Foo")
@@ -133,15 +139,15 @@ fn type_with_nested_fn() {
       "{"
       "\n"
       "  "
-      (FnDeclaration
+      (FuncDeclaration
         "fn"
         " "
-        (FnDeclarationName
+        (FuncDeclarationName
           "method")
-        (FnDeclarationParams
+        (FuncDeclarationParams
           "("
           ")")
-        (FnDeclarationReturnType
+        (FuncDeclarationReturnTyp
           ":"
           " "
           (IdentExpr
@@ -165,7 +171,8 @@ fn type_nested_inside_type() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    "type"
+    (ElementDeclarationTyp
+      "type")
     " "
     (EqualityDeclarationName
       "Outer")
@@ -175,7 +182,8 @@ fn type_nested_inside_type() {
       "\n"
       "  "
       (BlockElementDeclaration
-        "type"
+        (ElementDeclarationTyp
+          "type")
         " "
         (EqualityDeclarationName
           "Inner")
@@ -194,7 +202,8 @@ fn type_role_multiple_settings() {
   let tree = parse_source("type T [element, on use: expand] {}");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    "type"
+    (ElementDeclarationTyp
+      "type")
     " "
     (EqualityDeclarationName
       "T")
@@ -230,7 +239,8 @@ fn type_quoted_name() {
   let tree = parse_source(r#"type "Foo" {}"#);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    "type"
+    (ElementDeclarationTyp
+      "type")
     " "
     (EqualityDeclarationName
       "\"Foo\"")
@@ -247,7 +257,8 @@ fn type_error_missing_name() {
   let tree = parse_source("type {}");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    "type"
+    (ElementDeclarationTyp
+      "type")
     " "
     (EqualityDeclarationName)
     (BlockElementDeclarationBody
@@ -262,7 +273,8 @@ fn type_error_missing_body_or_eq() {
   let tree = parse_source("type Foo");
   let expected = r#"(SourceFile
   (EqualityDeclaration
-    "type"
+    (ElementDeclarationTyp
+      "type")
     " "
     (EqualityDeclarationName
       "Foo"))
@@ -275,7 +287,8 @@ fn type_alias_call_expr() {
   let tree = parse_source("type T = foo()");
   let expected = r#"(SourceFile
   (EqualityDeclaration
-    "type"
+    (ElementDeclarationTyp
+      "type")
     " "
     (EqualityDeclarationName
       "T")

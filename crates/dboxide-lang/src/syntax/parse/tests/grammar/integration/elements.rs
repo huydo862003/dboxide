@@ -27,7 +27,7 @@ Table Users as U {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (BlockElementDeclarationBody
@@ -38,7 +38,7 @@ Table Users as U {
   "\n"
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "TableGroup")
     " "
     (ElementDeclarationTargetFragment
@@ -53,7 +53,7 @@ Table Users as U {
   "\n"
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Ref")
     " "
     (BlockElementDeclarationBody
@@ -64,7 +64,7 @@ Table Users as U {
   "\n"
   "\n"
   (InlineElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Note")
     ":"
     " "
@@ -75,7 +75,7 @@ Table Users as U {
   "\n"
   "\n"
   (InlineElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Note")
     ":"
     " "
@@ -86,7 +86,7 @@ Table Users as U {
   "\n"
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -117,12 +117,12 @@ fn comprehensive_element_in_simple_body() {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (InlineElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Note")
     ":"
     " "
     (BlockElementDeclaration
-      (ElementDeclarationType
+      (ElementDeclarationTyp
         "Enum")
       " "
       (ElementDeclarationTargetFragment
@@ -157,7 +157,7 @@ Table wrong_nested_element [] {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Project")
     " "
     (BlockElementDeclarationBody
@@ -165,7 +165,7 @@ Table wrong_nested_element [] {
       "\n"
       "    "
       (BlockElementDeclaration
-        (ElementDeclarationType
+        (ElementDeclarationTyp
           "Table")
         " "
         (ElementDeclarationTargetFragment
@@ -182,7 +182,7 @@ Table wrong_nested_element [] {
       "\n"
       "    "
       (BlockElementDeclaration
-        (ElementDeclarationType
+        (ElementDeclarationTyp
           "Table")
         " "
         (ElementDeclarationTargetFragment
@@ -207,7 +207,7 @@ Table wrong_nested_element [] {
   "\n"
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -223,7 +223,7 @@ Table wrong_nested_element [] {
       "\n"
       "    "
       (BlockElementDeclaration
-        (ElementDeclarationType
+        (ElementDeclarationTyp
           "Indexes")
         " "
         (ElementDeclarationTargetFragment

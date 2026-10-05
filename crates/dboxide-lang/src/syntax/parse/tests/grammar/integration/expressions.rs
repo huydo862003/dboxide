@@ -58,7 +58,7 @@ fn comprehensive_expression() {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Test")
     " "
     (ElementDeclarationTargetFragment
@@ -534,7 +534,7 @@ fn comprehensive_list_expression() {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Test")
     " "
     (ElementDeclarationTargetFragment
@@ -652,7 +652,7 @@ fn comprehensive_literal_element_expression() {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Test")
     " "
     (ElementDeclarationTargetFragment
@@ -664,7 +664,7 @@ fn comprehensive_literal_element_expression() {
       "\n"
       "    "
       (BlockElementDeclaration
-        (ElementDeclarationType
+        (ElementDeclarationTyp
           "indexes")
         " "
         (SettingList
@@ -723,7 +723,7 @@ fn comprehensive_literal_element_expression() {
       "\n"
       "    "
       (BlockElementDeclaration
-        (ElementDeclarationType
+        (ElementDeclarationTyp
           "Note")
         " "
         (BlockElementDeclarationBody
@@ -764,7 +764,7 @@ fn comprehensive_tuple_expression() {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Test")
     " "
     (ElementDeclarationTargetFragment

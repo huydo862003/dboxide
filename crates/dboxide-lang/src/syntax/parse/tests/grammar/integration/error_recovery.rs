@@ -15,10 +15,10 @@ fn fn_missing_name_diag() {
     }]
   );
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName)
+    (FuncDeclarationName)
     (BlockElementDeclarationBody
       "{"
       "}"))
@@ -38,12 +38,12 @@ fn fn_missing_body_diag() {
     }]
   );
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "foo")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
       ")"))
   "")"#;
@@ -69,9 +69,9 @@ fn fn_only_keyword_diag() {
     ]
   );
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
-    (FnDeclarationName))
+    (FuncDeclarationName))
   "")"#;
   assert_eq!(tree, expected);
 }
@@ -220,7 +220,8 @@ fn type_missing_name_diag() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    "type"
+    (ElementDeclarationTyp
+      "type")
     " "
     (EqualityDeclarationName)
     (BlockElementDeclarationBody
@@ -243,7 +244,8 @@ fn type_missing_body_or_eq_diag() {
   );
   let expected = r#"(SourceFile
   (EqualityDeclaration
-    "type"
+    (ElementDeclarationTyp
+      "type")
     " "
     (EqualityDeclarationName
       "Foo"))
@@ -295,20 +297,20 @@ fn fn_missing_name_then_valid_fn() {
     }]
   );
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName)
+    (FuncDeclarationName)
     (BlockElementDeclarationBody
       "{"
       "}"))
   "\n"
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "ok")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
       ")")
     " "
@@ -331,21 +333,21 @@ fn fn_missing_body_then_valid_fn() {
     }]
   );
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "foo")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
       ")"))
   "\n"
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "bar")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
       ")")
     " "
@@ -369,17 +371,18 @@ fn type_missing_body_then_fn() {
   );
   let expected = r#"(SourceFile
   (EqualityDeclaration
-    "type"
+    (ElementDeclarationTyp
+      "type")
     " "
     (EqualityDeclarationName
       "Foo"))
   "\n"
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "ok")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
       ")")
     " "

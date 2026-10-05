@@ -13,7 +13,7 @@ fn comprehensive_call_expression() {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Test")
     " "
     (ElementDeclarationTargetFragment
@@ -93,7 +93,7 @@ fn comprehensive_function_application() {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Test")
     " "
     (ElementDeclarationTargetFragment

@@ -5,7 +5,8 @@ fn get_no_params_with_return() {
   let tree = parse_source("type T { namespace { get items(): Item[] {} } }");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    "type"
+    (ElementDeclarationTyp
+      "type")
     " "
     (EqualityDeclarationName
       "T")
@@ -14,7 +15,7 @@ fn get_no_params_with_return() {
       "{"
       " "
       (BlockElementDeclaration
-        (ElementDeclarationType
+        (ElementDeclarationTyp
           "namespace")
         " "
         (BlockElementDeclarationBody
@@ -25,10 +26,10 @@ fn get_no_params_with_return() {
             " "
             (GetDeclarationName
               "items")
-            (FnDeclarationParams
+            (FuncDeclarationParams
               "("
               ")")
-            (FnDeclarationReturnType
+            (FuncDeclarationReturnTyp
               ":"
               " "
               (IndexExpr
@@ -53,7 +54,8 @@ fn get_with_one_param() {
   let tree = parse_source("type T { namespace { get find(id: int): Item {} } }");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    "type"
+    (ElementDeclarationTyp
+      "type")
     " "
     (EqualityDeclarationName
       "T")
@@ -62,7 +64,7 @@ fn get_with_one_param() {
       "{"
       " "
       (BlockElementDeclaration
-        (ElementDeclarationType
+        (ElementDeclarationTyp
           "namespace")
         " "
         (BlockElementDeclarationBody
@@ -73,9 +75,9 @@ fn get_with_one_param() {
             " "
             (GetDeclarationName
               "find")
-            (FnDeclarationParams
+            (FuncDeclarationParams
               "("
-              (FnDeclarationParam
+              (FuncDeclarationParam
                 (IdentExpr
                   "id")
                 ":"
@@ -83,7 +85,7 @@ fn get_with_one_param() {
                 (IdentExpr
                   "int"))
               ")")
-            (FnDeclarationReturnType
+            (FuncDeclarationReturnTyp
               ":"
               " "
               (IdentExpr
@@ -109,7 +111,8 @@ fn get_with_body() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    "type"
+    (ElementDeclarationTyp
+      "type")
     " "
     (EqualityDeclarationName
       "T")
@@ -118,7 +121,7 @@ fn get_with_body() {
       "{"
       " "
       (BlockElementDeclaration
-        (ElementDeclarationType
+        (ElementDeclarationTyp
           "namespace")
         " "
         (BlockElementDeclarationBody
@@ -129,10 +132,10 @@ fn get_with_body() {
             " "
             (GetDeclarationName
               "count")
-            (FnDeclarationParams
+            (FuncDeclarationParams
               "("
               ")")
-            (FnDeclarationReturnType
+            (FuncDeclarationReturnTyp
               ":"
               " "
               (IdentExpr
@@ -161,7 +164,8 @@ fn get_error_missing_body() {
   let tree = parse_source("type T { namespace { get count(): int } }");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    "type"
+    (ElementDeclarationTyp
+      "type")
     " "
     (EqualityDeclarationName
       "T")
@@ -170,7 +174,7 @@ fn get_error_missing_body() {
       "{"
       " "
       (BlockElementDeclaration
-        (ElementDeclarationType
+        (ElementDeclarationTyp
           "namespace")
         " "
         (BlockElementDeclarationBody
@@ -181,10 +185,10 @@ fn get_error_missing_body() {
             " "
             (GetDeclarationName
               "count")
-            (FnDeclarationParams
+            (FuncDeclarationParams
               "("
               ")")
-            (FnDeclarationReturnType
+            (FuncDeclarationReturnTyp
               ":"
               " "
               (IdentExpr
@@ -202,7 +206,8 @@ fn get_error_missing_name() {
   let tree = parse_source("type T { namespace { get (): int {} } }");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    "type"
+    (ElementDeclarationTyp
+      "type")
     " "
     (EqualityDeclarationName
       "T")
@@ -211,7 +216,7 @@ fn get_error_missing_name() {
       "{"
       " "
       (BlockElementDeclaration
-        (ElementDeclarationType
+        (ElementDeclarationTyp
           "namespace")
         " "
         (BlockElementDeclarationBody
@@ -221,10 +226,10 @@ fn get_error_missing_name() {
             "get"
             " "
             (GetDeclarationName)
-            (FnDeclarationParams
+            (FuncDeclarationParams
               "("
               ")")
-            (FnDeclarationReturnType
+            (FuncDeclarationReturnTyp
               ":"
               " "
               (IdentExpr
@@ -246,7 +251,8 @@ fn get_no_params_no_return_type() {
   let tree = parse_source("type T { namespace { get items() {} } }");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    "type"
+    (ElementDeclarationTyp
+      "type")
     " "
     (EqualityDeclarationName
       "T")
@@ -255,7 +261,7 @@ fn get_no_params_no_return_type() {
       "{"
       " "
       (BlockElementDeclaration
-        (ElementDeclarationType
+        (ElementDeclarationTyp
           "namespace")
         " "
         (BlockElementDeclarationBody
@@ -266,7 +272,7 @@ fn get_no_params_no_return_type() {
             " "
             (GetDeclarationName
               "items")
-            (FnDeclarationParams
+            (FuncDeclarationParams
               "("
               ")")
             " "

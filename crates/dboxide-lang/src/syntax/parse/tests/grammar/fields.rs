@@ -9,7 +9,7 @@ fn field_basic() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -43,7 +43,7 @@ fn field_with_settings() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -85,7 +85,7 @@ fn multiple_fields() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -131,7 +131,7 @@ fn field_with_tuple() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -143,7 +143,7 @@ fn field_with_tuple() {
       "\n"
       "  "
       (BlockElementDeclaration
-        (ElementDeclarationType
+        (ElementDeclarationTyp
           "indexes")
         " "
         (BlockElementDeclarationBody
@@ -186,7 +186,7 @@ fn field_call_without_space() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -225,7 +225,7 @@ fn field_call_with_space_is_not_call() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -266,7 +266,7 @@ fn field_index_without_space() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -305,7 +305,7 @@ fn field_index_with_space_is_setting() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -347,7 +347,7 @@ fn field_with_binary_operator() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -387,7 +387,7 @@ fn field_with_complex_expression() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
