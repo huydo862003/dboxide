@@ -3,8 +3,12 @@ use std::sync::{Arc, Mutex};
 
 use salsa::{Database, Storage, db};
 
-pub mod name_resolve;
+pub mod builtins;
+pub mod get_namespace_members;
+pub mod get_object_fields;
+pub mod get_scope;
 pub mod parse_file;
+pub mod resolve_name;
 mod types;
 
 pub use types::*;
