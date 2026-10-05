@@ -459,3 +459,95 @@ fn parse_ref_operators() {
       "id")))"#;
   assert_eq!(tree, expected);
 }
+
+// Tests using parse_expr_with_diagnostics
+
+#[test]
+fn parse_unclosed_paren_produces_diagnostic() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("(1 + 2");
+  assert!(!diagnostics.is_empty());
+  assert!(tree.contains("ParenExpr"));
+}
+
+#[test]
+fn parse_unclosed_bracket_produces_diagnostic() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("[1, 2");
+  assert!(!diagnostics.is_empty());
+  assert!(tree.contains("ListExpr"));
+}
+
+#[test]
+fn parse_empty_expr_produces_diagnostic() {
+  let (_tree, diagnostics) = parse_expr_with_diagnostics("");
+  assert!(!diagnostics.is_empty());
+}
+
+#[test]
+fn parse_valid_closure_no_diagnostic() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("(x) => x + 1");
+  assert!(diagnostics.is_empty());
+  assert!(tree.contains("ClosureExpr"));
+}
+
+#[test]
+fn parse_valid_call_no_diagnostic() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("foo(1, 2)");
+  assert!(diagnostics.is_empty());
+  assert!(tree.contains("CallExpr"));
+}
+
+#[test]
+fn parse_valid_index_no_diagnostic() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("a[0]");
+  assert!(diagnostics.is_empty());
+  assert!(tree.contains("IndexExpr"));
+}
+
+#[test]
+fn parse_nested_unclosed_paren_produces_diagnostic() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("foo((1 + 2)");
+  assert!(!diagnostics.is_empty());
+  assert!(tree.contains("CallExpr"));
+}
+
+#[test]
+fn parse_valid_forall_no_diagnostic() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("forall c of columns { c }");
+  assert!(diagnostics.is_empty());
+  assert!(tree.contains("ForallExpr"));
+}
+
+#[test]
+fn parse_valid_exists_no_diagnostic() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("exists c of columns { c }");
+  assert!(diagnostics.is_empty());
+  assert!(tree.contains("ExistsExpr"));
+}
+
+#[test]
+fn parse_chained_dot_no_diagnostic() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("a.b.c");
+  assert!(diagnostics.is_empty());
+  assert!(tree.contains("InfixExpr"));
+}
+
+#[test]
+fn parse_at_access_no_diagnostic() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("users@columns");
+  assert!(diagnostics.is_empty());
+  assert!(tree.contains("InfixExpr"));
+}
+
+#[test]
+fn parse_triple_quoted_string_no_diagnostic() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("'''multi\nline'''");
+  assert!(diagnostics.is_empty());
+  assert!(tree.contains("TqStringExpr"));
+}
+
+#[test]
+fn parse_backtick_expr_no_diagnostic() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("`now()`");
+  assert!(diagnostics.is_empty());
+  assert!(tree.contains("OqStringExpr"));
+}

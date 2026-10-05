@@ -282,7 +282,7 @@ impl<'a> ParseCtx<'a> {
     &mut self,
   ) -> (GreenNode, Option<ExprCtx>) {
     let mut children = Vec::new();
-    children.push(self.qualified_name(SKIP_NONE, SyntaxKind::ElementDeclarationType));
+    children.push(self.qualified_name(SKIP_NONE, SyntaxKind::ElementDeclarationTyp));
 
     self.element_target_fragments(&mut children, SKIP_WC);
 
@@ -364,7 +364,7 @@ impl<'a> ParseCtx<'a> {
     let mut children = Vec::new();
 
     self.consume_trivia(&mut children, skip);
-    children.push(self.qualified_name(SKIP_NONE, SyntaxKind::ElementDeclarationType));
+    children.push(self.qualified_name(SKIP_NONE, SyntaxKind::ElementDeclarationTyp));
 
     self.element_target_fragments(&mut children, skip);
 
@@ -572,15 +572,18 @@ impl<'a> ParseCtx<'a> {
   /* Field and attribute declarations */
 
   // field = expr+ setting_list?
+  // A leading `[...]` before any args is parsed as a ListExpr arg (rest attribute syntax)
+  // A `[...]` after at least one arg is the trailing setting list
   pub(in crate::syntax::parse) fn field_declaration(&mut self, initial_skip: usize) -> GreenNode {
     self.expr_ctx_stack.enter(ExprCtx::Field);
     let mut children = Vec::new();
     let mut skip = initial_skip;
+    let mut can_be_settings = false;
     loop {
       let peek = self.peek(skip);
       match peek.token.kind() {
         SyntaxKind::Newline | SyntaxKind::Eof | SyntaxKind::RBrace => break,
-        SyntaxKind::LBracket => {
+        SyntaxKind::LBracket if can_be_settings => {
           self.consume_trivia(&mut children, skip);
           children.push(self.setting_list(SKIP_NONE));
           break;
@@ -589,6 +592,7 @@ impl<'a> ParseCtx<'a> {
           self.consume_trivia(&mut children, skip);
           let (expr_node, exit) = self.expr();
           children.push(self.emit(SyntaxKind::ElementFieldDeclarationArg, &[expr_node]));
+          can_be_settings = true;
           if exit.is_some() {
             break;
           }
@@ -793,16 +797,13 @@ impl<'a> ParseCtx<'a> {
     loop {
       let peek = self.peek(SKIP_WC);
       match peek.token.kind() {
-        SyntaxKind::Ident | SyntaxKind::DqString => {
+        SyntaxKind::Ident => {
           self.consume_trivia(&mut name_children, SKIP_WC);
           self.advance(&mut name_children, SKIP_NONE);
           let after = self.peek(SKIP_WC);
-          if matches!(after.token.kind(), SyntaxKind::Ident | SyntaxKind::DqString) {
+          if matches!(after.token.kind(), SyntaxKind::Ident) {
             let peek_after = self.peek_nth(1, SKIP_WC);
-            if !matches!(
-              peek_after.token.kind(),
-              SyntaxKind::Ident | SyntaxKind::DqString
-            ) {
+            if !matches!(peek_after.token.kind(), SyntaxKind::Ident,) {
               // Next word is the last one, include it
               self.consume_trivia(&mut name_children, SKIP_WC);
               self.advance(&mut name_children, SKIP_NONE);
@@ -810,6 +811,11 @@ impl<'a> ParseCtx<'a> {
             }
             continue;
           }
+          break;
+        }
+        SyntaxKind::DqString => {
+          self.consume_trivia(&mut name_children, SKIP_WC);
+          self.advance(&mut name_children, SKIP_NONE);
           break;
         }
         _ => {
@@ -1391,7 +1397,7 @@ impl<'a> ParseCtx<'a> {
         end_offset: peek.end_offset,
       });
     }
-    children.push(self.emit(SyntaxKind::FnDeclarationName, &name_children));
+    children.push(self.emit(SyntaxKind::FuncDeclarationName, &name_children));
 
     // optional params
     let peek = self.peek(SKIP_WC);
@@ -1412,14 +1418,17 @@ impl<'a> ParseCtx<'a> {
     if peek.token.kind() == SyntaxKind::LBrace {
       self.consume_trivia(&mut children, SKIP_WCN);
       let early_exit = self.block_element_body(&mut children, SKIP_NONE);
-      return (self.emit(SyntaxKind::FnDeclaration, &children), early_exit);
+      return (
+        self.emit(SyntaxKind::FuncDeclaration, &children),
+        early_exit,
+      );
     }
     self.emit_diagnostic(Diagnostic::MissingExpectedToken {
       expected: "'{'",
       start_offset: peek.start_offset,
       end_offset: peek.end_offset,
     });
-    (self.emit(SyntaxKind::FnDeclaration, &children), None)
+    (self.emit(SyntaxKind::FuncDeclaration, &children), None)
   }
 
   pub(in crate::syntax::parse) fn get_declaration(&mut self) -> (GreenNode, Option<ExprCtx>) {
@@ -1472,7 +1481,11 @@ impl<'a> ParseCtx<'a> {
 
   pub(in crate::syntax::parse) fn type_declaration(&mut self) -> (GreenNode, Option<ExprCtx>) {
     let mut children = Vec::new();
-    self.advance(&mut children, SKIP_NONE); // "type"
+
+    // Wrap "type" in ElementDeclarationTyp like other element declarations
+    let mut typ_children = Vec::new();
+    self.advance(&mut typ_children, SKIP_NONE); // "type"
+    children.push(self.emit(SyntaxKind::ElementDeclarationTyp, &typ_children));
 
     // name
     self.consume_trivia(&mut children, SKIP_WC);
@@ -1536,7 +1549,7 @@ impl<'a> ParseCtx<'a> {
     let (type_expr, _) = self.expr();
     self.expr_ctx_stack.exit(ExprCtx::Field);
     rt_children.push(type_expr);
-    self.emit(SyntaxKind::FnDeclarationReturnType, &rt_children)
+    self.emit(SyntaxKind::FuncDeclarationReturnTyp, &rt_children)
   }
 
   fn fn_declaration_params(&mut self) -> GreenNode {
@@ -1585,7 +1598,7 @@ impl<'a> ParseCtx<'a> {
     }
 
     self.expr_ctx_stack.exit(ExprCtx::Tuple);
-    self.emit(SyntaxKind::FnDeclarationParams, &children)
+    self.emit(SyntaxKind::FuncDeclarationParams, &children)
   }
 
   fn fn_declaration_param(&mut self) -> GreenNode {
@@ -1614,7 +1627,7 @@ impl<'a> ParseCtx<'a> {
         end_offset: peek.end_offset,
       });
     }
-    self.emit(SyntaxKind::FnDeclarationParam, &children)
+    self.emit(SyntaxKind::FuncDeclarationParam, &children)
   }
 
   // quantifier_expr = ("forall" | "exists") binding "of" collection body

@@ -21,11 +21,11 @@ impl Hash for CheapRedNode {
 
 #[tracked]
 pub struct TrackedRedNode<'db> {
-  value: CheapRedNode,
+  pub value: CheapRedNode,
 }
 
 #[tracked]
 pub struct FileParseResult<'db> {
-  ast: TrackedRedNode<'db>,
-  diagnostics: Vec<Diagnostic>,
+  pub ast: TrackedRedNode<'db>,
+  pub diagnostics: Vec<Diagnostic>,
 }

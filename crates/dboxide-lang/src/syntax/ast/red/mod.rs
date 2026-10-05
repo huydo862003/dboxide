@@ -132,13 +132,13 @@ impl RedNode {
     let children: Vec<_> = self.children().collect();
     let start = children
       .iter()
-      .find(|c| !c.kind().is_trivia())
-      .map(|c| c.offset())
+      .find(|child| !child.kind().is_trivia())
+      .map(|child| child.offset())
       .unwrap_or(self.offset());
     let end = children
       .iter()
-      .rfind(|c| !c.kind().is_trivia())
-      .map(|c| c.offset() + c.text_len())
+      .rfind(|child| !child.kind().is_trivia())
+      .map(|child| child.offset() + child.text_len())
       .unwrap_or(self.offset() + self.text_len());
     (start, end - start)
   }

@@ -1,13 +1,12 @@
 use salsa::{Accumulator, Database, tracked};
 
-use crate::{
-  FileHandle,
-  ast::{RedNode, cache::CACHE},
-  db::types::{CheapRedNode, Diagnostics, File, FileParseResult, TrackedRedNode},
-  diagnostics::Diagnostic,
-  parse::{ParseCtx, ParseResult},
-};
+use crate::FileHandle;
+use crate::ast::{RedNode, cache::CACHE};
+use crate::db::types::{CheapRedNode, Diagnostics, File, FileParseResult, TrackedRedNode};
+use crate::diagnostics::Diagnostic;
+use crate::parse::{ParseCtx, ParseResult};
 
+/// Parse a file into an AST
 #[tracked]
 pub fn parse_file<'db>(db: &'db dyn Database, file: File) -> FileParseResult<'db> {
   let mut diagnostics = vec![];

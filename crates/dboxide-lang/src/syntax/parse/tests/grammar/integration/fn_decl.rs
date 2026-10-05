@@ -4,12 +4,12 @@ use crate::syntax::parse::tests::utils::*;
 fn fn_no_params_no_return() {
   let tree = parse_source("fn foo() {}");
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "foo")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
       ")")
     " "
@@ -24,14 +24,14 @@ fn fn_no_params_no_return() {
 fn fn_one_param_with_return() {
   let tree = parse_source("fn foo(x: int): bool {}");
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "foo")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
-      (FnDeclarationParam
+      (FuncDeclarationParam
         (IdentExpr
           "x")
         ":"
@@ -39,7 +39,7 @@ fn fn_one_param_with_return() {
         (IdentExpr
           "int"))
       ")")
-    (FnDeclarationReturnType
+    (FuncDeclarationReturnTyp
       ":"
       " "
       (IdentExpr
@@ -56,14 +56,14 @@ fn fn_one_param_with_return() {
 fn fn_two_params() {
   let tree = parse_source("fn add(a: int, b: int): int {}");
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "add")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
-      (FnDeclarationParam
+      (FuncDeclarationParam
         (IdentExpr
           "a")
         ":"
@@ -72,7 +72,7 @@ fn fn_two_params() {
           "int"))
       ","
       " "
-      (FnDeclarationParam
+      (FuncDeclarationParam
         (IdentExpr
           "b")
         ":"
@@ -80,7 +80,7 @@ fn fn_two_params() {
         (IdentExpr
           "int"))
       ")")
-    (FnDeclarationReturnType
+    (FuncDeclarationReturnTyp
       ":"
       " "
       (IdentExpr
@@ -97,15 +97,15 @@ fn fn_two_params() {
 fn fn_operator_single_char() {
   let tree = parse_source("fn operator>(a: int, b: int): bool {}");
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "operator"
       ">")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
-      (FnDeclarationParam
+      (FuncDeclarationParam
         (IdentExpr
           "a")
         ":"
@@ -114,7 +114,7 @@ fn fn_operator_single_char() {
           "int"))
       ","
       " "
-      (FnDeclarationParam
+      (FuncDeclarationParam
         (IdentExpr
           "b")
         ":"
@@ -122,7 +122,7 @@ fn fn_operator_single_char() {
         (IdentExpr
           "int"))
       ")")
-    (FnDeclarationReturnType
+    (FuncDeclarationReturnTyp
       ":"
       " "
       (IdentExpr
@@ -139,15 +139,15 @@ fn fn_operator_single_char() {
 fn fn_operator_multi_char() {
   let tree = parse_source("fn operator~>(a: bool, b: bool): bool {}");
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "operator"
       "~>")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
-      (FnDeclarationParam
+      (FuncDeclarationParam
         (IdentExpr
           "a")
         ":"
@@ -156,7 +156,7 @@ fn fn_operator_multi_char() {
           "bool"))
       ","
       " "
-      (FnDeclarationParam
+      (FuncDeclarationParam
         (IdentExpr
           "b")
         ":"
@@ -164,7 +164,7 @@ fn fn_operator_multi_char() {
         (IdentExpr
           "bool"))
       ")")
-    (FnDeclarationReturnType
+    (FuncDeclarationReturnTyp
       ":"
       " "
       (IdentExpr
@@ -185,14 +185,14 @@ fn fn_with_body_field() {
 }"#,
   );
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "double")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
-      (FnDeclarationParam
+      (FuncDeclarationParam
         (IdentExpr
           "x")
         ":"
@@ -200,7 +200,7 @@ fn fn_with_body_field() {
         (IdentExpr
           "int"))
       ")")
-    (FnDeclarationReturnType
+    (FuncDeclarationReturnTyp
       ":"
       " "
       (IdentExpr
@@ -235,7 +235,8 @@ fn fn_inside_type_body() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    "type"
+    (ElementDeclarationTyp
+      "type")
     " "
     (EqualityDeclarationName
       "T")
@@ -244,15 +245,15 @@ fn fn_inside_type_body() {
       "{"
       "\n"
       "  "
-      (FnDeclaration
+      (FuncDeclaration
         "fn"
         " "
-        (FnDeclarationName
+        (FuncDeclarationName
           "method")
-        (FnDeclarationParams
+        (FuncDeclarationParams
           "("
           ")")
-        (FnDeclarationReturnType
+        (FuncDeclarationReturnTyp
           ":"
           " "
           (IdentExpr
@@ -271,15 +272,15 @@ fn fn_inside_type_body() {
 fn fn_return_type_union() {
   let tree = parse_source("fn parse(): int | null {}");
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "parse")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
       ")")
-    (FnDeclarationReturnType
+    (FuncDeclarationReturnTyp
       ":"
       " "
       (InfixExpr
@@ -304,10 +305,10 @@ fn fn_return_type_union() {
 fn fn_no_params_no_parens() {
   let tree = parse_source("fn foo {}");
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "foo")
     " "
     (BlockElementDeclarationBody
@@ -323,15 +324,15 @@ fn fn_no_params_no_parens() {
 fn fn_forall_in_body() {
   let tree = parse_source("fn check(): bool {\n  forall c of columns { true }\n}");
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "check")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
       ")")
-    (FnDeclarationReturnType
+    (FuncDeclarationReturnTyp
       ":"
       " "
       (IdentExpr
@@ -373,15 +374,15 @@ fn fn_forall_in_body() {
 fn fn_exists_in_body() {
   let tree = parse_source("fn check(): bool {\n  exists c of columns { true }\n}");
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "check")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
       ")")
-    (FnDeclarationReturnType
+    (FuncDeclarationReturnTyp
       ":"
       " "
       (IdentExpr
@@ -423,15 +424,15 @@ fn fn_exists_in_body() {
 fn fn_forall_dotted_collection() {
   let tree = parse_source("fn check(): bool {\n  forall c of table.columns { true }\n}");
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "check")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
       ")")
-    (FnDeclarationReturnType
+    (FuncDeclarationReturnTyp
       ":"
       " "
       (IdentExpr
@@ -479,10 +480,10 @@ fn fn_forall_dotted_collection() {
 fn fn_error_missing_name() {
   let tree = parse_source("fn {}");
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName)
+    (FuncDeclarationName)
     (BlockElementDeclarationBody
       "{"
       "}"))
@@ -494,12 +495,12 @@ fn fn_error_missing_name() {
 fn fn_error_missing_body() {
   let tree = parse_source("fn foo()");
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "foo")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
       ")"))
   "")"#;
@@ -510,14 +511,14 @@ fn fn_error_missing_body() {
 fn fn_error_operator_missing_symbol() {
   let tree = parse_source("fn operator foo() {}");
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "operator"))
   " "
   (Error
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "foo"))
   (Error
     "("
@@ -533,22 +534,22 @@ fn fn_error_operator_missing_symbol() {
 fn fn_error_param_missing_colon() {
   let tree = parse_source("fn foo(x int): bool {}");
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "foo")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
-      (FnDeclarationParam
+      (FuncDeclarationParam
         (IdentExpr
           "x"))
       " "
-      (FnDeclarationParam
+      (FuncDeclarationParam
         (IdentExpr
           "int"))
       ")")
-    (FnDeclarationReturnType
+    (FuncDeclarationReturnTyp
       ":"
       " "
       (IdentExpr
@@ -565,14 +566,14 @@ fn fn_error_param_missing_colon() {
 fn fn_error_unclosed_params() {
   let tree = parse_source("fn foo(x: int");
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "foo")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
-      (FnDeclarationParam
+      (FuncDeclarationParam
         (IdentExpr
           "x")
         ":"
@@ -587,16 +588,16 @@ fn fn_error_unclosed_params() {
 fn fn_error_bad_token_in_params() {
   let tree = parse_source("fn foo(123): bool {}");
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "foo")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
       "123"
       ")")
-    (FnDeclarationReturnType
+    (FuncDeclarationReturnTyp
       ":"
       " "
       (IdentExpr
@@ -613,15 +614,15 @@ fn fn_error_bad_token_in_params() {
 fn fn_error_forall_missing_of() {
   let tree = parse_source("fn check(): bool {\n  forall c columns { true }\n}");
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "check")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
       ")")
-    (FnDeclarationReturnType
+    (FuncDeclarationReturnTyp
       ":"
       " "
       (IdentExpr
@@ -661,15 +662,15 @@ fn fn_error_forall_missing_of() {
 fn fn_error_forall_missing_body() {
   let tree = parse_source("fn check(): bool {\n  forall c of columns\n}");
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "check")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
       ")")
-    (FnDeclarationReturnType
+    (FuncDeclarationReturnTyp
       ":"
       " "
       (IdentExpr
@@ -703,12 +704,12 @@ fn fn_error_forall_missing_body() {
 fn fn_no_parens_with_return_type() {
   let tree = parse_source("fn foo: bool {}");
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "foo")
-    (FnDeclarationReturnType
+    (FuncDeclarationReturnTyp
       ":"
       " "
       (IdentExpr
@@ -727,15 +728,15 @@ fn fn_no_parens_with_return_type() {
 fn fn_exists_dotted_collection() {
   let tree = parse_source("fn check(): bool {\n  exists c of table.columns { true }\n}");
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "check")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
       ")")
-    (FnDeclarationReturnType
+    (FuncDeclarationReturnTyp
       ":"
       " "
       (IdentExpr
@@ -784,15 +785,15 @@ fn fn_two_quantifiers_in_body() {
   let tree =
     parse_source("fn check(): bool {\n  forall a of xs { true }\n  exists b of ys { true }\n}");
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "check")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
       ")")
-    (FnDeclarationReturnType
+    (FuncDeclarationReturnTyp
       ":"
       " "
       (IdentExpr
@@ -860,16 +861,16 @@ fn fn_two_quantifiers_in_body() {
 fn fn_operator_with_space_before_symbol() {
   let tree = parse_source("fn operator >(a: int): bool {}");
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "operator"
       " "
       ">")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
-      (FnDeclarationParam
+      (FuncDeclarationParam
         (IdentExpr
           "a")
         ":"
@@ -877,7 +878,7 @@ fn fn_operator_with_space_before_symbol() {
         (IdentExpr
           "int"))
       ")")
-    (FnDeclarationReturnType
+    (FuncDeclarationReturnTyp
       ":"
       " "
       (IdentExpr
@@ -896,9 +897,9 @@ fn fn_operator_with_space_before_symbol() {
 fn fn_error_only_keyword() {
   let tree = parse_source("fn");
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
-    (FnDeclarationName))
+    (FuncDeclarationName))
   "")"#;
   assert_eq!(tree, expected);
 }
@@ -909,18 +910,18 @@ fn fn_error_only_keyword() {
 fn fn_error_param_no_colon_or_type() {
   let tree = parse_source("fn foo(x): bool {}");
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "foo")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
-      (FnDeclarationParam
+      (FuncDeclarationParam
         (IdentExpr
           "x"))
       ")")
-    (FnDeclarationReturnType
+    (FuncDeclarationReturnTyp
       ":"
       " "
       (IdentExpr
@@ -941,15 +942,15 @@ fn fn_error_forall_missing_binding() {
   // The parser emits a diagnostic for the missing "of" keyword and recovers.
   let tree = parse_source("fn check(): bool {\n  forall of columns { true }\n}");
   let expected = r#"(SourceFile
-  (FnDeclaration
+  (FuncDeclaration
     "fn"
     " "
-    (FnDeclarationName
+    (FuncDeclarationName
       "check")
-    (FnDeclarationParams
+    (FuncDeclarationParams
       "("
       ")")
-    (FnDeclarationReturnType
+    (FuncDeclarationReturnTyp
       ":"
       " "
       (IdentExpr

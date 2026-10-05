@@ -14,7 +14,7 @@ pub enum SyntaxKind {
   InlineElementDeclaration,
   InlineElementDeclarationBody,
 
-  ElementDeclarationType,
+  ElementDeclarationTyp,
   ElementDeclarationTargetFragment,
   ElementDeclarationAlias,
 
@@ -44,11 +44,11 @@ pub enum SyntaxKind {
 
   // fn name(params): ReturnType { body }
   // fn operator<sym>(params): ReturnType { body }
-  FnDeclaration,
-  FnDeclarationName,
-  FnDeclarationParams,
-  FnDeclarationParam,
-  FnDeclarationReturnType,
+  FuncDeclaration,
+  FuncDeclarationName,
+  FuncDeclarationParams,
+  FuncDeclarationParam,
+  FuncDeclarationReturnTyp,
 
   // get name(params): ReturnType { body }
   GetDeclaration,

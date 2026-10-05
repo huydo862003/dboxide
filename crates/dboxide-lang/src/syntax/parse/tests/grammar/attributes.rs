@@ -9,7 +9,7 @@ fn attribute_basic() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Project")
     " "
     (ElementDeclarationTargetFragment
