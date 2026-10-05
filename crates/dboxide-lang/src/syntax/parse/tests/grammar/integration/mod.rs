@@ -5,5 +5,6 @@ mod expressions;
 mod fn_decl;
 mod get_decl;
 mod misc;
+mod operators;
 mod relations;
 mod type_decl;

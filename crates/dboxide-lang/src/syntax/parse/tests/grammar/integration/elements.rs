@@ -27,7 +27,7 @@ Table Users as U {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (BlockElementDeclarationBody
@@ -38,7 +38,7 @@ Table Users as U {
   "\n"
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "TableGroup")
     " "
     (ElementDeclarationTargetFragment
@@ -53,7 +53,7 @@ Table Users as U {
   "\n"
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Ref")
     " "
     (BlockElementDeclarationBody
@@ -64,7 +64,7 @@ Table Users as U {
   "\n"
   "\n"
   (InlineElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Note")
     ":"
     " "
@@ -75,7 +75,7 @@ Table Users as U {
   "\n"
   "\n"
   (InlineElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Note")
     ":"
     " "
@@ -86,7 +86,7 @@ Table Users as U {
   "\n"
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -117,12 +117,12 @@ fn comprehensive_element_in_simple_body() {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (InlineElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Note")
     ":"
     " "
     (BlockElementDeclaration
-      (ElementDeclarationType
+      (ElementDeclarationTyp
         "Enum")
       " "
       (ElementDeclarationTargetFragment
@@ -157,7 +157,7 @@ Table wrong_nested_element [] {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Project")
     " "
     (BlockElementDeclarationBody
@@ -165,7 +165,7 @@ Table wrong_nested_element [] {
       "\n"
       "    "
       (BlockElementDeclaration
-        (ElementDeclarationType
+        (ElementDeclarationTyp
           "Table")
         " "
         (ElementDeclarationTargetFragment
@@ -182,7 +182,7 @@ Table wrong_nested_element [] {
       "\n"
       "    "
       (BlockElementDeclaration
-        (ElementDeclarationType
+        (ElementDeclarationTyp
           "Table")
         " "
         (ElementDeclarationTargetFragment
@@ -207,7 +207,7 @@ Table wrong_nested_element [] {
   "\n"
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -223,7 +223,7 @@ Table wrong_nested_element [] {
       "\n"
       "    "
       (BlockElementDeclaration
-        (ElementDeclarationType
+        (ElementDeclarationTyp
           "Indexes")
         " "
         (ElementDeclarationTargetFragment
@@ -252,4 +252,161 @@ Table wrong_nested_element [] {
   "\n"
   "")"#;
   assert_eq!(tree, expected);
+}
+
+#[test]
+fn block_element_with_settings_no_alias() {
+  let tree = parse_source(
+    r#"indexes [note: 'main'] {
+  id
+}"#,
+  );
+  assert_eq!(
+    tree,
+    r#"(SourceFile
+  (BlockElementDeclaration
+    (ElementDeclarationTyp
+      "indexes")
+    " "
+    (SettingList
+      "["
+      (SettingListItem
+        (SettingListItemName
+          "note")
+        ":"
+        (SettingListItemValue
+          (SqStringExpr
+            " "
+            "'main'")))
+      "]")
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (ElementFieldDeclaration
+        (ElementFieldDeclarationArg
+          (IdentExpr
+            "id")))
+      "\n"
+      "}"))
+  "")"#
+  );
+}
+
+#[test]
+fn block_element_nested_with_settings_only() {
+  // Nested block element identified by [settings] + { body }
+  let tree = parse_source(
+    r#"T E {
+  indexes [note: 'x'] {}
+}"#,
+  );
+  assert_eq!(
+    tree,
+    r#"(SourceFile
+  (BlockElementDeclaration
+    (ElementDeclarationTyp
+      "T")
+    " "
+    (ElementDeclarationTargetFragment
+      (IdentExpr
+        "E"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (BlockElementDeclaration
+        (ElementDeclarationTyp
+          "indexes")
+        " "
+        (SettingList
+          "["
+          (SettingListItem
+            (SettingListItemName
+              "note")
+            ":"
+            (SettingListItemValue
+              (SqStringExpr
+                " "
+                "'x'")))
+          "]")
+        " "
+        (BlockElementDeclarationBody
+          "{"
+          "}"))
+      "\n"
+      "}"))
+  "")"#
+  );
+}
+
+#[test]
+fn block_element_head_with_nested_settings() {
+  // Settings list contains nested brackets - scan_past_delimited depth tracking
+  let tree = parse_source(
+    r#"T E {
+  Sub [settings: [a, b]] {}
+}"#,
+  );
+  assert_eq!(
+    tree,
+    r#"(SourceFile
+  (BlockElementDeclaration
+    (ElementDeclarationTyp
+      "T")
+    " "
+    (ElementDeclarationTargetFragment
+      (IdentExpr
+        "E"))
+    " "
+    (BlockElementDeclarationBody
+      "{"
+      "\n"
+      "  "
+      (BlockElementDeclaration
+        (ElementDeclarationTyp
+          "Sub")
+        " "
+        (SettingList
+          "["
+          (SettingListItem
+            (SettingListItemName
+              "settings")
+            ":"
+            (SettingListItemValue
+              (ListExpr
+                " "
+                "["
+                (IdentExpr
+                  "a")
+                ","
+                (IdentExpr
+                  " "
+                  "b")
+                "]")))
+          "]")
+        " "
+        (BlockElementDeclarationBody
+          "{"
+          "}"))
+      "\n"
+      "}"))
+  "")"#
+  );
+}
+
+#[test]
+fn qualified_name_in_use_specifier() {
+  let tree = parse_source("use { schema.table users } from './db.dbml'");
+  assert!(tree.contains("UseSpecifier"));
+  assert!(tree.contains("users"));
+}
+
+#[test]
+fn inline_element_parsed_correctly() {
+  // Inline (equality-form) element at top level
+  let tree = parse_source("Ref: users.id > posts.user_id");
+  assert!(tree.contains("ElementDeclarationTyp"));
 }

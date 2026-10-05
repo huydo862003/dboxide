@@ -1,21 +1,10 @@
-use std::collections::BTreeMap;
-
 use salsa::Database;
 
 use crate::db::types::Symbol;
 use crate::db::types::interned::symbol::*;
 
-pub(crate) fn get_metatype_module_symbol(db: &dyn Database) -> Symbol<'_> {
-  Symbol::new(
-    db,
-    SymbolKind::VirtualModule(VirtualModuleKind::Metatype),
-    "metatype".to_string(),
-    "@metatype".to_string(),
-  )
-}
-
-pub(crate) fn get_metatype_members(db: &dyn Database) -> BTreeMap<String, Symbol<'_>> {
-  let mut members = BTreeMap::new();
+pub(crate) fn pretype_get_metatype_members(db: &dyn Database) -> StaticScopeMembers<'_> {
+  let mut members = StaticScopeMembers::default();
 
   for (name, kind) in [
     ("string", VirtualTypKind::MetatypeString),
@@ -39,30 +28,26 @@ pub(crate) fn get_metatype_members(db: &dyn Database) -> BTreeMap<String, Symbol
     ("Map", VirtualTypKind::MetatypeMap),
     ("List", VirtualTypKind::MetatypeList),
   ] {
-    members.insert(
+    let symbol = Symbol::new(
+      db,
+      SymbolKind::VirtualTyp(VirtualModuleKind::Metatype, kind),
       name.to_string(),
-      Symbol::new(
-        db,
-        SymbolKind::VirtualTyp(kind),
-        name.to_string(),
-        format!("@metatype::{name}"),
-      ),
+      format!("@metatype::{name}"),
     );
+    members.insert(db, symbol);
   }
 
   for (name, kind) in [
     ("interpret", VirtualFunctionKind::Interpret),
     ("typeof", VirtualFunctionKind::Typeof),
   ] {
-    members.insert(
+    let symbol = Symbol::new(
+      db,
+      SymbolKind::VirtualFunction(VirtualModuleKind::Metatype, kind),
       name.to_string(),
-      Symbol::new(
-        db,
-        SymbolKind::VirtualFunction(kind),
-        name.to_string(),
-        format!("@metatype::{name}"),
-      ),
+      format!("@metatype::{name}"),
     );
+    members.insert(db, symbol);
   }
 
   members

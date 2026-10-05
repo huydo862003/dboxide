@@ -5,7 +5,7 @@ fn block_element_basic() {
   let tree = parse_source("Table users {}");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -24,7 +24,7 @@ fn block_element_with_alias() {
   let tree = parse_source("Table users as u {}");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -49,7 +49,7 @@ fn block_element_with_settings() {
   let tree = parse_source("Table users [note: 'main'] {}");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -80,7 +80,7 @@ fn block_element_qualified_name() {
   let tree = parse_source("public.auth.User {}");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "public"
       "."
       (IdentExpr
@@ -101,7 +101,7 @@ fn inline_element() {
   let tree = parse_source("Ref: orders.user_id > users.id");
   let expected = r#"(SourceFile
   (InlineElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Ref")
     ":"
     " "
@@ -137,7 +137,7 @@ fn nested_element() {
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -149,7 +149,7 @@ fn nested_element() {
       "\n"
       "  "
       (BlockElementDeclaration
-        (ElementDeclarationType
+        (ElementDeclarationTyp
           "indexes")
         " "
         (BlockElementDeclarationBody
@@ -168,7 +168,7 @@ fn empty_block_body() {
   let tree = parse_source("Table t {}");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -190,7 +190,7 @@ Table b {}",
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -202,7 +202,7 @@ Table b {}",
       "}"))
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -229,7 +229,7 @@ fn two_target_fragments() {
   let tree = parse_source("Table public users {}");
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -252,7 +252,7 @@ fn two_qualified_target_fragments() {
   let tree = parse_source(r#"Table "public"."schema" users {}"#);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment

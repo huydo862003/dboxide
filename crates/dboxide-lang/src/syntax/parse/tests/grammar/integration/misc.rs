@@ -33,7 +33,7 @@ Ref: "diagrams"."id" - "user_role_in_diagram"."diagram_id"
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -75,7 +75,7 @@ Ref: "diagrams"."id" - "user_role_in_diagram"."diagram_id"
   "\n"
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -180,7 +180,7 @@ Ref: "diagrams"."id" - "user_role_in_diagram"."diagram_id"
   "\n"
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -222,7 +222,7 @@ Ref: "diagrams"."id" - "user_role_in_diagram"."diagram_id"
   "\n"
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -260,7 +260,7 @@ Ref: "diagrams"."id" - "user_role_in_diagram"."diagram_id"
   "\n"
   "\n"
   (InlineElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Ref")
     ":"
     " "
@@ -285,7 +285,7 @@ Ref: "diagrams"."id" - "user_role_in_diagram"."diagram_id"
   "\n"
   "\n"
   (InlineElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Ref")
     ":"
     " "
@@ -324,7 +324,7 @@ Note: 12."#;
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -348,7 +348,7 @@ Note: 12."#;
   "\n"
   "\n"
   (InlineElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Note")
     ":"
     " "
@@ -401,7 +401,7 @@ Table citites {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -637,7 +637,7 @@ Table citites {
   "\n"
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -713,7 +713,7 @@ Table citites {
   "\n"
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -750,7 +750,7 @@ Table citites {
   "\n"
   "\n"
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -782,7 +782,7 @@ Table citites {
       "\n"
       "\t"
       (BlockElementDeclaration
-        (ElementDeclarationType
+        (ElementDeclarationTyp
           "indexes")
         " "
         (BlockElementDeclarationBody
@@ -831,7 +831,7 @@ fn comprehensive_trailing_comments() {
   let tree = parse_source(input);
   let expected = r#"(SourceFile
   (BlockElementDeclaration
-    (ElementDeclarationType
+    (ElementDeclarationTyp
       "Table")
     " "
     (ElementDeclarationTargetFragment
@@ -884,7 +884,7 @@ fn comprehensive_trailing_comments() {
       "\n"
       "  "
       (BlockElementDeclaration
-        (ElementDeclarationType
+        (ElementDeclarationTyp
           "indexes")
         " "
         (BlockElementDeclarationBody
