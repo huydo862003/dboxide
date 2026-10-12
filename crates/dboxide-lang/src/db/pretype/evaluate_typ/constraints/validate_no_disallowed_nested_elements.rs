@@ -2,7 +2,7 @@ use salsa::{Accumulator, Database};
 
 use crate::ast::{AstNode, BlockElementDeclaration, ElementDeclaration};
 use crate::db::types::Diagnostics;
-use crate::diagnostics::Diagnostic;
+use crate::diagnostics::DiagnosticKind;
 
 pub fn validate_no_disallowed_nested_elements(
   db: &dyn Database,
@@ -15,11 +15,10 @@ pub fn validate_no_disallowed_nested_elements(
       .unwrap_or_else(|| "<unknown>".to_string());
     let start = element.syntax().offset();
     Accumulator::accumulate(
-      Diagnostics(Diagnostic::DisallowedNestedElement {
-        element_typ,
-        start_offset: start,
-        end_offset: start + element.syntax().text_len(),
-      }),
+      Diagnostics(
+        DiagnosticKind::DisallowedNestedElement { element_typ }
+          .into_error(start, start + element.syntax().text_len()),
+      ),
       db,
     );
   }

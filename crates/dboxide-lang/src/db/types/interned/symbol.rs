@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use salsa::interned;
 
 use crate::ast::{AstNode, FuncDeclaration, RedNode};
+use crate::db::prepost::evaluate_node::evaluate_node_pretype;
 use crate::db::types::input::File;
 use crate::db::types::tracked::obj_system::Typ;
 
@@ -126,7 +127,7 @@ impl<'db> Symbol<'db> {
     if let Some(params) = func.params() {
       for param in params.params() {
         if let Some(type_expr) = param.type_expr() {
-          let obj = crate::db::pretype::pretype_evaluate_node(db, *file, &type_expr);
+          let obj = evaluate_node_pretype(db, *file, &type_expr);
           if let Some(typ) = obj.and_then(|o| o.as_typ()) {
             param_typs.push(typ);
           }
@@ -135,9 +136,9 @@ impl<'db> Symbol<'db> {
     }
     let return_typ = func
       .return_typ()
-      .and_then(|rt| rt.type_expr())
-      .and_then(|type_expr| crate::db::pretype::pretype_evaluate_node(db, *file, &type_expr))
-      .and_then(|o| o.as_typ());
+      .and_then(|typ| typ.type_expr())
+      .and_then(|typ_expr| evaluate_node_pretype(db, *file, &typ_expr))
+      .and_then(|object| object.as_typ());
     Some((param_typs, return_typ))
   }
 

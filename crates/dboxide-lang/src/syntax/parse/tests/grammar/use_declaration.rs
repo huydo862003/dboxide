@@ -1,5 +1,5 @@
 use crate::syntax::parse::tests::utils::*;
-use crate::types::diagnostics::Diagnostic;
+use crate::types::diagnostics::DiagnosticKind;
 
 #[test]
 fn use_wildcard() {
@@ -80,8 +80,8 @@ fn use_specifier_list_unclosed_at_eof() {
   // Missing closing `}` and `from ...` - should emit UnclosedDelimiter
   let (tree, diags) = parse_source_with_diagnostics("use { table users");
   assert!(diags.iter().any(|d| matches!(
-    d,
-    Diagnostic::UnclosedDelimiter { delimiter, .. } if *delimiter == "{"
+    &d.kind,
+    DiagnosticKind::UnclosedDelimiter { delimiter } if *delimiter == "{"
   )));
   // Should still recover and include what was parsed
   assert!(tree.contains("UseSpecifier"));
@@ -156,7 +156,7 @@ fn use_wrong_keyword_instead_of_from() {
   // Non-"from" ident after specifiers emits MissingExpectedToken for 'from'
   let (_tree, diags) = parse_source_with_diagnostics("use * notfrom './db'");
   assert!(diags.iter().any(|d| matches!(
-    d,
-    Diagnostic::MissingExpectedToken { expected, .. } if *expected == "'from'"
+    &d.kind,
+    DiagnosticKind::MissingExpectedToken { expected } if *expected == "'from'"
   )));
 }

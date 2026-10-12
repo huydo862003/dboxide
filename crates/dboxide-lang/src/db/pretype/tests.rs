@@ -12,13 +12,13 @@ use crate::{FileHandle, Typ};
 
 use crate::db::types::interned::symbol::StaticScopeMembers;
 
-use super::pretype_evaluate::pretype_evaluate_typ_symbol::pretype_evaluate_typ_symbol;
-use super::pretype_get_file_usable_symbols::pretype_get_file_usable_symbols;
-use super::pretype_get_scope_members::pretype_get_scope_members;
-use super::pretype_get_symbol_namespace::pretype_get_symbol_namespace;
 use crate::OnUsePolicy;
+use crate::db::prepost::get_file_symbols::get_file_symbols_pretype;
+use crate::db::prepost::get_scope_members::get_scope_members_pretype;
+use crate::db::prepost::get_symbol_namespace::get_symbol_namespace_pretype;
+use crate::db::pretype::evaluate_typ::evaluate_typ_symbol;
 use crate::db::types::{Diagnostics, Obj, StaticTyp};
-use crate::diagnostics::Diagnostic;
+use crate::diagnostics::DiagnosticKind;
 
 fn create_file(
   db: &dyn Database,
@@ -44,7 +44,7 @@ fn create_file(
 
 fn get_file_scope_members<'db>(db: &'db DboxideDatabase, file: File) -> StaticScopeMembers<'db> {
   let scope = StaticScope::new(db, StaticScopeKind::UserModule(file));
-  pretype_get_scope_members(db, scope).clone()
+  get_scope_members_pretype(db, scope).clone()
 }
 
 fn assert_contains_symbol(members: &StaticScopeMembers, name: &str) {
@@ -76,7 +76,7 @@ fn get_schema_namespace<'db>(
 ) -> StaticScopeMembers<'db> {
   let members = get_file_scope_members(db, file);
   let schema_symbol = get_first_symbol(&members, name);
-  pretype_get_symbol_namespace(db, schema_symbol).clone()
+  get_symbol_namespace_pretype(db, schema_symbol).clone()
 }
 
 // Pretype does NOT collect elements, only types, functions, operators, schemas
@@ -133,42 +133,6 @@ fn collect_equality_declarations() {
   assert!(matches!(
     get_first_symbol(&members, "Alias").kind(&db),
     SymbolKind::UserTyp(..)
-  ));
-}
-
-#[test]
-fn collect_function_declarations() {
-  let db = DboxideDatabase::default();
-  let file = create_file(
-    &db,
-    "test.dbml",
-    "fn validate(): bool {}
-fn compute(x: int): int {}",
-    HashMap::new(),
-  );
-  let members = get_file_scope_members(&db, file);
-  assert_contains_symbol(&members, "validate");
-  assert_contains_symbol(&members, "compute");
-  assert!(matches!(
-    get_first_symbol(&members, "validate").kind(&db),
-    SymbolKind::UserFunction(..)
-  ));
-}
-
-#[test]
-fn collect_operator_declarations() {
-  let db = DboxideDatabase::default();
-  let file = create_file(
-    &db,
-    "test.dbml",
-    "fn operator >(a: int, b: int): bool {}",
-    HashMap::new(),
-  );
-  let members = get_file_scope_members(&db, file);
-  assert_contains_symbol(&members, ">");
-  assert!(matches!(
-    get_first_symbol(&members, ">").kind(&db),
-    SymbolKind::UserOperator(..)
   ));
 }
 
@@ -242,20 +206,14 @@ auth.type Outer {}",
   assert_missing_symbol(&auth_namespace, "Inner");
 
   let sub_symbol = get_first_symbol(&auth_namespace, "sub");
-  let sub_namespace = pretype_get_symbol_namespace(&db, sub_symbol).clone();
+  let sub_namespace = get_symbol_namespace_pretype(&db, sub_symbol).clone();
   assert_contains_symbol(&sub_namespace, "Inner");
 }
 
 #[test]
-fn use_wildcard_imports_types_and_functions() {
+fn use_wildcard_imports_types() {
   let db = DboxideDatabase::default();
-  let dep = create_file(
-    &db,
-    "dep.dbml",
-    "type MyTyp {}
-fn validate(): bool {}",
-    HashMap::new(),
-  );
+  let dep = create_file(&db, "dep.dbml", "type MyTyp {}", HashMap::new());
   let file = create_file(
     &db,
     "main.dbml",
@@ -264,7 +222,6 @@ fn validate(): bool {}",
   );
   let members = get_file_scope_members(&db, file);
   assert_contains_symbol(&members, "MyTyp");
-  assert_contains_symbol(&members, "validate");
   assert!(matches!(
     get_first_symbol(&members, "MyTyp").kind(&db),
     SymbolKind::Use(..)
@@ -352,7 +309,7 @@ fn use_does_not_export() {
     "use * from './a'",
     HashMap::from([("./a".to_string(), Either::Right(dep_a))]),
   );
-  let usable = pretype_get_file_usable_symbols(&db, dep_b, true);
+  let usable = get_file_symbols_pretype(&db, dep_b, true);
   assert_missing_symbol(usable, "Foo");
 }
 
@@ -479,7 +436,7 @@ type Table [element] {
   let members = get_file_scope_members(&db, file);
   assert_contains_symbol(&members, "Table");
   let symbol = get_first_symbol(&members, "Table");
-  let obj = pretype_evaluate_typ_symbol(&db, symbol);
+  let obj = evaluate_typ_symbol(&db, symbol);
   assert!(obj.is_some());
   let Obj::Typ(typ) = obj.unwrap() else {
     panic!("expected Obj::Typ");
@@ -594,10 +551,10 @@ type Table [element] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "Table");
-  let diagnostics = pretype_evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
+  let diagnostics = evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
   assert!(diagnostics.iter().any(|d| matches!(
-    &d.0,
-    crate::diagnostics::Diagnostic::InvalidDeclarationFieldLabel { field_name, .. } if field_name == "name"
+    &d.0.kind,
+    crate::diagnostics::DiagnosticKind::InvalidDeclarationFieldLabel { field_name, .. } if field_name == "name"
   )));
 }
 
@@ -623,14 +580,13 @@ type RefBinary [field] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "RefBinary");
-  let diagnostics = pretype_evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
+  let diagnostics = evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
   assert!(diagnostics.iter().any(|d| matches!(
-    &d.0,
-    crate::diagnostics::Diagnostic::NonContiguousFieldArgIndex {
+    &d.0.kind,
+    crate::diagnostics::DiagnosticKind::NonContiguousFieldArgIndex {
       field_name,
       found_index: 2,
       expected_index: 1,
-      ..
     } if field_name == "to"
   )));
 }
@@ -661,7 +617,7 @@ type Column [field] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "Column");
-  let Some(Obj::Typ(Typ::Element(elem))) = pretype_evaluate_typ_symbol(&db, symbol) else {
+  let Some(Obj::Typ(Typ::Element(elem))) = evaluate_typ_symbol(&db, symbol) else {
     panic!("expected Typ::Element");
   };
 
@@ -669,7 +625,7 @@ type Column [field] {
   assert_eq!(constraint_defs.len(), 1);
   assert_eq!(constraint_defs[0].name, "nullability");
 
-  let diagnostics = pretype_evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
+  let diagnostics = evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
   assert!(diagnostics.is_empty());
 }
 
@@ -694,7 +650,7 @@ type Table [element] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "Table");
-  let diagnostics = pretype_evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
+  let diagnostics = evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
   assert!(diagnostics.is_empty());
 }
 
@@ -719,7 +675,7 @@ type Row [field] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "Row");
-  let diagnostics = pretype_evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
+  let diagnostics = evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
   assert!(diagnostics.is_empty(), "unexpected diagnostics");
 }
 
@@ -746,14 +702,14 @@ type Column [field] {
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "Column");
 
-  let Some(Obj::Typ(Typ::Element(elem))) = pretype_evaluate_typ_symbol(&db, symbol) else {
+  let Some(Obj::Typ(Typ::Element(elem))) = evaluate_typ_symbol(&db, symbol) else {
     panic!("expected Typ::Element");
   };
 
   assert!(elem.settings(&db).contains_key("refs"));
   assert!(elem.settings(&db).contains_key("deps"));
 
-  let diagnostics = pretype_evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
+  let diagnostics = evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
   assert!(diagnostics.is_empty(), "unexpected diagnostics");
 }
 
@@ -778,10 +734,10 @@ type Table [element] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "Table");
-  let diagnostics = pretype_evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
+  let diagnostics = evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
   assert!(diagnostics.iter().any(|d| matches!(
-    &d.0,
-    crate::diagnostics::Diagnostic::ConflictingLabelAnnotations { field_name, .. } if field_name == "name"
+    &d.0.kind,
+    crate::diagnostics::DiagnosticKind::ConflictingLabelAnnotations { field_name } if field_name == "name"
   )));
 }
 
@@ -806,10 +762,10 @@ type Column [field] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "Column");
-  let diagnostics = pretype_evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
+  let diagnostics = evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
   assert!(diagnostics.iter().any(|d| matches!(
-    &d.0,
-    crate::diagnostics::Diagnostic::UniqueRequiresLabel { field_name, .. } if field_name == "name"
+    &d.0.kind,
+    crate::diagnostics::DiagnosticKind::UniqueRequiresLabel { field_name } if field_name == "name"
   )));
 }
 
@@ -834,10 +790,10 @@ type Row [field] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "Row");
-  let diagnostics = pretype_evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
+  let diagnostics = evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
   assert!(diagnostics.iter().any(|d| matches!(
-    &d.0,
-    crate::diagnostics::Diagnostic::CsvRequiresArg { field_name, .. } if field_name == "values"
+    &d.0.kind,
+    crate::diagnostics::DiagnosticKind::CsvRequiresArg { field_name } if field_name == "values"
   )));
 }
 
@@ -866,10 +822,10 @@ type Column [field] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "Column");
-  let diagnostics = pretype_evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
+  let diagnostics = evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
   assert!(diagnostics.iter().any(|d| matches!(
-    &d.0,
-    crate::diagnostics::Diagnostic::InvalidConstraintDefinition { constraint_name, .. } if constraint_name == "invalid_rule"
+    &d.0.kind,
+    crate::diagnostics::DiagnosticKind::InvalidConstraintDefinition { constraint_name, .. } if constraint_name == "invalid_rule"
   )));
 }
 
@@ -895,7 +851,7 @@ type TableGroup [element] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "TableGroup");
-  let diagnostics = pretype_evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
+  let diagnostics = evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
   assert!(diagnostics.is_empty(), "unexpected diagnostics");
 }
 
@@ -922,10 +878,10 @@ type TableGroup [element] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "TableGroup");
-  let diagnostics = pretype_evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
+  let diagnostics = evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
   assert!(diagnostics.iter().any(|d| matches!(
-    &d.0,
-    Diagnostic::ArgAfterVariadicArg { field_name, .. } if field_name == "extra"
+    &d.0.kind,
+    DiagnosticKind::ArgAfterVariadicArg { field_name } if field_name == "extra"
   )));
 }
 
@@ -950,7 +906,7 @@ type Column [field] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "Column");
-  let Some(Obj::Typ(Typ::Element(elem))) = pretype_evaluate_typ_symbol(&db, symbol) else {
+  let Some(Obj::Typ(Typ::Element(elem))) = evaluate_typ_symbol(&db, symbol) else {
     panic!("expected Typ::Element");
   };
 
@@ -967,7 +923,7 @@ type Column [field] {
     "expected 'col_type' NOT in settings"
   );
 
-  let diagnostics = pretype_evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
+  let diagnostics = evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
   assert!(diagnostics.is_empty(), "unexpected diagnostics");
 }
 
@@ -992,7 +948,7 @@ type Table [element] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "Table");
-  let Some(Obj::Typ(Typ::Element(elem))) = pretype_evaluate_typ_symbol(&db, symbol) else {
+  let Some(Obj::Typ(Typ::Element(elem))) = evaluate_typ_symbol(&db, symbol) else {
     panic!("expected Typ::Element");
   };
 
@@ -1005,7 +961,7 @@ type Table [element] {
     "expected 'note' in settings"
   );
 
-  let diagnostics = pretype_evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
+  let diagnostics = evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
   assert!(diagnostics.is_empty(), "unexpected diagnostics");
 }
 
@@ -1030,10 +986,10 @@ type Project [element] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "Project");
-  let diagnostics = pretype_evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
+  let diagnostics = evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
   assert!(diagnostics.iter().any(|d| matches!(
-    &d.0,
-    Diagnostic::ColonDeclarationInTypeBody { field_name, .. } if field_name == "note"
+    &d.0.kind,
+    DiagnosticKind::ColonDeclarationInTypeBody { field_name } if field_name == "note"
   )));
 }
 
@@ -1058,10 +1014,10 @@ type Column [field] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "Column");
-  let diagnostics = pretype_evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
+  let diagnostics = evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
   assert!(diagnostics.iter().any(|d| matches!(
-    &d.0,
-    Diagnostic::InvalidFieldType { field_name, .. } if field_name == "name"
+    &d.0.kind,
+    DiagnosticKind::InvalidFieldType { field_name } if field_name == "name"
   )));
 }
 
@@ -1086,7 +1042,7 @@ type Index [element] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "Index");
-  let Some(Obj::Typ(Typ::Element(elem))) = pretype_evaluate_typ_symbol(&db, symbol) else {
+  let Some(Obj::Typ(Typ::Element(elem))) = evaluate_typ_symbol(&db, symbol) else {
     panic!("expected Typ::Element");
   };
 
@@ -1095,7 +1051,7 @@ type Index [element] {
     "expected 'columns' in fields"
   );
 
-  let diagnostics = pretype_evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
+  let diagnostics = evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
   assert!(diagnostics.is_empty(), "unexpected diagnostics");
 }
 
@@ -1120,10 +1076,10 @@ type Index [element] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "Index");
-  let diagnostics = pretype_evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
+  let diagnostics = evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
   assert!(diagnostics.iter().any(|d| matches!(
-    &d.0,
-    crate::diagnostics::Diagnostic::MalformedRestAttribute { .. }
+    &d.0.kind,
+    crate::diagnostics::DiagnosticKind::MalformedRestAttribute
   )));
 }
 
@@ -1148,7 +1104,7 @@ type Column [field] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "Column");
-  let Some(Obj::Typ(Typ::Element(element))) = pretype_evaluate_typ_symbol(&db, symbol) else {
+  let Some(Obj::Typ(Typ::Element(element))) = evaluate_typ_symbol(&db, symbol) else {
     panic!("expected Typ::Element");
   };
 
@@ -1157,7 +1113,7 @@ type Column [field] {
     "expected 'is_nullable' in vtable"
   );
 
-  let diagnostics = pretype_evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
+  let diagnostics = evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
   assert!(diagnostics.is_empty(), "unexpected diagnostics");
 }
 
@@ -1186,7 +1142,7 @@ type Column [field] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "Column");
-  let Some(Obj::Typ(Typ::Element(element))) = pretype_evaluate_typ_symbol(&db, symbol) else {
+  let Some(Obj::Typ(Typ::Element(element))) = evaluate_typ_symbol(&db, symbol) else {
     panic!("expected Typ::Element");
   };
 
@@ -1195,7 +1151,7 @@ type Column [field] {
     "expected 'name' in namespace"
   );
 
-  let diagnostics = pretype_evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
+  let diagnostics = evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
   assert!(diagnostics.is_empty(), "unexpected diagnostics");
 }
 
@@ -1220,7 +1176,7 @@ type TableGroup [element, on use: expand] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "TableGroup");
-  let Some(Obj::Typ(Typ::Element(element))) = pretype_evaluate_typ_symbol(&db, symbol) else {
+  let Some(Obj::Typ(Typ::Element(element))) = evaluate_typ_symbol(&db, symbol) else {
     panic!("expected Typ::Element");
   };
 
@@ -1248,10 +1204,10 @@ type TableGroup [element, on use: inline] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "TableGroup");
-  let diagnostics = pretype_evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
+  let diagnostics = evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
   assert!(diagnostics.iter().any(|d| matches!(
-    &d.0,
-    Diagnostic::UnrecognizedOnUseValue { value, .. } if value == "inline"
+    &d.0.kind,
+    DiagnosticKind::UnrecognizedOnUseValue { value } if value == "inline"
   )));
 }
 
@@ -1276,10 +1232,10 @@ type Index [element] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "Index");
-  let diagnostics = pretype_evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
+  let diagnostics = evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
   assert!(diagnostics.iter().any(|d| matches!(
-    &d.0,
-    Diagnostic::InvalidFieldType { field_name, .. } if field_name == "columns"
+    &d.0.kind,
+    DiagnosticKind::InvalidFieldType { field_name } if field_name == "columns"
   )));
 }
 
@@ -1306,7 +1262,7 @@ type Column [field] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "Column");
-  let Some(Obj::Typ(Typ::Element(element))) = pretype_evaluate_typ_symbol(&db, symbol) else {
+  let Some(Obj::Typ(Typ::Element(element))) = evaluate_typ_symbol(&db, symbol) else {
     panic!("expected Typ::Element");
   };
 
@@ -1319,7 +1275,7 @@ type Column [field] {
     "expected 'display_name' in vtable"
   );
 
-  let diagnostics = pretype_evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
+  let diagnostics = evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
   assert!(diagnostics.is_empty(), "unexpected diagnostics");
 }
 
@@ -1348,7 +1304,7 @@ type Column [field] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "Column");
-  let Some(Obj::Typ(Typ::Element(element))) = pretype_evaluate_typ_symbol(&db, symbol) else {
+  let Some(Obj::Typ(Typ::Element(element))) = evaluate_typ_symbol(&db, symbol) else {
     panic!("expected Typ::Element");
   };
 
@@ -1362,7 +1318,7 @@ type Column [field] {
     "expected 'name' to resolve to string"
   );
 
-  let diagnostics = pretype_evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
+  let diagnostics = evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
   assert!(diagnostics.is_empty(), "unexpected diagnostics");
 }
 
@@ -1389,7 +1345,7 @@ type Project [element] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "Project");
-  let Some(Obj::Typ(Typ::Element(element))) = pretype_evaluate_typ_symbol(&db, symbol) else {
+  let Some(Obj::Typ(Typ::Element(element))) = evaluate_typ_symbol(&db, symbol) else {
     panic!("expected Typ::Element");
   };
 
@@ -1428,10 +1384,10 @@ type Column [field] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "Column");
-  let diagnostics = pretype_evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
+  let diagnostics = evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
   assert!(diagnostics.iter().any(|d| matches!(
-    &d.0,
-    Diagnostic::UnknownNamespaceExport { field_name, .. } if field_name == "nonexistent"
+    &d.0.kind,
+    DiagnosticKind::UnknownNamespaceExport { field_name } if field_name == "nonexistent"
   )));
 }
 
@@ -1458,9 +1414,9 @@ type Column [field] {
 
   let members = get_file_scope_members(&db, file);
   let symbol = get_first_symbol(&members, "Column");
-  let diagnostics = pretype_evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
+  let diagnostics = evaluate_typ_symbol::accumulated::<Diagnostics>(&db, symbol);
   assert!(diagnostics.iter().any(|d| matches!(
-    &d.0,
-    Diagnostic::ColonDeclarationInNamespaceBlock { field_name, .. } if field_name == "name"
+    &d.0.kind,
+    DiagnosticKind::ColonDeclarationInNamespaceBlock { field_name } if field_name == "name"
   )));
 }

@@ -1,8 +1,9 @@
+use crate::diagnostics::Diagnostic;
 use salsa::Database;
 
 use crate::ast::{AstNode, ClosureExpr, ElementAttributeDeclaration};
 use crate::db::types::{ConstraintDefinition, Diagnostics};
-use crate::diagnostics::Diagnostic;
+use crate::diagnostics::DiagnosticKind;
 
 use super::super::types::EvaluatedConstraintEntry;
 
@@ -37,12 +38,11 @@ pub fn validate_constraint_entry(
   let (start, end) = entry.span();
 
   if entry.name.trim().is_empty() {
-    let diag = Diagnostic::InvalidConstraintDefinition {
+    let diag = DiagnosticKind::InvalidConstraintDefinition {
       constraint_name: entry.name.clone(),
       message: "constraint name cannot be empty".to_string(),
-      start_offset: start,
-      end_offset: end,
-    };
+    }
+    .into_error(start, end);
     salsa::Accumulator::accumulate(Diagnostics(diag.clone()), db);
     diagnostics.push(diag);
     return (diagnostics, None);
@@ -57,15 +57,14 @@ pub fn validate_constraint_entry(
       }),
     ),
     None => {
-      let diag = Diagnostic::InvalidConstraintDefinition {
+      let diag = DiagnosticKind::InvalidConstraintDefinition {
         constraint_name: entry.name.clone(),
         message: format!(
           "constraint '{}' value must be a closure expression",
           entry.name
         ),
-        start_offset: start,
-        end_offset: end,
-      };
+      }
+      .into_error(start, end);
       salsa::Accumulator::accumulate(Diagnostics(diag.clone()), db);
       diagnostics.push(diag);
       (diagnostics, None)

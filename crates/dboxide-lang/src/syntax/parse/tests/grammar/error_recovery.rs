@@ -1,5 +1,5 @@
 use crate::syntax::parse::tests::utils::*;
-use crate::types::diagnostics::Diagnostic;
+use crate::types::diagnostics::DiagnosticKind;
 
 #[test]
 fn unclosed_brace() {
@@ -7,7 +7,7 @@ fn unclosed_brace() {
   assert!(
     diags
       .iter()
-      .any(|d| matches!(d, Diagnostic::UnclosedDelimiter { delimiter: "{", .. }))
+      .any(|d| matches!(d.kind, DiagnosticKind::UnclosedDelimiter { delimiter: "{" }))
   );
 }
 
@@ -21,7 +21,7 @@ fn unclosed_bracket() {
   assert!(
     diags
       .iter()
-      .any(|d| matches!(d, Diagnostic::UnclosedDelimiter { delimiter: "[", .. }))
+      .any(|d| matches!(d.kind, DiagnosticKind::UnclosedDelimiter { delimiter: "[" }))
   );
 }
 
@@ -35,7 +35,7 @@ fn unclosed_tuple() {
   assert!(
     diags
       .iter()
-      .any(|d| matches!(d, Diagnostic::UnclosedDelimiter { delimiter: "(", .. }))
+      .any(|d| matches!(d.kind, DiagnosticKind::UnclosedDelimiter { delimiter: "(" }))
   );
 }
 

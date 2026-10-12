@@ -3,7 +3,7 @@ use salsa::{Accumulator, Database};
 use crate::db::types::interned::lazy_typ::LazyTyp;
 use crate::db::types::interned::symbol::{SymbolKind, VirtualTypKind};
 use crate::db::types::{Diagnostics, Typ};
-use crate::diagnostics::Diagnostic;
+use crate::diagnostics::DiagnosticKind;
 
 use super::super::types::EvaluatedFieldDeclaration;
 
@@ -17,15 +17,14 @@ pub fn validate_declaration_field_labels(
   let (start, end) = field.span();
 
   if is_declaration && field.label.is_none() {
-    let diag = Diagnostic::InvalidDeclarationFieldLabel {
+    let diag = DiagnosticKind::InvalidDeclarationFieldLabel {
       field_name: name.to_string(),
       message: format!(
         "declaration field '{}' must have [label] or [label alias]",
         name
       ),
-      start_offset: start,
-      end_offset: end,
-    };
+    }
+    .into_error(start, end);
     Accumulator::accumulate(Diagnostics(diag), db);
   }
 }

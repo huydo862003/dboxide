@@ -1,7 +1,7 @@
 use salsa::{Accumulator, Database};
 
 use crate::db::types::Diagnostics;
-use crate::diagnostics::Diagnostic;
+use crate::diagnostics::DiagnosticKind;
 
 use super::super::types::{EvaluatedFieldDeclaration, FieldAnnotationFlags, LabelFlags};
 
@@ -20,11 +20,12 @@ pub fn validate_field_annotation_consistency(
 
   if raw_label.contains(LabelFlags::LABEL) && raw_label.contains(LabelFlags::ALIAS) {
     Accumulator::accumulate(
-      Diagnostics(Diagnostic::ConflictingLabelAnnotations {
-        field_name: name.to_string(),
-        start_offset: start,
-        end_offset: end,
-      }),
+      Diagnostics(
+        DiagnosticKind::ConflictingLabelAnnotations {
+          field_name: name.to_string(),
+        }
+        .into_error(start, end),
+      ),
       db,
     );
   }
@@ -33,22 +34,24 @@ pub fn validate_field_annotation_consistency(
     && !raw_label.intersects(LabelFlags::LABEL | LabelFlags::ALIAS)
   {
     Accumulator::accumulate(
-      Diagnostics(Diagnostic::UniqueRequiresLabel {
-        field_name: name.to_string(),
-        start_offset: start,
-        end_offset: end,
-      }),
+      Diagnostics(
+        DiagnosticKind::UniqueRequiresLabel {
+          field_name: name.to_string(),
+        }
+        .into_error(start, end),
+      ),
       db,
     );
   }
 
   if field.flags.contains(FieldAnnotationFlags::CSV) && field.arg_position.is_none() {
     Accumulator::accumulate(
-      Diagnostics(Diagnostic::CsvRequiresArg {
-        field_name: name.to_string(),
-        start_offset: start,
-        end_offset: end,
-      }),
+      Diagnostics(
+        DiagnosticKind::CsvRequiresArg {
+          field_name: name.to_string(),
+        }
+        .into_error(start, end),
+      ),
       db,
     );
   }

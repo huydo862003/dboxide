@@ -1,7 +1,7 @@
 use crate::parse::constants::*;
 use crate::parse::expr_ctx::ExprCtx;
 use crate::syntax::ast::{GreenNode, SyntaxKind};
-use crate::types::diagnostics::Diagnostic;
+use crate::types::diagnostics::DiagnosticKind;
 
 use super::{ParseCtx, Peeker};
 
@@ -38,11 +38,12 @@ impl<'a> ParseCtx<'a> {
           }
         }
         _ => {
-          self.emit_diagnostic(Diagnostic::UnexpectedToken {
-            expected: "element declaration",
-            start_offset: result.start_offset,
-            end_offset: result.end_offset,
-          });
+          self.emit_diagnostic(
+            DiagnosticKind::UnexpectedToken {
+              expected: "element declaration",
+            }
+            .into_error(result.start_offset, result.end_offset),
+          );
           self.synchronize(&mut children);
         }
       }
@@ -88,11 +89,10 @@ impl<'a> ParseCtx<'a> {
     {
       self.advance(&mut children, SKIP_WC);
     } else {
-      self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-        expected: "'from'",
-        start_offset,
-        end_offset,
-      });
+      self.emit_diagnostic(
+        DiagnosticKind::MissingExpectedToken { expected: "'from'" }
+          .into_error(start_offset, end_offset),
+      );
     }
 
     let peek = self.peek(SKIP_WC);
@@ -104,11 +104,12 @@ impl<'a> ParseCtx<'a> {
     ) {
       self.advance(&mut children, SKIP_WC);
     } else {
-      self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-        expected: "string literal path",
-        start_offset,
-        end_offset,
-      });
+      self.emit_diagnostic(
+        DiagnosticKind::MissingExpectedToken {
+          expected: "string literal path",
+        }
+        .into_error(start_offset, end_offset),
+      );
     }
 
     (self.emit(SyntaxKind::UseDeclaration, &children), None)
@@ -130,11 +131,8 @@ impl<'a> ParseCtx<'a> {
       &mut children,
       SKIP_NONE,
       SyntaxKind::LBrace,
-      Diagnostic::MissingExpectedToken {
-        expected: "'{'",
-        start_offset: peek.start_offset,
-        end_offset: peek.end_offset,
-      },
+      DiagnosticKind::MissingExpectedToken { expected: "'{'" }
+        .into_error(peek.start_offset, peek.end_offset),
     ) {
       self.expr_ctx_stack.exit(ExprCtx::Block);
       return self.emit(SyntaxKind::UseSpecifierList, &children);
@@ -149,10 +147,10 @@ impl<'a> ParseCtx<'a> {
           break;
         }
         SyntaxKind::Eof => {
-          self.emit_diagnostic(Diagnostic::UnclosedDelimiter {
-            delimiter: "{",
-            open_offset,
-          });
+          self.emit_diagnostic(
+            DiagnosticKind::UnclosedDelimiter { delimiter: "{" }
+              .into_error(open_offset, open_offset),
+          );
           break;
         }
         SyntaxKind::Ident
@@ -168,11 +166,12 @@ impl<'a> ParseCtx<'a> {
           children.push(self.use_specifier(SKIP_NONE));
         }
         _ => {
-          self.emit_diagnostic(Diagnostic::UnexpectedToken {
-            expected: "import specifier",
-            start_offset: peek.start_offset,
-            end_offset: peek.end_offset,
-          });
+          self.emit_diagnostic(
+            DiagnosticKind::UnexpectedToken {
+              expected: "import specifier",
+            }
+            .into_error(peek.start_offset, peek.end_offset),
+          );
           self.synchronize_use_specifier_list(&mut children);
         }
       }
@@ -224,11 +223,12 @@ impl<'a> ParseCtx<'a> {
       let kind = self.qualified_name(SKIP_WC, SyntaxKind::UseSpecifierKind);
       children.push(self.emit(SyntaxKind::IdentExpr, &[kind]));
     } else {
-      self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-        expected: "import kind specifier (e.g. table, enum)",
-        start_offset: peek.start_offset,
-        end_offset: peek.end_offset,
-      });
+      self.emit_diagnostic(
+        DiagnosticKind::MissingExpectedToken {
+          expected: "import kind specifier (e.g. table, enum)",
+        }
+        .into_error(peek.start_offset, peek.end_offset),
+      );
       return self.emit(SyntaxKind::UseSpecifier, &children);
     }
 
@@ -240,11 +240,12 @@ impl<'a> ParseCtx<'a> {
     } else {
       let start_offset = peek.start_offset;
       let end_offset = peek.end_offset;
-      self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-        expected: "element name",
-        start_offset,
-        end_offset,
-      });
+      self.emit_diagnostic(
+        DiagnosticKind::MissingExpectedToken {
+          expected: "element name",
+        }
+        .into_error(start_offset, end_offset),
+      );
       self.synchronize_use_specifier_list(&mut children);
       return self.emit(SyntaxKind::UseSpecifier, &children);
     }
@@ -264,11 +265,12 @@ impl<'a> ParseCtx<'a> {
         let alias = self.qualified_name(SKIP_WC, SyntaxKind::UseSpecifierAlias);
         children.push(self.ident_or_dq_expr(&[alias], alias_kind));
       } else {
-        self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-          expected: "alias name after 'as'",
-          start_offset: peek.start_offset,
-          end_offset: peek.end_offset,
-        });
+        self.emit_diagnostic(
+          DiagnosticKind::MissingExpectedToken {
+            expected: "alias name after 'as'",
+          }
+          .into_error(peek.start_offset, peek.end_offset),
+        );
         self.synchronize_use_specifier_list(&mut children);
       }
     }
@@ -312,11 +314,8 @@ impl<'a> ParseCtx<'a> {
           &mut children,
           SKIP_NONE,
           SyntaxKind::Colon,
-          Diagnostic::MissingExpectedToken {
-            expected: "':'",
-            start_offset: peek.start_offset,
-            end_offset: peek.end_offset,
-          },
+          DiagnosticKind::MissingExpectedToken { expected: "':'" }
+            .into_error(peek.start_offset, peek.end_offset),
         );
         self.consume_trivia(&mut children, SKIP_WC);
         if self.is_block_element_head() {
@@ -345,11 +344,12 @@ impl<'a> ParseCtx<'a> {
       _ => {
         let start_offset = peek.start_offset;
         let end_offset = peek.end_offset;
-        self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-          expected: "'{' or ':'",
-          start_offset,
-          end_offset,
-        });
+        self.emit_diagnostic(
+          DiagnosticKind::MissingExpectedToken {
+            expected: "'{' or ':'",
+          }
+          .into_error(start_offset, end_offset),
+        );
         (self.emit(SyntaxKind::Error, &children), None)
       }
     }
@@ -397,7 +397,15 @@ impl<'a> ParseCtx<'a> {
 
   pub(in crate::syntax::parse) fn is_block_element_head(&mut self) -> bool {
     let mut peeker = self.peeker();
-    if peeker.next_token(SKIP_WC).token.kind() != SyntaxKind::Ident {
+    let first = peeker.next_token(SKIP_WC);
+    if first.token.kind() != SyntaxKind::Ident {
+      return false;
+    }
+    if first
+      .token
+      .text()
+      .is_some_and(|t| t.eq_ignore_ascii_case("match"))
+    {
       return false;
     }
 
@@ -478,11 +486,7 @@ impl<'a> ParseCtx<'a> {
       &mut children,
       skip,
       SyntaxKind::LBrace,
-      Diagnostic::MissingExpectedToken {
-        expected: "'{'",
-        start_offset,
-        end_offset,
-      },
+      DiagnosticKind::MissingExpectedToken { expected: "'{'" }.into_error(start_offset, end_offset),
     ) {
       self.expr_ctx_stack.exit(ExprCtx::Block);
       parent.push(self.emit(SyntaxKind::BlockElementDeclarationBody, &children));
@@ -499,10 +503,10 @@ impl<'a> ParseCtx<'a> {
           break;
         }
         SyntaxKind::Eof => {
-          self.emit_diagnostic(Diagnostic::UnclosedDelimiter {
-            delimiter: "{",
-            open_offset,
-          });
+          self.emit_diagnostic(
+            DiagnosticKind::UnclosedDelimiter { delimiter: "{" }
+              .into_error(open_offset, open_offset),
+          );
           break;
         }
         _ => {
@@ -510,10 +514,10 @@ impl<'a> ParseCtx<'a> {
           if let Some(handler) = self.expr_ctx_stack.find_handler(kind)
             && handler != ExprCtx::Block
           {
-            self.emit_diagnostic(Diagnostic::UnclosedDelimiter {
-              delimiter: "{",
-              open_offset,
-            });
+            self.emit_diagnostic(
+              DiagnosticKind::UnclosedDelimiter { delimiter: "{" }
+                .into_error(open_offset, open_offset),
+            );
             early_exit = Some(handler);
             break;
           }
@@ -624,11 +628,7 @@ impl<'a> ParseCtx<'a> {
       &mut children,
       SKIP_NONE,
       SyntaxKind::Colon,
-      Diagnostic::MissingExpectedToken {
-        expected: "':'",
-        start_offset,
-        end_offset,
-      },
+      DiagnosticKind::MissingExpectedToken { expected: "':'" }.into_error(start_offset, end_offset),
     );
 
     let (value, _) = self.expr();
@@ -712,11 +712,12 @@ impl<'a> ParseCtx<'a> {
     } else {
       let start_offset = peek.start_offset;
       let end_offset = peek.end_offset;
-      self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-        expected: "alias name after 'as'",
-        start_offset,
-        end_offset,
-      });
+      self.emit_diagnostic(
+        DiagnosticKind::MissingExpectedToken {
+          expected: "alias name after 'as'",
+        }
+        .into_error(start_offset, end_offset),
+      );
       self.synchronize_element_alias(parent);
     }
   }
@@ -761,10 +762,10 @@ impl<'a> ParseCtx<'a> {
           break;
         }
         SyntaxKind::Eof => {
-          self.emit_diagnostic(Diagnostic::UnclosedDelimiter {
-            delimiter: "[",
-            open_offset,
-          });
+          self.emit_diagnostic(
+            DiagnosticKind::UnclosedDelimiter { delimiter: "[" }
+              .into_error(open_offset, open_offset),
+          );
           break;
         }
         SyntaxKind::Comma => {
@@ -776,10 +777,10 @@ impl<'a> ParseCtx<'a> {
           if let Some(handler) = self.expr_ctx_stack.find_handler(kind)
             && handler != ExprCtx::List
           {
-            self.emit_diagnostic(Diagnostic::UnclosedDelimiter {
-              delimiter: "[",
-              open_offset,
-            });
+            self.emit_diagnostic(
+              DiagnosticKind::UnclosedDelimiter { delimiter: "[" }
+                .into_error(open_offset, open_offset),
+            );
             break;
           }
           children.push(self.setting_item());
@@ -821,11 +822,12 @@ impl<'a> ParseCtx<'a> {
         _ => {
           let start_offset = peek.start_offset;
           let end_offset = peek.end_offset;
-          self.emit_diagnostic(Diagnostic::UnexpectedToken {
-            expected: "setting name",
-            start_offset,
-            end_offset,
-          });
+          self.emit_diagnostic(
+            DiagnosticKind::UnexpectedToken {
+              expected: "setting name",
+            }
+            .into_error(start_offset, end_offset),
+          );
           self.synchronize(&mut name_children);
           break;
         }
@@ -928,13 +930,57 @@ impl<'a> ParseCtx<'a> {
 
       // Check postfix (e.g. `?` or `..` without following operand)
       if op_text == "?" {
-        if let Some((left_bp, ())) = postfix_binding_power(&op_text) {
-          if left_bp < min_bp {
-            break;
+        // `?` is postfix nullable if it's optional chaining (`x?[i]`, `x?(a)`),
+        // or if there's no `:` ahead (ruling out ternary `x ? y : z`).
+        let is_optional_chaining = {
+          let skip = self.expr_skip_flags();
+          let mut peeker = self.peeker();
+          _ = peeker.next_token(skip); // skip `?`
+          matches!(
+            peeker.next_token(SKIP_NONE).token.kind(),
+            SyntaxKind::LBracket | SyntaxKind::LParen
+          )
+        };
+        let is_ternary = {
+          let skip = self.expr_skip_flags();
+          let mut peeker = self.peeker();
+          _ = peeker.next_token(skip); // skip `?`
+          let mut depth: i32 = 0;
+          loop {
+            let result = peeker.next_token(SKIP_WC);
+            match result.token.kind() {
+              SyntaxKind::Eof | SyntaxKind::Newline | SyntaxKind::RBrace => break false,
+              SyntaxKind::LParen | SyntaxKind::LBracket => depth += 1,
+              SyntaxKind::RParen | SyntaxKind::RBracket => {
+                depth -= 1;
+                if depth < 0 {
+                  break false;
+                }
+              }
+              SyntaxKind::Colon if depth == 0 => break true,
+              _ => {}
+            }
           }
+        };
+
+        if is_optional_chaining || !is_ternary {
+          if let Some((left_bp, ())) = postfix_binding_power(&op_text) {
+            if left_bp < min_bp {
+              break;
+            }
+            let mut children = vec![lhs];
+            self.advance(&mut children, self.expr_skip_flags());
+            lhs = self.emit(SyntaxKind::PostfixExpr, &children);
+            continue;
+          }
+        } else {
           let mut children = vec![lhs];
           self.advance(&mut children, self.expr_skip_flags());
-          lhs = self.emit(SyntaxKind::PostfixExpr, &children);
+          let (then_node, exit) = self.ternary_expr(&mut children);
+          lhs = then_node;
+          if exit.is_some() {
+            return (lhs, exit);
+          }
           continue;
         }
       } else if op_text == ".." {
@@ -1040,6 +1086,8 @@ impl<'a> ParseCtx<'a> {
           self.quantifier_expr(SyntaxKind::ForallExpr, children, skip)
         } else if text.eq_ignore_ascii_case("exists") {
           self.quantifier_expr(SyntaxKind::ExistsExpr, children, skip)
+        } else if text.eq_ignore_ascii_case("match") {
+          self.match_expr(children, skip)
         } else {
           let mut children = children;
           self.advance(&mut children, skip);
@@ -1051,22 +1099,24 @@ impl<'a> ParseCtx<'a> {
       _ => {
         let handler = self.expr_ctx_stack.find_handler(peek.token.kind());
         if handler.is_some() {
-          self.diagnostics.push(Diagnostic::MissingSyntaxNode {
-            expected: SyntaxKind::IdentExpr,
-            start_offset: self.offset,
-            end_offset: self.offset,
-          });
+          self.diagnostics.push(
+            DiagnosticKind::MissingSyntaxNode {
+              expected: SyntaxKind::IdentExpr,
+            }
+            .into_error(self.offset, self.offset),
+          );
           (self.emit(SyntaxKind::Error, &children), handler)
         } else {
           let mut children = children;
           self.advance(&mut children, skip);
           let bad = children.pop().unwrap();
           children.push(self.emit(SyntaxKind::Error, &[bad]));
-          self.diagnostics.push(Diagnostic::MissingSyntaxNode {
-            expected: SyntaxKind::IdentExpr,
-            start_offset: self.offset,
-            end_offset: self.offset,
-          });
+          self.diagnostics.push(
+            DiagnosticKind::MissingSyntaxNode {
+              expected: SyntaxKind::IdentExpr,
+            }
+            .into_error(self.offset, self.offset),
+          );
           (self.emit(SyntaxKind::Error, &children), None)
         }
       }
@@ -1089,11 +1139,10 @@ impl<'a> ParseCtx<'a> {
       &mut children,
       self.expr_skip_flags(),
       SyntaxKind::LParen,
-      Diagnostic::MissingSyntaxNode {
+      DiagnosticKind::MissingSyntaxNode {
         expected: SyntaxKind::LParen,
-        start_offset: offset,
-        end_offset: self.offset,
-      },
+      }
+      .into_error(offset, self.offset),
     );
 
     // Empty parens `()` -> TupleExpr
@@ -1108,10 +1157,9 @@ impl<'a> ParseCtx<'a> {
     let (first, early_exit) = self.expr();
     children.push(first);
     if early_exit.is_some_and(|ctx| ctx != ExprCtx::Tuple) {
-      self.emit_diagnostic(Diagnostic::UnclosedDelimiter {
-        delimiter: "(",
-        open_offset: offset,
-      });
+      self.emit_diagnostic(
+        DiagnosticKind::UnclosedDelimiter { delimiter: "(" }.into_error(offset, offset),
+      );
       self.expr_ctx_stack.exit(ExprCtx::Tuple);
       return (self.emit(SyntaxKind::ParenExpr, &children), early_exit);
     }
@@ -1136,28 +1184,25 @@ impl<'a> ParseCtx<'a> {
             let (item, exit) = self.expr();
             children.push(item);
             if exit.is_some_and(|c| c != ExprCtx::Tuple) {
-              self.emit_diagnostic(Diagnostic::UnclosedDelimiter {
-                delimiter: "(",
-                open_offset: offset,
-              });
+              self.emit_diagnostic(
+                DiagnosticKind::UnclosedDelimiter { delimiter: "(" }.into_error(offset, offset),
+              );
               self.expr_ctx_stack.exit(ExprCtx::Tuple);
               return (self.emit(SyntaxKind::TupleExpr, &children), exit);
             }
           }
           SyntaxKind::Eof => {
-            self.emit_diagnostic(Diagnostic::UnclosedDelimiter {
-              delimiter: "(",
-              open_offset: offset,
-            });
+            self.emit_diagnostic(
+              DiagnosticKind::UnclosedDelimiter { delimiter: "(" }.into_error(offset, offset),
+            );
             break;
           }
           _ => {
             let handler = self.expr_ctx_stack.find_handler(peek.token.kind());
             if handler.is_some_and(|c| c != ExprCtx::Tuple) {
-              self.emit_diagnostic(Diagnostic::UnclosedDelimiter {
-                delimiter: "(",
-                open_offset: offset,
-              });
+              self.emit_diagnostic(
+                DiagnosticKind::UnclosedDelimiter { delimiter: "(" }.into_error(offset, offset),
+              );
               self.expr_ctx_stack.exit(ExprCtx::Tuple);
               return (self.emit(SyntaxKind::TupleExpr, &children), handler);
             }
@@ -1180,11 +1225,10 @@ impl<'a> ParseCtx<'a> {
       &mut children,
       SKIP_ALL_TRIVIA,
       SyntaxKind::RParen,
-      Diagnostic::MissingSyntaxNode {
+      DiagnosticKind::MissingSyntaxNode {
         expected: SyntaxKind::RParen,
-        start_offset: offset,
-        end_offset: self.offset,
-      },
+      }
+      .into_error(offset, self.offset),
     );
     self.expr_ctx_stack.exit(ExprCtx::Tuple);
     (self.emit(SyntaxKind::ParenExpr, &children), None)
@@ -1206,11 +1250,10 @@ impl<'a> ParseCtx<'a> {
       &mut children,
       self.expr_skip_flags(),
       SyntaxKind::LBracket,
-      Diagnostic::MissingSyntaxNode {
+      DiagnosticKind::MissingSyntaxNode {
         expected: SyntaxKind::LBracket,
-        start_offset: offset,
-        end_offset: self.offset,
-      },
+      }
+      .into_error(offset, self.offset),
     );
     let early_exit = self.parse_comma_delimited(&mut children, ExprCtx::List, SyntaxKind::RBracket);
     self.expr_ctx_stack.exit(ExprCtx::List);
@@ -1230,11 +1273,10 @@ impl<'a> ParseCtx<'a> {
       &mut children,
       self.expr_skip_flags(),
       SyntaxKind::LParen,
-      Diagnostic::MissingSyntaxNode {
+      DiagnosticKind::MissingSyntaxNode {
         expected: SyntaxKind::LParen,
-        start_offset: offset,
-        end_offset: self.offset,
-      },
+      }
+      .into_error(offset, self.offset),
     );
     let early_exit = self.parse_comma_delimited(&mut children, ExprCtx::Tuple, SyntaxKind::RParen);
     self.expr_ctx_stack.exit(ExprCtx::Tuple);
@@ -1254,11 +1296,10 @@ impl<'a> ParseCtx<'a> {
       &mut children,
       self.expr_skip_flags(),
       SyntaxKind::LBracket,
-      Diagnostic::MissingSyntaxNode {
+      DiagnosticKind::MissingSyntaxNode {
         expected: SyntaxKind::LBracket,
-        start_offset: offset,
-        end_offset: self.offset,
-      },
+      }
+      .into_error(offset, self.offset),
     );
     let early_exit = self.parse_comma_delimited(&mut children, ExprCtx::List, SyntaxKind::RBracket);
     self.expr_ctx_stack.exit(ExprCtx::List);
@@ -1338,11 +1379,10 @@ impl<'a> ParseCtx<'a> {
           }
         }
         SyntaxKind::Eof => {
-          self.diagnostics.push(Diagnostic::MissingSyntaxNode {
-            expected: closer,
-            start_offset: self.offset,
-            end_offset: self.offset,
-          });
+          self.diagnostics.push(
+            DiagnosticKind::MissingSyntaxNode { expected: closer }
+              .into_error(self.offset, self.offset),
+          );
           break;
         }
         _ => {
@@ -1383,19 +1423,21 @@ impl<'a> ParseCtx<'a> {
           self.consume_trivia(&mut name_children, SKIP_WC);
           self.advance(&mut name_children, SKIP_NONE);
         } else {
-          self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-            expected: "operator symbol after 'operator'",
-            start_offset: peek2.start_offset,
-            end_offset: peek2.end_offset,
-          });
+          self.emit_diagnostic(
+            DiagnosticKind::MissingExpectedToken {
+              expected: "operator symbol after 'operator'",
+            }
+            .into_error(peek2.start_offset, peek2.end_offset),
+          );
         }
       }
     } else {
-      self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-        expected: "function name or 'operator<sym>'",
-        start_offset: peek.start_offset,
-        end_offset: peek.end_offset,
-      });
+      self.emit_diagnostic(
+        DiagnosticKind::MissingExpectedToken {
+          expected: "function name or 'operator<sym>'",
+        }
+        .into_error(peek.start_offset, peek.end_offset),
+      );
     }
     children.push(self.emit(SyntaxKind::FuncDeclarationName, &name_children));
 
@@ -1423,11 +1465,10 @@ impl<'a> ParseCtx<'a> {
         early_exit,
       );
     }
-    self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-      expected: "'{'",
-      start_offset: peek.start_offset,
-      end_offset: peek.end_offset,
-    });
+    self.emit_diagnostic(
+      DiagnosticKind::MissingExpectedToken { expected: "'{'" }
+        .into_error(peek.start_offset, peek.end_offset),
+    );
     (self.emit(SyntaxKind::FuncDeclaration, &children), None)
   }
 
@@ -1442,11 +1483,12 @@ impl<'a> ParseCtx<'a> {
     if peek.token.kind() == SyntaxKind::Ident {
       self.advance(&mut name_children, SKIP_NONE);
     } else {
-      self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-        expected: "getter name",
-        start_offset: peek.start_offset,
-        end_offset: peek.end_offset,
-      });
+      self.emit_diagnostic(
+        DiagnosticKind::MissingExpectedToken {
+          expected: "getter name",
+        }
+        .into_error(peek.start_offset, peek.end_offset),
+      );
     }
     children.push(self.emit(SyntaxKind::GetDeclarationName, &name_children));
 
@@ -1471,11 +1513,10 @@ impl<'a> ParseCtx<'a> {
       let early_exit = self.block_element_body(&mut children, SKIP_NONE);
       return (self.emit(SyntaxKind::GetDeclaration, &children), early_exit);
     }
-    self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-      expected: "'{'",
-      start_offset: peek.start_offset,
-      end_offset: peek.end_offset,
-    });
+    self.emit_diagnostic(
+      DiagnosticKind::MissingExpectedToken { expected: "'{'" }
+        .into_error(peek.start_offset, peek.end_offset),
+    );
     (self.emit(SyntaxKind::GetDeclaration, &children), None)
   }
 
@@ -1494,11 +1535,12 @@ impl<'a> ParseCtx<'a> {
     if matches!(peek.token.kind(), SyntaxKind::Ident | SyntaxKind::DqString) {
       self.advance(&mut name_children, SKIP_NONE);
     } else {
-      self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-        expected: "type name",
-        start_offset: peek.start_offset,
-        end_offset: peek.end_offset,
-      });
+      self.emit_diagnostic(
+        DiagnosticKind::MissingExpectedToken {
+          expected: "type name",
+        }
+        .into_error(peek.start_offset, peek.end_offset),
+      );
     }
     children.push(self.emit(SyntaxKind::EqualityDeclarationName, &name_children));
 
@@ -1531,11 +1573,12 @@ impl<'a> ParseCtx<'a> {
         )
       }
       _ => {
-        self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-          expected: "'{' or '='",
-          start_offset: peek.start_offset,
-          end_offset: peek.end_offset,
-        });
+        self.emit_diagnostic(
+          DiagnosticKind::MissingExpectedToken {
+            expected: "'{' or '='",
+          }
+          .into_error(peek.start_offset, peek.end_offset),
+        );
         (self.emit(SyntaxKind::EqualityDeclaration, &children), None)
       }
     }
@@ -1572,10 +1615,10 @@ impl<'a> ParseCtx<'a> {
           break;
         }
         SyntaxKind::Eof => {
-          self.emit_diagnostic(Diagnostic::UnclosedDelimiter {
-            delimiter: "(",
-            open_offset,
-          });
+          self.emit_diagnostic(
+            DiagnosticKind::UnclosedDelimiter { delimiter: "(" }
+              .into_error(open_offset, open_offset),
+          );
           break;
         }
         SyntaxKind::Comma => {
@@ -1587,11 +1630,12 @@ impl<'a> ParseCtx<'a> {
         _ => {
           let start_offset = peek.start_offset;
           let end_offset = peek.end_offset;
-          self.emit_diagnostic(Diagnostic::UnexpectedToken {
-            expected: "parameter name",
-            start_offset,
-            end_offset,
-          });
+          self.emit_diagnostic(
+            DiagnosticKind::UnexpectedToken {
+              expected: "parameter name",
+            }
+            .into_error(start_offset, end_offset),
+          );
           self.advance(&mut children, SKIP_NONE);
         }
       }
@@ -1621,11 +1665,12 @@ impl<'a> ParseCtx<'a> {
       let (type_expr, _) = self.expr();
       children.push(type_expr);
     } else {
-      self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-        expected: "':' after parameter name",
-        start_offset: peek.start_offset,
-        end_offset: peek.end_offset,
-      });
+      self.emit_diagnostic(
+        DiagnosticKind::MissingExpectedToken {
+          expected: "':' after parameter name",
+        }
+        .into_error(peek.start_offset, peek.end_offset),
+      );
     }
     self.emit(SyntaxKind::FuncDeclarationParam, &children)
   }
@@ -1648,11 +1693,12 @@ impl<'a> ParseCtx<'a> {
       self.advance(&mut binding_children, SKIP_NONE);
       children.push(self.emit(SyntaxKind::IdentExpr, &binding_children));
     } else {
-      self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-        expected: "binding variable name",
-        start_offset: peek.start_offset,
-        end_offset: peek.end_offset,
-      });
+      self.emit_diagnostic(
+        DiagnosticKind::MissingExpectedToken {
+          expected: "binding variable name",
+        }
+        .into_error(peek.start_offset, peek.end_offset),
+      );
     }
 
     // "of" keyword
@@ -1667,11 +1713,10 @@ impl<'a> ParseCtx<'a> {
       self.consume_trivia(&mut children, SKIP_WC);
       self.advance(&mut children, SKIP_NONE);
     } else {
-      self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-        expected: "'of'",
-        start_offset: peek.start_offset,
-        end_offset: peek.end_offset,
-      });
+      self.emit_diagnostic(
+        DiagnosticKind::MissingExpectedToken { expected: "'of'" }
+          .into_error(peek.start_offset, peek.end_offset),
+      );
     }
 
     // collection expression - stops naturally before `{`
@@ -1688,12 +1733,103 @@ impl<'a> ParseCtx<'a> {
       let early_exit = self.block_element_body(&mut children, SKIP_NONE);
       return (self.emit(kind, &children), early_exit);
     }
-    self.emit_diagnostic(Diagnostic::MissingExpectedToken {
-      expected: "'{'",
-      start_offset: peek.start_offset,
-      end_offset: peek.end_offset,
-    });
+    self.emit_diagnostic(
+      DiagnosticKind::MissingExpectedToken { expected: "'{'" }
+        .into_error(peek.start_offset, peek.end_offset),
+    );
     (self.emit(kind, &children), None)
+  }
+
+  /// Parse the then and else branches of a ternary expression
+  /// `?` has already been consumed; children contains [condition]
+  fn ternary_expr(&mut self, children: &mut Vec<GreenNode>) -> (GreenNode, Option<ExprCtx>) {
+    let (then_expr, exit) = self.pratt_expr(0, vec![]);
+    children.push(then_expr);
+    if exit.is_some() {
+      return (self.emit(SyntaxKind::TernaryExpr, children), exit);
+    }
+
+    let peek = self.peek(self.expr_skip_flags());
+    if peek.token.kind() == SyntaxKind::Colon {
+      self.advance(children, self.expr_skip_flags());
+      let (else_expr, exit) = self.pratt_expr(0, vec![]);
+      children.push(else_expr);
+      return (self.emit(SyntaxKind::TernaryExpr, children), exit);
+    }
+
+    (self.emit(SyntaxKind::TernaryExpr, children), None)
+  }
+
+  /// Parse a match expression: `match subject { pattern => result ... }`
+  fn match_expr(&mut self, children: Vec<GreenNode>, skip: usize) -> (GreenNode, Option<ExprCtx>) {
+    let mut children = children;
+    self.advance(&mut children, skip); // consume "match"
+
+    // Parse subject expression
+    self.consume_trivia(&mut children, SKIP_WC);
+    self.expr_ctx_stack.enter(ExprCtx::Field);
+    let (subject, _) = self.expr();
+    self.expr_ctx_stack.exit(ExprCtx::Field);
+    children.push(subject);
+
+    // Expect `{`
+    let peek = self.peek(SKIP_WCN);
+    if peek.token.kind() != SyntaxKind::LBrace {
+      self.emit_diagnostic(
+        DiagnosticKind::MissingExpectedToken { expected: "'{'" }
+          .into_error(peek.start_offset, peek.end_offset),
+      );
+      return (self.emit(SyntaxKind::MatchExpr, &children), None);
+    }
+    self.advance(&mut children, SKIP_WCN); // consume `{`
+    let open_offset = self.offset;
+
+    // Parse arms
+    loop {
+      self.consume_trivia(&mut children, SKIP_WCN);
+      let peek = self.peek(SKIP_NONE);
+      match peek.token.kind() {
+        SyntaxKind::RBrace => {
+          self.advance(&mut children, SKIP_NONE);
+          break;
+        }
+        SyntaxKind::Eof => {
+          self.emit_diagnostic(
+            DiagnosticKind::UnclosedDelimiter { delimiter: "{" }
+              .into_error(open_offset, open_offset),
+          );
+          break;
+        }
+        _ => {
+          // Parse arm: pattern => result
+          let mut arm_children = Vec::new();
+          // Pattern: parse at binding power 5 to stop before `=>`
+          let (pattern, _) = self.pratt_expr(5, vec![]);
+          arm_children.push(pattern);
+
+          // Expect `=>`
+          let peek = self.peek(SKIP_WC);
+          if peek.token.kind() == SyntaxKind::Operator && peek.token.text() == Some("=>") {
+            self.advance(&mut arm_children, SKIP_WC);
+          } else {
+            self.emit_diagnostic(
+              DiagnosticKind::MissingExpectedToken { expected: "'=>'" }
+                .into_error(peek.start_offset, peek.end_offset),
+            );
+          }
+
+          // Result expression
+          self.expr_ctx_stack.enter(ExprCtx::Field);
+          let (result, _) = self.expr();
+          self.expr_ctx_stack.exit(ExprCtx::Field);
+          arm_children.push(result);
+
+          children.push(self.emit(SyntaxKind::MatchArm, &arm_children));
+        }
+      }
+    }
+
+    (self.emit(SyntaxKind::MatchExpr, &children), None)
   }
 
   /* Utils */

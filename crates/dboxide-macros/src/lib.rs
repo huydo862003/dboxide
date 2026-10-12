@@ -1,6 +1,7 @@
 use proc_macro::TokenStream;
 
 mod ast;
+mod diagnostic;
 
 #[proc_macro_derive(AstNode, attributes(ast_node))]
 pub fn ast_node_derive(item: TokenStream) -> TokenStream {
@@ -16,4 +17,9 @@ pub fn ast_node_derive(item: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn wrapper_ast_node(attr: TokenStream, item: TokenStream) -> TokenStream {
   ast::wrapper_ast_node_impl(attr, item)
+}
+
+#[proc_macro_attribute]
+pub fn dboxide_diagnostic_kind(attr: TokenStream, item: TokenStream) -> TokenStream {
+  diagnostic::dboxide_diagnostic_kind_impl(attr, item)
 }

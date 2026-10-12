@@ -5,14 +5,13 @@ use crate::ast::{
   ElementDeclaration, ElementFieldDeclaration, ElementFieldDeclarationArg, Expr, FuncDeclaration,
   ListExpr, PostfixExpr,
 };
+use crate::db::prepost::{TypBodyExtract, extract_typ_body};
 use crate::db::types::interned::func_signature::FuncSignature;
 use crate::db::types::interned::lazy_typ::LazyTyp;
 use crate::db::types::interned::symbol::{SymbolKind, VirtualTypKind};
 use crate::db::types::{AnyTyp, Diagnostics, File, FuncObj, FuncTyp, OnUsePolicy, Typ};
-use crate::db::utils::{TypBodyExtract, extract_typ_body};
-use crate::diagnostics::Diagnostic;
+use crate::diagnostics::DiagnosticKind;
 
-use super::super::pretype_evaluate_node::pretype_evaluate_lazy_typ;
 use super::constraints::{
   extract_constraint_entry, validate_constraint_entry, validate_contiguous_arg_index,
   validate_declaration_field_labels, validate_field_annotation_consistency,
@@ -21,9 +20,10 @@ use super::constraints::{
 use super::types::{
   ArgPosition, EvaluatedFieldDeclaration, EvaluatedTyp, FieldAnnotationFlags, LabelFlags,
 };
+use crate::db::prepost::evaluate_node::evaluate_lazy_typ_pretype;
 
 /// Evaluate `type Name [element] { ... }` into an ElementTyp
-pub fn pretype_evaluate_typ_element_node<'db>(
+pub fn evaluate_typ_element<'db>(
   db: &'db dyn Database,
   file: File,
   name: &str,
@@ -45,11 +45,12 @@ pub fn pretype_evaluate_typ_element_node<'db>(
       } else {
         let start = expr.syntax().offset();
         salsa::Accumulator::accumulate(
-          Diagnostics(Diagnostic::UnrecognizedOnUseValue {
-            value: value.to_string(),
-            start_offset: start,
-            end_offset: start + expr.syntax().text_len(),
-          }),
+          Diagnostics(
+            DiagnosticKind::UnrecognizedOnUseValue {
+              value: value.to_string(),
+            }
+            .into_error(start, start + expr.syntax().text_len()),
+          ),
           db,
         );
         Some(OnUsePolicy::Default)
@@ -144,10 +145,10 @@ fn parse_field_name(
     if items.next().is_some() {
       let start = field.syntax().offset();
       salsa::Accumulator::accumulate(
-        Diagnostics(Diagnostic::MalformedRestAttribute {
-          start_offset: start,
-          end_offset: start + field.syntax().text_len(),
-        }),
+        Diagnostics(
+          DiagnosticKind::MalformedRestAttribute
+            .into_error(start, start + field.syntax().text_len()),
+        ),
         db,
       );
       return None;
@@ -167,18 +168,19 @@ fn parse_field_typ<'db>(
   let resolved = type_arg
     .as_ref()
     .and_then(|arg| arg.expr())
-    .and_then(|expr| pretype_evaluate_lazy_typ(db, file, &expr));
+    .and_then(|expr| evaluate_lazy_typ_pretype(db, file, &expr));
 
   if resolved.is_none()
     && let Some(arg) = &type_arg
   {
     let start = arg.syntax().offset();
     salsa::Accumulator::accumulate(
-      Diagnostics(Diagnostic::InvalidFieldType {
-        field_name: field_name.to_string(),
-        start_offset: start,
-        end_offset: start + arg.syntax().text_len(),
-      }),
+      Diagnostics(
+        DiagnosticKind::InvalidFieldType {
+          field_name: field_name.to_string(),
+        }
+        .into_error(start, start + arg.syntax().text_len()),
+      ),
       db,
     );
   }
@@ -265,11 +267,10 @@ fn disallow_colon_syntax(db: &dyn Database, attributes: &[ElementAttributeDeclar
       None => continue,
     };
     salsa::Accumulator::accumulate(
-      Diagnostics(Diagnostic::ColonDeclarationInTypeBody {
-        field_name,
-        start_offset: start,
-        end_offset: start + attr.syntax().text_len(),
-      }),
+      Diagnostics(
+        DiagnosticKind::ColonDeclarationInTypeBody { field_name }
+          .into_error(start, start + attr.syntax().text_len()),
+      ),
       db,
     );
   }
@@ -298,7 +299,7 @@ fn process_nested_types<'db>(
           .is_some_and(|name| name.name().eq_ignore_ascii_case("element"))
       })
     });
-    let nested_typ = pretype_evaluate_typ_element_node(db, file, &declaration_name, nested_type);
+    let nested_typ = evaluate_typ_element(db, file, &declaration_name, nested_type);
     if is_element_role {
       evaluated
         .element_subtypes
@@ -328,16 +329,15 @@ fn process_namespace_block<'db>(
     let Some(field_name) = name_arg.expr().and_then(|expr| expr.as_name()) else {
       continue;
     };
-    if let Some(decl) = evaluated.field_declarations.get(&field_name) {
-      evaluated.namespace.insert(field_name, decl.typ);
+    if let Some(declaration) = evaluated.field_declarations.get(&field_name) {
+      evaluated.namespace.insert(field_name, declaration.typ);
     } else {
       let start = field.syntax().offset();
       salsa::Accumulator::accumulate(
-        Diagnostics(Diagnostic::UnknownNamespaceExport {
-          field_name,
-          start_offset: start,
-          end_offset: start + field.syntax().text_len(),
-        }),
+        Diagnostics(
+          DiagnosticKind::UnknownNamespaceExport { field_name }
+            .into_error(start, start + field.syntax().text_len()),
+        ),
         db,
       );
     }
@@ -351,11 +351,10 @@ fn process_namespace_block<'db>(
       None => continue,
     };
     salsa::Accumulator::accumulate(
-      Diagnostics(Diagnostic::ColonDeclarationInNamespaceBlock {
-        field_name,
-        start_offset: start,
-        end_offset: start + attr.syntax().text_len(),
-      }),
+      Diagnostics(
+        DiagnosticKind::ColonDeclarationInNamespaceBlock { field_name }
+          .into_error(start, start + attr.syntax().text_len()),
+      ),
       db,
     );
   }
@@ -370,7 +369,7 @@ fn process_namespace_block<'db>(
     let typ = getter
       .return_typ()
       .and_then(|rt| rt.type_expr())
-      .and_then(|expr| pretype_evaluate_lazy_typ(db, file, &expr))
+      .and_then(|expr| evaluate_lazy_typ_pretype(db, file, &expr))
       .unwrap_or_else(|| LazyTyp::eager(AnyTyp::new(db).into()));
     evaluated.namespace.insert(getter_name.clone(), typ);
 
@@ -379,7 +378,8 @@ fn process_namespace_block<'db>(
       db,
       getter_name.clone(),
       FuncTyp::new(db, signature),
-      getter.body().map(|b| b.syntax().clone()),
+      Some(getter.syntax().clone()),
+      None,
     );
     evaluated.vtable.insert(getter_name, func_obj);
   }
@@ -401,7 +401,7 @@ fn process_member_functions<'db>(
     let ret_typ = func_declaration
       .return_typ()
       .and_then(|rt| rt.type_expr())
-      .and_then(|expr| pretype_evaluate_lazy_typ(db, file, &expr))
+      .and_then(|expr| evaluate_lazy_typ_pretype(db, file, &expr))
       .unwrap_or_else(|| LazyTyp::eager(AnyTyp::new(db).into()));
 
     let mut param_types = Vec::new();
@@ -409,7 +409,7 @@ fn process_member_functions<'db>(
       for param in params_node.params() {
         let param_typ = param
           .type_expr()
-          .and_then(|expr| pretype_evaluate_lazy_typ(db, file, &expr))
+          .and_then(|expr| evaluate_lazy_typ_pretype(db, file, &expr))
           .unwrap_or_else(|| LazyTyp::eager(AnyTyp::new(db).into()));
         param_types.push(param_typ);
       }
@@ -420,13 +420,14 @@ fn process_member_functions<'db>(
       db,
       func_name.clone(),
       FuncTyp::new(db, sig),
-      func_declaration.body().map(|b| b.syntax().clone()),
+      Some(func_declaration.syntax().clone()),
+      None,
     );
     evaluated.vtable.insert(func_name, func_obj);
   }
 }
 
-// parse `n` or `n..` from a setting value expression
+// Parse `n` or `n..` from a setting value expression
 fn parse_positional_index(expr: &Expr) -> Option<(usize, bool)> {
   if let Some(postfix) = PostfixExpr::cast(expr.syntax().clone())
     && postfix.op().as_deref() == Some("..")

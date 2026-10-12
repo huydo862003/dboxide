@@ -1,7 +1,7 @@
 version: "1.0.0"
 vault:
   root_dir: "vault"
-repo: "https://github.com/hdnax/dboxide"
+repo: "https://github.com/huydo862003/dboxide"
 site:
   url: "https://huydo862003.github.io"
   title: "dboxide"
@@ -13,5 +13,3 @@ site:
     - title: "Research"
       link: "/02-research/index"
       icon: icon.library
-    - title: "GitHub"
-      link: "https://github.com/hdnax/dboxide"

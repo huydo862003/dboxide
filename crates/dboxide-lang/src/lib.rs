@@ -1,5 +1,7 @@
+extern crate self as dboxide_lang;
+
 mod db;
-pub mod syntax;
+mod syntax;
 mod types;
 
 pub use db::*;

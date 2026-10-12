@@ -3,7 +3,7 @@ use salsa::{Accumulator, Database, tracked};
 use crate::FileHandle;
 use crate::ast::{RedNode, cache::CACHE};
 use crate::db::types::{CheapRedNode, Diagnostics, File, FileParseResult, TrackedRedNode};
-use crate::diagnostics::Diagnostic;
+use crate::diagnostics::DiagnosticKind;
 use crate::parse::{ParseCtx, ParseResult};
 
 /// Parse a file into an AST
@@ -18,11 +18,12 @@ pub fn parse_file<'db>(db: &'db dyn Database, file: File) -> FileParseResult<'db
   };
 
   let stream = file.handle(db).open().unwrap_or_else(|| {
-    diagnostics.push(Diagnostic::FileNotFound {
-      path: file.filepath(db).into(),
-      start_offset: 0,
-      end_offset: 0,
-    });
+    diagnostics.push(
+      DiagnosticKind::FileNotFound {
+        path: file.filepath(db).into(),
+      }
+      .into_error(0, 0),
+    );
 
     empty_file.open().unwrap()
   });

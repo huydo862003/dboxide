@@ -356,6 +356,7 @@ mod tests {
       "greet".to_string(),
       FuncTyp::new(db, signature_greet),
       None,
+      None,
     );
 
     let mut parent_vtable = BTreeMap::new();
@@ -386,6 +387,7 @@ mod tests {
       db,
       "calc".to_string(),
       FuncTyp::new(db, signature_calc),
+      None,
       None,
     );
 

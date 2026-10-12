@@ -2,8 +2,8 @@
 //!
 //! Pipeline stages:
 //! 1. syntax: parse files, extract use specifiers
-//! 2. pretype: scope, name resolution, comp_evaluate, pretype_get_symbol_namespace
-//! 4. posttype: final evaluation with full type knowledge
+//! 2. pretype: type evaluation, scope (types only), symbol namespaces
+//! 3. posttype: full evaluation, scope (all symbols), checking, validation
 //!
 //! Import resolution is host-driven:
 //! 1. Host creates `File` inputs with content
@@ -20,14 +20,12 @@ use std::sync::{Arc, Mutex};
 
 use salsa::{Database, Storage, db};
 
-pub mod posttype;
-pub mod pretype;
-pub mod syntax;
+mod posttype;
+mod prepost;
+mod pretype;
 mod types;
-pub mod utils;
 
 pub use pretype::*;
-pub use syntax::*;
 pub use types::*;
 
 #[db]
