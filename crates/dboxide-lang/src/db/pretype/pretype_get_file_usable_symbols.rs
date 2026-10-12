@@ -11,11 +11,10 @@ use crate::db::types::{File, Symbol, pretype_get_metatype_members};
 
 const DEFAULT_SCHEMA: &str = "public";
 
-/// Collect symbols visible from a file
-/// reuses_only = true: exported symbols (own + transitive reuse)
-/// reuses_only = false: all visible symbols (own + use + reuse)
+// reuses_only = true: exported symbols (own + transitive reuse)
+// reuses_only = false: all visible symbols (own + use + reuse)
 #[tracked]
-pub fn pretype_get_file_usable_symbols<'db>(
+pub fn get_file_types_and_schemas<'db>(
   db: &'db dyn Database,
   file: File,
   reuses_only: bool,
@@ -25,7 +24,7 @@ pub fn pretype_get_file_usable_symbols<'db>(
   let mut top_schemas = HashSet::new();
   top_schemas.insert(DEFAULT_SCHEMA.to_string());
 
-  pretype_collect_file_symbols(
+  collect_file_symbols(
     db,
     file,
     reuses_only,
@@ -51,8 +50,7 @@ pub fn pretype_get_file_usable_symbols<'db>(
   members
 }
 
-/// Traverse the import graph collecting types, functions, operators, and discovering schema names
-fn pretype_collect_file_symbols<'db>(
+fn collect_file_symbols<'db>(
   db: &'db dyn Database,
   file: File,
   reuses_only: bool,
@@ -74,7 +72,7 @@ fn pretype_collect_file_symbols<'db>(
     if reuses_only && !use_declaration.is_reuse() {
       continue;
     }
-    pretype_collect_file_used_symbols(db, file, &use_declaration, visited, members, top_schemas);
+    collect_file_used_symbols(db, file, &use_declaration, visited, members, top_schemas);
   }
 
   for element_declaration in source_file.element_declarations() {
@@ -116,37 +114,9 @@ fn pretype_collect_file_symbols<'db>(
     );
     members.insert(db, symbol);
   }
-
-  for func_declaration in source_file.func_declarations() {
-    let Some(name_node) = func_declaration.name() else {
-      continue;
-    };
-    if name_node.is_operator_declaration() {
-      let Some(op_symbol) = name_node.operator_symbol() else {
-        continue;
-      };
-      let symbol = Symbol::new(
-        db,
-        SymbolKind::UserOperator(file, func_declaration.syntax().clone()),
-        op_symbol.clone(),
-        format!("{file_path}::operator::{op_symbol}"),
-      );
-      members.insert(db, symbol);
-    } else {
-      let name = name_node.text().trim().to_string();
-      let symbol = Symbol::new(
-        db,
-        SymbolKind::UserFunction(file, func_declaration.syntax().clone()),
-        name.clone(),
-        format!("{file_path}::{name}"),
-      );
-      members.insert(db, symbol);
-    }
-  }
 }
 
-/// Resolve a use/reuse declaration into Use symbols
-fn pretype_collect_file_used_symbols<'db>(
+fn collect_file_used_symbols<'db>(
   db: &'db dyn Database,
   file: File,
   use_declaration: &UseDeclaration,
@@ -167,7 +137,7 @@ fn pretype_collect_file_used_symbols<'db>(
       target_symbols = pretype_get_metatype_members(db);
     }
     Either::Right(target_file) => {
-      pretype_collect_file_symbols(
+      collect_file_symbols(
         db,
         *target_file,
         true,

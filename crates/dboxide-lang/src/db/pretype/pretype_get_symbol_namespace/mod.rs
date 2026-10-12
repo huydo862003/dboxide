@@ -9,7 +9,7 @@ use crate::db::types::interned::symbol::{StaticScopeMembers, SymbolKind};
 /// Namespace members of a symbol (what `.` traversal sees)
 /// In this phase, schemas, types, functions, operators, and schema members are returned
 #[tracked]
-pub fn pretype_get_symbol_namespace<'db>(
+pub fn get_symbol_namespace<'db>(
   db: &'db dyn Database,
   symbol: Symbol<'db>,
 ) -> StaticScopeMembers<'db> {

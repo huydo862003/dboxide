@@ -32,6 +32,12 @@ pub enum DiagnosticCode {
   UnknownNamespaceExport,
   ColonDeclarationInNamespaceBlock,
   ArgAfterVariadicArg,
+
+  /* Posttype / Element Checking */
+  UnresolvedElementType,
+  UnknownAttribute,
+  UnknownSubElement,
+  ConstraintViolation,
 }
 
 impl DiagnosticCode {
@@ -60,6 +66,10 @@ impl DiagnosticCode {
       DiagnosticCode::UnknownNamespaceExport => "unknown-namespace-export",
       DiagnosticCode::ColonDeclarationInNamespaceBlock => "colon-declaration-in-namespace-block",
       DiagnosticCode::ArgAfterVariadicArg => "arg-after-variadic-arg",
+      DiagnosticCode::UnresolvedElementType => "unresolved-element-type",
+      DiagnosticCode::UnknownAttribute => "unknown-attribute",
+      DiagnosticCode::UnknownSubElement => "unknown-sub-element",
+      DiagnosticCode::ConstraintViolation => "constraint-violation",
     }
   }
 }
@@ -188,6 +198,29 @@ pub enum Diagnostic {
     start_offset: usize,
     end_offset: usize,
   },
+  UnresolvedElementType {
+    name: String,
+    start_offset: usize,
+    end_offset: usize,
+  },
+  UnknownAttribute {
+    name: String,
+    typ_name: String,
+    start_offset: usize,
+    end_offset: usize,
+  },
+  UnknownSubElement {
+    name: String,
+    typ_name: String,
+    start_offset: usize,
+    end_offset: usize,
+  },
+  ConstraintViolation {
+    constraint_name: String,
+    typ_name: String,
+    start_offset: usize,
+    end_offset: usize,
+  },
 }
 
 impl Diagnostic {
@@ -294,6 +327,26 @@ impl Diagnostic {
         start_offset,
         end_offset,
         ..
+      }
+      | Diagnostic::UnresolvedElementType {
+        start_offset,
+        end_offset,
+        ..
+      }
+      | Diagnostic::UnknownAttribute {
+        start_offset,
+        end_offset,
+        ..
+      }
+      | Diagnostic::UnknownSubElement {
+        start_offset,
+        end_offset,
+        ..
+      }
+      | Diagnostic::ConstraintViolation {
+        start_offset,
+        end_offset,
+        ..
       } => Some((*start_offset, *end_offset)),
       Diagnostic::UnexpectedChar { offset, .. } => Some((*offset, *offset + 1)),
       Diagnostic::UnclosedDelimiter { open_offset, .. } => Some((*open_offset, *open_offset)),
@@ -361,6 +414,22 @@ impl Diagnostic {
       Diagnostic::ArgAfterVariadicArg { field_name, .. } => {
         format!("field '{field_name}' declares [arg] after a variadic [arg: n..], which captures all remaining positions")
       }
+      Diagnostic::UnresolvedElementType { name, .. } => {
+        format!("element type '{name}' could not be resolved")
+      }
+      Diagnostic::UnknownAttribute { name, typ_name, .. } => {
+        format!("unknown attribute '{name}' on element type '{typ_name}'")
+      }
+      Diagnostic::UnknownSubElement { name, typ_name, .. } => {
+        format!("unknown sub-element '{name}' on element type '{typ_name}'")
+      }
+      Diagnostic::ConstraintViolation {
+        constraint_name,
+        typ_name,
+        ..
+      } => {
+        format!("constraint '{constraint_name}' violated on element type '{typ_name}'")
+      }
     }
   }
 
@@ -393,6 +462,10 @@ impl Diagnostic {
         DiagnosticCode::ColonDeclarationInNamespaceBlock
       }
       Diagnostic::ArgAfterVariadicArg { .. } => DiagnosticCode::ArgAfterVariadicArg,
+      Diagnostic::UnresolvedElementType { .. } => DiagnosticCode::UnresolvedElementType,
+      Diagnostic::UnknownAttribute { .. } => DiagnosticCode::UnknownAttribute,
+      Diagnostic::UnknownSubElement { .. } => DiagnosticCode::UnknownSubElement,
+      Diagnostic::ConstraintViolation { .. } => DiagnosticCode::ConstraintViolation,
     }
   }
 }

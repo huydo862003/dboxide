@@ -12,7 +12,7 @@ use crate::db::types::{AnyTyp, Diagnostics, File, FuncObj, FuncTyp, OnUsePolicy,
 use crate::db::utils::{TypBodyExtract, extract_typ_body};
 use crate::diagnostics::Diagnostic;
 
-use super::super::pretype_evaluate_node::pretype_evaluate_lazy_typ;
+use super::super::pretype_evaluate_node::evaluate_lazy_typ;
 use super::constraints::{
   extract_constraint_entry, validate_constraint_entry, validate_contiguous_arg_index,
   validate_declaration_field_labels, validate_field_annotation_consistency,
@@ -23,7 +23,7 @@ use super::types::{
 };
 
 /// Evaluate `type Name [element] { ... }` into an ElementTyp
-pub fn pretype_evaluate_typ_element_node<'db>(
+pub fn evaluate_typ_element<'db>(
   db: &'db dyn Database,
   file: File,
   name: &str,
@@ -167,7 +167,7 @@ fn parse_field_typ<'db>(
   let resolved = type_arg
     .as_ref()
     .and_then(|arg| arg.expr())
-    .and_then(|expr| pretype_evaluate_lazy_typ(db, file, &expr));
+    .and_then(|expr| evaluate_lazy_typ(db, file, &expr));
 
   if resolved.is_none()
     && let Some(arg) = &type_arg
@@ -298,7 +298,7 @@ fn process_nested_types<'db>(
           .is_some_and(|name| name.name().eq_ignore_ascii_case("element"))
       })
     });
-    let nested_typ = pretype_evaluate_typ_element_node(db, file, &declaration_name, nested_type);
+    let nested_typ = evaluate_typ_element(db, file, &declaration_name, nested_type);
     if is_element_role {
       evaluated
         .element_subtypes
@@ -370,7 +370,7 @@ fn process_namespace_block<'db>(
     let typ = getter
       .return_typ()
       .and_then(|rt| rt.type_expr())
-      .and_then(|expr| pretype_evaluate_lazy_typ(db, file, &expr))
+      .and_then(|expr| evaluate_lazy_typ(db, file, &expr))
       .unwrap_or_else(|| LazyTyp::eager(AnyTyp::new(db).into()));
     evaluated.namespace.insert(getter_name.clone(), typ);
 
@@ -379,7 +379,7 @@ fn process_namespace_block<'db>(
       db,
       getter_name.clone(),
       FuncTyp::new(db, signature),
-      getter.body().map(|b| b.syntax().clone()),
+      Some(getter.syntax().clone()),
     );
     evaluated.vtable.insert(getter_name, func_obj);
   }
@@ -401,7 +401,7 @@ fn process_member_functions<'db>(
     let ret_typ = func_declaration
       .return_typ()
       .and_then(|rt| rt.type_expr())
-      .and_then(|expr| pretype_evaluate_lazy_typ(db, file, &expr))
+      .and_then(|expr| evaluate_lazy_typ(db, file, &expr))
       .unwrap_or_else(|| LazyTyp::eager(AnyTyp::new(db).into()));
 
     let mut param_types = Vec::new();
@@ -409,7 +409,7 @@ fn process_member_functions<'db>(
       for param in params_node.params() {
         let param_typ = param
           .type_expr()
-          .and_then(|expr| pretype_evaluate_lazy_typ(db, file, &expr))
+          .and_then(|expr| evaluate_lazy_typ(db, file, &expr))
           .unwrap_or_else(|| LazyTyp::eager(AnyTyp::new(db).into()));
         param_types.push(param_typ);
       }
@@ -420,7 +420,7 @@ fn process_member_functions<'db>(
       db,
       func_name.clone(),
       FuncTyp::new(db, sig),
-      func_declaration.body().map(|b| b.syntax().clone()),
+      Some(func_declaration.syntax().clone()),
     );
     evaluated.vtable.insert(func_name, func_obj);
   }

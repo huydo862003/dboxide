@@ -43,12 +43,15 @@ impl<'db> RuntimeObj<'db> for FuncTyp<'db> {
   }
 }
 
+/// source is the containing AST node:
+/// - for closures: the ClosureExpr node (contains params and body)
+/// - for named functions: the FuncDeclaration node (contains params, return type, body)
 #[tracked]
 pub struct FuncObj<'db> {
   pub name: String,
   #[returns(copy)]
   pub func_typ: FuncTyp<'db>,
-  pub body: Option<RedNode>,
+  pub source: Option<RedNode>,
 }
 
 impl<'db> FuncObj<'db> {
