@@ -9,7 +9,7 @@ use super::base::{RuntimeObj, StaticTyp};
 /// `List[V]`
 #[tracked]
 pub struct ListTyp<'db> {
-  pub elem: Option<LazyTyp<'db>>,
+  pub element: Option<LazyTyp<'db>>,
 }
 
 impl<'db> StaticTyp<'db> for ListTyp<'db> {
@@ -18,11 +18,11 @@ impl<'db> StaticTyp<'db> for ListTyp<'db> {
   }
 
   fn arity(&self, db: &'db dyn Database) -> usize {
-    if self.elem(db).is_some() { 0 } else { 1 }
+    if self.element(db).is_some() { 0 } else { 1 }
   }
 
   fn typ_params(&self, db: &'db dyn Database) -> Option<TypParams<'db>> {
-    if self.elem(db).is_some() {
+    if self.element(db).is_some() {
       return None;
     }
     Some(TypParams::new(

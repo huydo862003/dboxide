@@ -1049,6 +1049,49 @@ impl ExistsExpr {
 }
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug, AstNode)]
+pub struct TernaryExpr(RedNode);
+
+impl TernaryExpr {
+  pub fn condition(&self) -> Option<Expr> {
+    self.children::<Expr>().next()
+  }
+
+  pub fn then_expr(&self) -> Option<Expr> {
+    self.children::<Expr>().nth(1)
+  }
+
+  pub fn else_expr(&self) -> Option<Expr> {
+    self.children::<Expr>().nth(2)
+  }
+}
+
+#[derive(Clone, PartialEq, Eq, Hash, Debug, AstNode)]
+pub struct MatchExpr(RedNode);
+
+impl MatchExpr {
+  pub fn subject(&self) -> Option<Expr> {
+    self.children::<Expr>().next()
+  }
+
+  pub fn arms(&self) -> impl Iterator<Item = MatchArm> {
+    self.children::<MatchArm>()
+  }
+}
+
+#[derive(Clone, PartialEq, Eq, Hash, Debug, AstNode)]
+pub struct MatchArm(RedNode);
+
+impl MatchArm {
+  pub fn pattern(&self) -> Option<Expr> {
+    self.children::<Expr>().next()
+  }
+
+  pub fn result(&self) -> Option<Expr> {
+    self.children::<Expr>().nth(1)
+  }
+}
+
+#[derive(Clone, PartialEq, Eq, Hash, Debug, AstNode)]
 #[ast_node(Error)]
 pub struct ErrorNode(RedNode);
 
@@ -1078,6 +1121,8 @@ impl ErrorNode {
   CommaExpr,
   ForallExpr,
   ExistsExpr,
+  TernaryExpr,
+  MatchExpr,
 ])]
 pub struct Expr(RedNode);
 

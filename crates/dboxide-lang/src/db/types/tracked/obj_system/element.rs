@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 
 use salsa::{Database, tracked};
 
+use crate::ast::RedNode;
 use crate::db::types::interned::lazy_typ::LazyTyp;
 
 use super::base::{RuntimeObj, StaticTyp};
@@ -54,125 +55,150 @@ impl<'db> RuntimeObj<'db> for ElementMetaTyp<'db> {
   }
 }
 
+/// Positional arg field declared on an element or field type
+#[derive(Clone, PartialEq, Eq, Hash, Debug, salsa::SalsaValue)]
+pub struct ArgFieldDefinition<'db> {
+  pub name: String,
+  pub typ: LazyTyp<'db>,
+  pub is_variadic: bool,
+  pub has_csv: bool,
+}
+
+/// Schema for attributes on an element type.
+/// `named` holds fields declared with `[attribute]`.
+/// `rest` holds the catch-all type from a `[name] Type` bracket-syntax declaration: when set, any attribute key in the element body is accepted and its value is typed against `rest`.
+#[derive(Clone, PartialEq, Eq, Hash, Default, salsa::SalsaValue)]
+pub struct AttributeSchema<'db> {
+  pub named: BTreeMap<String, LazyTyp<'db>>,
+  pub rest: Option<LazyTyp<'db>>,
+}
+
+/// Nested type definitions inside a type body:
+/// - `field`: `type Name [field] { ... }`: defines how a "field line" in the element body looks
+/// - `element`: `type Name [element] { ... }`: defines a sub-element block (`indexes { }`, etc.)
+#[derive(Clone, PartialEq, Eq, Hash, Default, salsa::SalsaValue)]
+pub struct TypNestedTyps<'db> {
+  pub field_nested_typs: BTreeMap<String, LazyTyp<'db>>,
+  pub element_nested_typs: BTreeMap<String, LazyTyp<'db>>,
+}
+
 /// Element type
 #[tracked]
 pub struct ElementTyp<'db> {
   pub name: String,
-  pub fields: BTreeMap<String, LazyTyp<'db>>,
-  pub labels: Vec<LabelDefinition>,
-  pub attributes: BTreeMap<String, LazyTyp<'db>>,
-  pub settings: BTreeMap<String, LazyTyp<'db>>,
-  pub field_subtypes: BTreeMap<String, LazyTyp<'db>>,
-  pub element_subtypes: BTreeMap<String, LazyTyp<'db>>,
-  pub namespace: BTreeMap<String, LazyTyp<'db>>,
   pub vtable: BTreeMap<String, FuncObj<'db>>,
-  pub constraints: BTreeMap<String, ConstraintDefinition>,
-  #[returns(copy)]
-  pub on_use: OnUsePolicy,
   pub parent: Option<Typ<'db>>,
+
+  pub typ_settings: TypSettings, // Type name [on use: expand, element, field]
+  pub typ_field_lines: BTreeMap<String, LazyTyp<'db>>, // field-name field-type
+  /// Nested field and element type definitions from the type body
+  pub typ_nested_typs: TypNestedTyps<'db>,
+  pub typ_namespace: BTreeMap<String, LazyTyp<'db>>,
+  pub typ_constraints: BTreeMap<String, TypConstraint>,
+
+  /* Specific fields */
+  pub typ_element_labels: Vec<TypElementLabel>, // field-name field-type [label] -> declaring Element label []
+  pub typ_element_settings: BTreeMap<String, LazyTyp<'db>>, // field-name field-type [setting] -> declaring Type name [field-name: field-type]
+  pub typ_element_arg_fields: BTreeMap<usize, ArgFieldDefinition<'db>>, // Positional arg fields by index, from `[arg: n]` or `[arg: n..]` annotations
+  pub typ_element_attributes: AttributeSchema<'db>, // field-name field-type [attribute] -> declaring field-name: field-type
 }
 
 impl<'db> ElementTyp<'db> {
-  pub fn label_definitions(&self, db: &'db dyn Database) -> Vec<LabelDefinition> {
-    self.labels(db).clone()
+  pub fn label_definitions(&self, db: &'db dyn Database) -> Vec<TypElementLabel> {
+    self.typ_element_labels(db).clone()
   }
 
-  pub fn field_definitions(&self, db: &'db dyn Database) -> Vec<FieldDefinition<'db>> {
+  pub fn field_definitions(&self, db: &'db dyn Database) -> Vec<TypElementFieldDefinition<'db>> {
     self
-      .fields(db)
+      .typ_field_lines(db)
       .iter()
-      .map(|(name, typ)| FieldDefinition {
+      .map(|(name, typ)| TypElementFieldDefinition {
         name: name.clone(),
         typ: *typ,
       })
       .collect()
   }
 
-  pub fn attribute_definitions(&self, db: &'db dyn Database) -> Vec<AttributeDefinition<'db>> {
-    self
-      .attributes(db)
-      .iter()
-      .map(|(name, typ)| AttributeDefinition {
-        name: name.clone(),
-        typ: *typ,
-      })
-      .collect()
-  }
-
-  pub fn setting_definitions(&self, db: &'db dyn Database) -> Vec<SettingDefinition<'db>> {
-    self
-      .settings(db)
-      .iter()
-      .map(|(name, typ)| SettingDefinition {
-        name: name.clone(),
-        typ: *typ,
-      })
-      .collect()
-  }
-
-  pub fn field_subtype_definitions(
+  pub fn attribute_definitions(
     &self,
     db: &'db dyn Database,
-  ) -> Vec<FieldSubTypeDefinition<'db>> {
+  ) -> Vec<TypElementAttributeDefinition<'db>> {
     self
-      .field_subtypes(db)
+      .typ_element_attributes(db)
+      .named
       .iter()
-      .map(|(name, typ)| FieldSubTypeDefinition {
+      .map(|(name, typ)| TypElementAttributeDefinition {
         name: name.clone(),
         typ: *typ,
       })
       .collect()
   }
 
-  pub fn field_sub_type_definitions(
+  pub fn setting_definitions(
     &self,
     db: &'db dyn Database,
-  ) -> Vec<FieldSubTypeDefinition<'db>> {
-    self.field_subtype_definitions(db)
-  }
-
-  pub fn element_subtype_definitions(
-    &self,
-    db: &'db dyn Database,
-  ) -> Vec<ElementSubTypeDefinition<'db>> {
+  ) -> Vec<TypElementSettingDefinition<'db>> {
     self
-      .element_subtypes(db)
+      .typ_element_settings(db)
       .iter()
-      .map(|(name, typ)| ElementSubTypeDefinition {
+      .map(|(name, typ)| TypElementSettingDefinition {
         name: name.clone(),
         typ: *typ,
       })
       .collect()
   }
 
-  pub fn element_sub_type_definitions(
+  pub fn field_nested_typ_definitions(
     &self,
     db: &'db dyn Database,
-  ) -> Vec<ElementSubTypeDefinition<'db>> {
-    self.element_subtype_definitions(db)
-  }
-
-  pub fn sub_element_definitions(&self, db: &'db dyn Database) -> Vec<SubElementDefinition<'db>> {
+  ) -> Vec<TypNestedFieldTypDefinition<'db>> {
     self
-      .element_subtypes(db)
+      .typ_nested_typs(db)
+      .field_nested_typs
       .iter()
-      .map(|(name, typ)| SubElementDefinition {
+      .map(|(name, typ)| TypNestedFieldTypDefinition {
         name: name.clone(),
         typ: *typ,
       })
       .collect()
   }
 
-  pub fn constraint_definitions(&self, db: &'db dyn Database) -> Vec<ConstraintDefinition> {
-    self.constraints(db).values().cloned().collect()
-  }
-
-  pub fn lookup_constraint(
+  pub fn element_nested_typ_definitions(
     &self,
     db: &'db dyn Database,
-    name: &str,
-  ) -> Option<ConstraintDefinition> {
-    self.constraints(db).get(name).cloned()
+  ) -> Vec<TypNestedElementTypDefinition<'db>> {
+    self
+      .typ_nested_typs(db)
+      .element_nested_typs
+      .iter()
+      .map(|(name, typ)| TypNestedElementTypDefinition {
+        name: name.clone(),
+        typ: *typ,
+      })
+      .collect()
+  }
+
+  pub fn nested_typ_definitions(
+    &self,
+    db: &'db dyn Database,
+  ) -> Vec<ElementNestedElementDefinition<'db>> {
+    self
+      .typ_nested_typs(db)
+      .element_nested_typs
+      .iter()
+      .map(|(name, typ)| ElementNestedElementDefinition {
+        name: name.clone(),
+        typ: *typ,
+      })
+      .collect()
+  }
+
+  pub fn constraint_definitions(&self, db: &'db dyn Database) -> Vec<TypConstraint> {
+    self.typ_constraints(db).values().cloned().collect()
+  }
+
+  pub fn lookup_constraint(&self, db: &'db dyn Database, name: &str) -> Option<TypConstraint> {
+    self.typ_constraints(db).get(name).cloned()
   }
 }
 
@@ -196,23 +222,23 @@ impl<'db> StaticTyp<'db> for ElementTyp<'db> {
   fn get_fields(&self, db: &'db dyn Database) -> BTreeMap<String, LazyTyp<'db>> {
     let mut result = self
       .parent(db)
-      .map(|p| p.get_fields(db))
+      .map(|parent| parent.get_fields(db))
       .unwrap_or_default();
-    result.extend(self.fields(db).clone());
+    result.extend(self.typ_field_lines(db).clone());
     result
   }
 
   fn get_namespace_members(&self, db: &'db dyn Database) -> BTreeMap<String, LazyTyp<'db>> {
     let mut result = self
       .parent(db)
-      .map(|p| p.get_namespace_members(db))
+      .map(|parent| parent.get_namespace_members(db))
       .unwrap_or_default();
-    result.extend(self.namespace(db).clone());
+    result.extend(self.typ_namespace(db).clone());
     result
   }
 
   fn lookup_namespace_member(&self, db: &'db dyn Database, name: &str) -> Option<LazyTyp<'db>> {
-    if let Some(member) = self.namespace(db).get(name) {
+    if let Some(member) = self.typ_namespace(db).get(name) {
       return Some(*member);
     }
     self
@@ -251,9 +277,16 @@ impl<'db> RuntimeObj<'db> for ElementTyp<'db> {
   }
 }
 
+#[derive(Clone, PartialEq, Eq, Hash, Debug, Default)]
+pub struct TypSettings {
+  pub on_use: OnUsePolicy,
+  pub is_element_typ: bool,
+  pub is_field_typ: bool,
+}
+
 /// Label definition representing a declared name or alias slot
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct LabelDefinition {
+pub struct TypElementLabel {
   pub field_name: String,
   pub is_alias: bool,
   pub unique: bool,
@@ -262,51 +295,51 @@ pub struct LabelDefinition {
 
 /// Field definition representing a declared field on an element
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct FieldDefinition<'db> {
+pub struct TypElementFieldDefinition<'db> {
   pub name: String,
   pub typ: LazyTyp<'db>,
 }
 
-/// Attribute definition representing a declared attribute (@attr or attr: type)
+/// Attribute definition representing a declared attribute (attr: type)
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct AttributeDefinition<'db> {
+pub struct TypElementAttributeDefinition<'db> {
   pub name: String,
   pub typ: LazyTyp<'db>,
 }
 
 /// Setting definition representing a declared setting ([setting])
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct SettingDefinition<'db> {
+pub struct TypElementSettingDefinition<'db> {
   pub name: String,
   pub typ: LazyTyp<'db>,
 }
 
-/// Field sub-type definition representing a nested field type ([field])
+/// Field nested type definition representing a nested field type ([field])
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct FieldSubTypeDefinition<'db> {
+pub struct TypNestedFieldTypDefinition<'db> {
   pub name: String,
   pub typ: LazyTyp<'db>,
 }
 
-/// Sub-element definition representing a nested element type ([element])
+/// Element nested type definition representing a nested element type ([element])
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct SubElementDefinition<'db> {
+pub struct TypNestedElementTypDefinition<'db> {
   pub name: String,
   pub typ: LazyTyp<'db>,
 }
 
-/// Element sub-type definition representing a nested element type ([element])
+/// Nested element definition representing a nested element type ([element])
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ElementSubTypeDefinition<'db> {
+pub struct ElementNestedElementDefinition<'db> {
   pub name: String,
   pub typ: LazyTyp<'db>,
 }
 
 /// Constraint definition representing a validation rule inside constraints block
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ConstraintDefinition {
+pub struct TypConstraint {
   pub name: String,
-  pub closure_syntax: crate::ast::RedNode,
+  pub closure_syntax: RedNode,
 }
 
 /// Runtime instance of an element type
@@ -356,6 +389,7 @@ mod tests {
       "greet".to_string(),
       FuncTyp::new(db, signature_greet),
       None,
+      None,
     );
 
     let mut parent_vtable = BTreeMap::new();
@@ -364,17 +398,17 @@ mod tests {
     let parent_element_typ = ElementTyp::new(
       db,
       "BaseElement".to_string(),
+      parent_vtable,
+      None,
+      TypSettings::default(),
+      BTreeMap::new(),
+      TypNestedTyps::default(),
+      BTreeMap::new(),
       BTreeMap::new(),
       vec![],
       BTreeMap::new(),
       BTreeMap::new(),
-      BTreeMap::new(),
-      BTreeMap::new(),
-      BTreeMap::new(),
-      parent_vtable,
-      BTreeMap::new(),
-      OnUsePolicy::Default,
-      None,
+      AttributeSchema::default(),
     );
 
     let signature_calc = FuncSignature::new(
@@ -387,6 +421,7 @@ mod tests {
       "calc".to_string(),
       FuncTyp::new(db, signature_calc),
       None,
+      None,
     );
 
     let mut child_vtable = BTreeMap::new();
@@ -398,17 +433,17 @@ mod tests {
     let child_element_typ = ElementTyp::new(
       db,
       "ChildElement".to_string(),
+      child_vtable,
+      Some(Typ::Element(parent_element_typ)),
+      TypSettings::default(),
       child_fields,
+      TypNestedTyps::default(),
+      BTreeMap::new(),
+      BTreeMap::new(),
       vec![],
       BTreeMap::new(),
       BTreeMap::new(),
-      BTreeMap::new(),
-      BTreeMap::new(),
-      BTreeMap::new(),
-      child_vtable,
-      BTreeMap::new(),
-      OnUsePolicy::Default,
-      Some(Typ::Element(parent_element_typ)),
+      AttributeSchema::default(),
     );
 
     // Static lookup tests

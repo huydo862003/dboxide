@@ -1,14 +1,6 @@
-pub mod pretype_evaluate;
-pub mod pretype_get_file_usable_symbols;
-pub mod pretype_get_scope_members;
-pub mod pretype_get_symbol_namespace;
-pub mod pretype_resolve_name;
+pub(crate) mod evaluate_typ;
+pub(crate) mod syntax;
 
-#[cfg(test)]
-mod tests;
+pub use syntax::*;
 
-pub use pretype_evaluate::*;
-pub use pretype_get_file_usable_symbols::*;
-pub use pretype_get_scope_members::*;
-pub use pretype_get_symbol_namespace::*;
-pub use pretype_resolve_name::*;
+pub use evaluate_typ::evaluate_typ_symbol;

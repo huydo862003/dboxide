@@ -1,398 +1,176 @@
 use std::path::PathBuf;
 
+use dboxide_macros::dboxide_diagnostic_kind;
+
 use crate::syntax::ast::SyntaxKind;
 
-#[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum DiagnosticCode {
-  UnexpectedEof = 0,
-  UnexpectedChar,
+#[dboxide_diagnostic_kind]
+pub enum DiagnosticKind {
+  /* Lexer */
+  #[message("unexpected end of input, expected '{expected}'")]
+  UnexpectedEof { expected: char },
+  #[message("unexpected character '{ch}'")]
+  UnexpectedChar { ch: char },
+  #[message("unterminated string literal")]
   UnterminatedString,
 
-  UnexpectedToken,
-  ExpectedToken,
-  InvalidTopElement,
-  UnclosedDelimiter,
-  MissingSyntaxNode,
-
-  FileNotFound,
-
-  /* Semantic / Type Evaluation */
-  InvalidDeclarationFieldLabel,
-  NonContiguousFieldArgIndex,
-  InvalidFieldType,
-  MalformedRestAttribute,
-  ConflictingLabelAnnotations,
-  UniqueRequiresLabel,
-  CsvRequiresArg,
-  InvalidConstraintDefinition,
-  DisallowedNestedElement,
-  UnrecognizedOnUseValue,
-  ColonDeclarationInTypeBody,
-  UnknownNamespaceExport,
-  ColonDeclarationInNamespaceBlock,
-  ArgAfterVariadicArg,
-}
-
-impl DiagnosticCode {
-  pub fn as_str(&self) -> &'static str {
-    match self {
-      DiagnosticCode::UnexpectedEof => "unexpected-eof",
-      DiagnosticCode::UnexpectedChar => "unexpected-char",
-      DiagnosticCode::UnterminatedString => "unterminated-string",
-      DiagnosticCode::UnexpectedToken => "unexpected-token",
-      DiagnosticCode::ExpectedToken => "expected-token",
-      DiagnosticCode::InvalidTopElement => "invalid-top-element",
-      DiagnosticCode::UnclosedDelimiter => "unclosed-delimiter",
-      DiagnosticCode::MissingSyntaxNode => "missing-syntax-node",
-      DiagnosticCode::FileNotFound => "file-not-found",
-      DiagnosticCode::InvalidDeclarationFieldLabel => "invalid-declaration-field-label",
-      DiagnosticCode::NonContiguousFieldArgIndex => "non-contiguous-field-arg-index",
-      DiagnosticCode::ConflictingLabelAnnotations => "conflicting-label-annotations",
-      DiagnosticCode::UniqueRequiresLabel => "unique-requires-label",
-      DiagnosticCode::InvalidFieldType => "invalid-field-type",
-      DiagnosticCode::MalformedRestAttribute => "malformed-rest-attribute",
-      DiagnosticCode::CsvRequiresArg => "csv-requires-arg",
-      DiagnosticCode::InvalidConstraintDefinition => "invalid-constraint-definition",
-      DiagnosticCode::DisallowedNestedElement => "disallowed-nested-element",
-      DiagnosticCode::UnrecognizedOnUseValue => "unrecognized-on-use-value",
-      DiagnosticCode::ColonDeclarationInTypeBody => "colon-declaration-in-type-body",
-      DiagnosticCode::UnknownNamespaceExport => "unknown-namespace-export",
-      DiagnosticCode::ColonDeclarationInNamespaceBlock => "colon-declaration-in-namespace-block",
-      DiagnosticCode::ArgAfterVariadicArg => "arg-after-variadic-arg",
-    }
-  }
-}
-
-/// Compilation diagnostics
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum Diagnostic {
-  /* Lexer */
-  UnexpectedEof {
-    expected: char,
-    start_offset: usize,
-    end_offset: usize,
-  },
-  UnexpectedChar {
-    ch: char,
-    offset: usize,
-  },
-  UnterminatedString {
-    start_offset: usize,
-    end_offset: usize,
-  },
-
   /* Parser */
-  InvalidTopLevelElement {
-    start_offset: usize,
-    end_offset: usize,
-  },
-  UnexpectedToken {
-    expected: &'static str,
-    start_offset: usize,
-    end_offset: usize,
-  },
-  MissingExpectedToken {
-    expected: &'static str,
-    start_offset: usize,
-    end_offset: usize,
-  },
-  UnclosedDelimiter {
-    delimiter: &'static str,
-    open_offset: usize,
-  },
-  MissingSyntaxNode {
-    expected: SyntaxKind,
-    start_offset: usize,
-    end_offset: usize,
-  },
+  #[message(
+    "expected use declaration, block-form element declaration or inline-form element declaration"
+  )]
+  InvalidTopLevelElement,
+  #[message("unexpected token, expected {expected}")]
+  UnexpectedToken { expected: &'static str },
+  #[message("expected {expected}")]
+  MissingExpectedToken { expected: &'static str },
+  #[message("unclosed '{delimiter}'")]
+  UnclosedDelimiter { delimiter: &'static str },
+  #[message("missing {expected:?}")]
+  MissingSyntaxNode { expected: SyntaxKind },
 
   /* File */
-  FileNotFound {
-    path: PathBuf,
-    start_offset: usize,
-    end_offset: usize,
-  },
+  #[message("file not found: {path:?}")]
+  FileNotFound { path: PathBuf },
 
   /* Semantic / Type Evaluation */
-  InvalidDeclarationFieldLabel {
-    field_name: String,
-    message: String,
-    start_offset: usize,
-    end_offset: usize,
-  },
+  #[message("{message}")]
+  InvalidDeclarationFieldLabel { field_name: String, message: String },
+  #[message(
+    "non-contiguous arg index for field '{field_name}': found {found_index}, expected {expected_index}"
+  )]
   NonContiguousFieldArgIndex {
     field_name: String,
     found_index: usize,
     expected_index: usize,
-    start_offset: usize,
-    end_offset: usize,
   },
-  InvalidFieldType {
-    field_name: String,
-    start_offset: usize,
-    end_offset: usize,
-  },
-  MalformedRestAttribute {
-    start_offset: usize,
-    end_offset: usize,
-  },
-  ConflictingLabelAnnotations {
-    field_name: String,
-    start_offset: usize,
-    end_offset: usize,
-  },
-  UniqueRequiresLabel {
-    field_name: String,
-    start_offset: usize,
-    end_offset: usize,
-  },
-  CsvRequiresArg {
-    field_name: String,
-    start_offset: usize,
-    end_offset: usize,
-  },
+  #[message("field '{field_name}' type annotation does not resolve to a type")]
+  InvalidFieldTyp { field_name: String },
+  #[message("rest attribute `[name] Type` must have exactly one identifier inside the brackets")]
+  MalformedRestAttribute,
+  #[message("a type can only have one rest attribute declaration")]
+  DuplicateRestAttribute,
+  #[message("rest attribute type must be a map type")]
+  RestAttributeMustBeMap,
+  #[message("field '{field_name}' cannot have both [label] and [label alias]")]
+  ConflictingLabelAnnotations { field_name: String },
+  #[message("[unique] on field '{field_name}' requires [label] or [label alias]")]
+  UniqueRequiresLabel { field_name: String },
+  #[message("[csv] on field '{field_name}' requires [arg: n] or [arg: n..]")]
+  CsvRequiresArg { field_name: String },
+  #[message("{message}")]
   InvalidConstraintDefinition {
     constraint_name: String,
     message: String,
-    start_offset: usize,
-    end_offset: usize,
   },
-  DisallowedNestedElement {
-    element_typ: String,
-    start_offset: usize,
-    end_offset: usize,
+  #[message(
+    "nested element '{element_typ}' is not allowed inside a type body; only nested type definitions are permitted"
+  )]
+  DisallowedNestedElement { element_typ: String },
+  #[message("unrecognized [on use] value '{value}'; expected 'expand'")]
+  UnrecognizedOnUseValue { value: String },
+  #[message("a type cannot be both [element] and [field]")]
+  ConflictingTypRoles,
+  #[message(
+    "nested type '{typ_name}' must declare a role: add [element] or [field] to its setting list"
+  )]
+  NestedTypMissingRole { typ_name: String },
+  #[message(
+    "unrecognized type setting '{setting}'; valid settings are 'element', 'field' and 'on use'"
+  )]
+  UnrecognizedTypSetting { setting: String },
+  #[message(
+    "colon-syntax declaration '{field_name}: Type' is not valid in a type body; use 'name Type [annotations]' instead"
+  )]
+  ColonDeclarationInTypBody { field_name: String },
+  #[message("namespace export '{field_name}' does not refer to a declared field")]
+  UnknownNamespaceExport { field_name: String },
+  #[message(
+    "colon-syntax '{field_name}: Type' is not valid in a namespace block; namespace blocks only support field re-exports and getters"
+  )]
+  ColonDeclarationInNamespaceBlock { field_name: String },
+  #[message(
+    "field '{field_name}' declares [arg] after a variadic [arg: n..], which captures all remaining positions"
+  )]
+  ArgAfterVariadicArg { field_name: String },
+
+  /* Posttype / Element Checking */
+  #[message("duplicate {typ_name} label '{name}'")]
+  DuplicateElementLabel {
+    name: String,
+    typ_name: String,
+    first_offset: usize,
   },
-  UnrecognizedOnUseValue {
-    value: String,
-    start_offset: usize,
-    end_offset: usize,
+  #[message("element type '{name}' could not be resolved")]
+  UnresolvedElementTyp { name: String },
+  #[message("unknown attribute '{name}' on element type '{typ_name}'")]
+  UnknownAttribute { name: String, typ_name: String },
+  #[message("unknown sub-element '{name}' on element type '{typ_name}'")]
+  UnknownSubElement { name: String, typ_name: String },
+  #[message("unknown setting '{name}' on element type '{typ_name}'")]
+  UnknownSetting { name: String, typ_name: String },
+  #[message("constraint '{constraint_name}' violated on element type '{typ_name}'")]
+  ConstraintViolation {
+    constraint_name: String,
+    typ_name: String,
   },
-  ColonDeclarationInTypeBody {
-    field_name: String,
-    start_offset: usize,
-    end_offset: usize,
+  #[message(
+    "field '{field_name}' is declared [label alias] but no [label] field exists in this type; an alias has nothing to refer to"
+  )]
+  AliasLabelWithoutPrimaryLabel { field_name: String },
+  #[message(
+    "element type '{typ_name}' does not support aliases; add a field with [label alias] to enable 'as <name>' syntax"
+  )]
+  AliasNotSupportedByTyp { typ_name: String },
+  #[message(
+    "element type '{typ_name}' does not support named declarations; add a field with [label] to enable naming"
+  )]
+  NameNotSupportedByTyp { typ_name: String },
+  #[message("'as <name>' requires a primary name; give the element a name before the alias")]
+  AliasMissingPrimaryName,
+
+  /* Field line arg count */
+  #[message(
+    "field line for '{typ_name}' expects at least {min_expected} positional argument(s), found {found}"
+  )]
+  TooFewFieldLineArgs {
+    typ_name: String,
+    min_expected: usize,
+    found: usize,
   },
-  UnknownNamespaceExport {
-    field_name: String,
-    start_offset: usize,
-    end_offset: usize,
-  },
-  ColonDeclarationInNamespaceBlock {
-    field_name: String,
-    start_offset: usize,
-    end_offset: usize,
-  },
-  ArgAfterVariadicArg {
-    field_name: String,
-    start_offset: usize,
-    end_offset: usize,
+  #[message(
+    "field line for '{typ_name}' expects at most {max_expected} positional argument(s), found {found}"
+  )]
+  TooManyFieldLineArgs {
+    typ_name: String,
+    max_expected: usize,
+    found: usize,
   },
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Severity {
+  Error,
+  Warning,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Diagnostic {
+  pub kind: DiagnosticKind,
+  pub severity: Severity,
+  pub start_offset: usize,
+  pub end_offset: usize,
+}
+
 impl Diagnostic {
-  pub fn offsets(&self) -> Option<(usize, usize)> {
-    match self {
-      Diagnostic::UnexpectedEof {
-        start_offset,
-        end_offset,
-        ..
-      }
-      | Diagnostic::UnterminatedString {
-        start_offset,
-        end_offset,
-      }
-      | Diagnostic::UnexpectedToken {
-        start_offset,
-        end_offset,
-        ..
-      }
-      | Diagnostic::MissingExpectedToken {
-        start_offset,
-        end_offset,
-        ..
-      }
-      | Diagnostic::InvalidTopLevelElement {
-        start_offset,
-        end_offset,
-      }
-      | Diagnostic::MissingSyntaxNode {
-        start_offset,
-        end_offset,
-        ..
-      }
-      | Diagnostic::FileNotFound {
-        start_offset,
-        end_offset,
-        ..
-      }
-      | Diagnostic::InvalidDeclarationFieldLabel {
-        start_offset,
-        end_offset,
-        ..
-      }
-      | Diagnostic::NonContiguousFieldArgIndex {
-        start_offset,
-        end_offset,
-        ..
-      }
-      | Diagnostic::InvalidFieldType {
-        start_offset,
-        end_offset,
-        ..
-      }
-      | Diagnostic::MalformedRestAttribute {
-        start_offset,
-        end_offset,
-      }
-      | Diagnostic::ConflictingLabelAnnotations {
-        start_offset,
-        end_offset,
-        ..
-      }
-      | Diagnostic::UniqueRequiresLabel {
-        start_offset,
-        end_offset,
-        ..
-      }
-      | Diagnostic::CsvRequiresArg {
-        start_offset,
-        end_offset,
-        ..
-      }
-      | Diagnostic::InvalidConstraintDefinition {
-        start_offset,
-        end_offset,
-        ..
-      }
-      | Diagnostic::DisallowedNestedElement {
-        start_offset,
-        end_offset,
-        ..
-      }
-      | Diagnostic::UnrecognizedOnUseValue {
-        start_offset,
-        end_offset,
-        ..
-      }
-      | Diagnostic::ColonDeclarationInTypeBody {
-        start_offset,
-        end_offset,
-        ..
-      }
-      | Diagnostic::UnknownNamespaceExport {
-        start_offset,
-        end_offset,
-        ..
-      }
-      | Diagnostic::ColonDeclarationInNamespaceBlock {
-        start_offset,
-        end_offset,
-        ..
-      }
-      | Diagnostic::ArgAfterVariadicArg {
-        start_offset,
-        end_offset,
-        ..
-      } => Some((*start_offset, *end_offset)),
-      Diagnostic::UnexpectedChar { offset, .. } => Some((*offset, *offset + 1)),
-      Diagnostic::UnclosedDelimiter { open_offset, .. } => Some((*open_offset, *open_offset)),
-    }
+  pub fn code_str(&self) -> &'static str {
+    self.kind.code_str()
+  }
+
+  pub fn offsets(&self) -> (usize, usize) {
+    (self.start_offset, self.end_offset)
   }
 
   pub fn message(&self) -> String {
-    match self {
-      Diagnostic::UnexpectedEof { expected, .. } => {
-        format!("unexpected end of input, expected '{expected}'")
-      }
-      Diagnostic::UnexpectedChar { ch, .. } => format!("unexpected character '{ch}'"),
-      Diagnostic::UnterminatedString { .. } => "unterminated string literal".to_string(),
-      Diagnostic::UnexpectedToken { expected, .. } => {
-        format!("unexpected token, expected {expected}")
-      }
-      Diagnostic::MissingExpectedToken { expected, .. } => format!("expected {expected}"),
-      Diagnostic::InvalidTopLevelElement { .. } => {
-        "expected use declaration, block-form element declaration or inline-form element declaration"
-          .to_string()
-      }
-      Diagnostic::UnclosedDelimiter { delimiter, .. } => format!("unclosed '{delimiter}'"),
-      Diagnostic::MissingSyntaxNode { expected, .. } => format!("missing {expected:?}"),
-      Diagnostic::FileNotFound { path, .. } => format!("File not found: {path:?}"),
-      Diagnostic::InvalidDeclarationFieldLabel { message, .. } => message.clone(),
-      Diagnostic::NonContiguousFieldArgIndex {
-        field_name,
-        found_index,
-        expected_index,
-        ..
-      } => format!(
-        "non-contiguous arg index for field '{field_name}': found {found_index}, expected {expected_index}"
-      ),
-      Diagnostic::InvalidFieldType { field_name, .. } => {
-        format!("field '{field_name}' type annotation does not resolve to a type")
-      }
-      Diagnostic::MalformedRestAttribute { .. } => {
-        "rest attribute `[name] Type` must have exactly one identifier inside the brackets".to_string()
-      }
-      Diagnostic::ConflictingLabelAnnotations { field_name, .. } => {
-        format!("field '{field_name}' cannot have both [label] and [label alias]")
-      }
-      Diagnostic::UniqueRequiresLabel { field_name, .. } => {
-        format!("[unique] on field '{field_name}' requires [label] or [label alias]")
-      }
-      Diagnostic::CsvRequiresArg { field_name, .. } => {
-        format!("[csv] on field '{field_name}' requires [arg: n] or [arg: n..]")
-      }
-      Diagnostic::InvalidConstraintDefinition { message, .. } => message.clone(),
-      Diagnostic::DisallowedNestedElement { element_typ, .. } => {
-        format!("nested element '{element_typ}' is not allowed inside a type body; only nested type definitions are permitted")
-      }
-      Diagnostic::UnrecognizedOnUseValue { value, .. } => {
-        format!("unrecognized [on use] value '{value}'; expected 'expand'")
-      }
-      Diagnostic::ColonDeclarationInTypeBody { field_name, .. } => {
-        format!("colon-syntax declaration '{field_name}: Type' is not valid in a type body; use 'name Type [annotations]' instead")
-      }
-      Diagnostic::UnknownNamespaceExport { field_name, .. } => {
-        format!("namespace export '{field_name}' does not refer to a declared field")
-      }
-      Diagnostic::ColonDeclarationInNamespaceBlock { field_name, .. } => {
-        format!("colon-syntax '{field_name}: Type' is not valid in a namespace block; namespace blocks only support field re-exports and getters")
-      }
-      Diagnostic::ArgAfterVariadicArg { field_name, .. } => {
-        format!("field '{field_name}' declares [arg] after a variadic [arg: n..], which captures all remaining positions")
-      }
-    }
-  }
-
-  pub fn code(&self) -> DiagnosticCode {
-    match self {
-      Diagnostic::UnexpectedEof { .. } => DiagnosticCode::UnexpectedEof,
-      Diagnostic::UnexpectedChar { .. } => DiagnosticCode::UnexpectedChar,
-      Diagnostic::UnterminatedString { .. } => DiagnosticCode::UnterminatedString,
-      Diagnostic::UnexpectedToken { .. } => DiagnosticCode::UnexpectedToken,
-      Diagnostic::MissingExpectedToken { .. } => DiagnosticCode::ExpectedToken,
-      Diagnostic::InvalidTopLevelElement { .. } => DiagnosticCode::InvalidTopElement,
-      Diagnostic::UnclosedDelimiter { .. } => DiagnosticCode::UnclosedDelimiter,
-      Diagnostic::MissingSyntaxNode { .. } => DiagnosticCode::MissingSyntaxNode,
-      Diagnostic::FileNotFound { .. } => DiagnosticCode::FileNotFound,
-      Diagnostic::InvalidDeclarationFieldLabel { .. } => {
-        DiagnosticCode::InvalidDeclarationFieldLabel
-      }
-      Diagnostic::NonContiguousFieldArgIndex { .. } => DiagnosticCode::NonContiguousFieldArgIndex,
-      Diagnostic::InvalidFieldType { .. } => DiagnosticCode::InvalidFieldType,
-      Diagnostic::MalformedRestAttribute { .. } => DiagnosticCode::MalformedRestAttribute,
-      Diagnostic::ConflictingLabelAnnotations { .. } => DiagnosticCode::ConflictingLabelAnnotations,
-      Diagnostic::UniqueRequiresLabel { .. } => DiagnosticCode::UniqueRequiresLabel,
-      Diagnostic::CsvRequiresArg { .. } => DiagnosticCode::CsvRequiresArg,
-      Diagnostic::InvalidConstraintDefinition { .. } => DiagnosticCode::InvalidConstraintDefinition,
-      Diagnostic::DisallowedNestedElement { .. } => DiagnosticCode::DisallowedNestedElement,
-      Diagnostic::UnrecognizedOnUseValue { .. } => DiagnosticCode::UnrecognizedOnUseValue,
-      Diagnostic::ColonDeclarationInTypeBody { .. } => DiagnosticCode::ColonDeclarationInTypeBody,
-      Diagnostic::UnknownNamespaceExport { .. } => DiagnosticCode::UnknownNamespaceExport,
-      Diagnostic::ColonDeclarationInNamespaceBlock { .. } => {
-        DiagnosticCode::ColonDeclarationInNamespaceBlock
-      }
-      Diagnostic::ArgAfterVariadicArg { .. } => DiagnosticCode::ArgAfterVariadicArg,
-    }
+    self.kind.message()
   }
 }

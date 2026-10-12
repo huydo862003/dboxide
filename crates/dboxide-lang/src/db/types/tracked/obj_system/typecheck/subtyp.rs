@@ -144,14 +144,16 @@ fn are_typ_args_compatible<'db>(
   suptyp: &Typ<'db>,
 ) -> bool {
   match (subtyp, suptyp) {
-    (Typ::List(sub_list), Typ::List(sup_list)) => match (sub_list.elem(db), sup_list.elem(db)) {
-      (_, None) => true,
-      (None, Some(_)) => false,
-      (Some(sub_elem), Some(sup_elem)) => match (sub_elem.resolve(db), sup_elem.resolve(db)) {
-        (Some(sub), Some(sup)) => is_subtyp_of(db, &sub, &sup),
-        _ => false,
-      },
-    },
+    (Typ::List(sub_list), Typ::List(sup_list)) => {
+      match (sub_list.element(db), sup_list.element(db)) {
+        (_, None) => true,
+        (None, Some(_)) => false,
+        (Some(sub_elem), Some(sup_elem)) => match (sub_elem.resolve(db), sup_elem.resolve(db)) {
+          (Some(sub), Some(sup)) => is_subtyp_of(db, &sub, &sup),
+          _ => false,
+        },
+      }
+    }
 
     (Typ::Map(sub_map), Typ::Map(sup_map)) => {
       let key_ok = match (sub_map.key(db), sup_map.key(db)) {

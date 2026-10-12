@@ -7,7 +7,7 @@ use std::rc::Rc;
 use crate::syntax::ast::SyntaxKind;
 use crate::syntax::ast::{SyntaxToken, cache::Cache};
 use crate::types::PeekableStream;
-use crate::types::diagnostics::Diagnostic;
+use crate::types::diagnostics::{Diagnostic, DiagnosticKind};
 
 pub struct LexCtx<'a> {
   stream: PeekableStream<'a, char>,
@@ -106,7 +106,7 @@ impl<'a> LexCtx<'a> {
       _ => {
         let offset = self.offset;
         self.advance();
-        let diag = Diagnostic::UnexpectedChar { ch: c, offset };
+        let diag = DiagnosticKind::UnexpectedChar { ch: c }.into_error(offset, offset + 1);
         self.emit_with(SyntaxKind::Error, Some(diag))
       }
     }
@@ -185,11 +185,8 @@ impl<'a> LexCtx<'a> {
         self.advance();
         loop {
           if self.at_end() {
-            let diag = Diagnostic::UnexpectedEof {
-              expected: '/',
-              start_offset: start,
-              end_offset: self.offset,
-            };
+            let diag =
+              DiagnosticKind::UnexpectedEof { expected: '/' }.into_error(start, self.offset);
             return self.emit_with(SyntaxKind::Error, Some(diag));
           }
           if self.peek() == Some('*') && self.peek_nth(1) == Some('/') {
@@ -218,10 +215,7 @@ impl<'a> LexCtx<'a> {
     loop {
       match self.peek() {
         None | Some('\n') => {
-          let diag = Diagnostic::UnterminatedString {
-            start_offset: start,
-            end_offset: self.offset,
-          };
+          let diag = DiagnosticKind::UnterminatedString.into_error(start, self.offset);
           return self.emit_with(SyntaxKind::Error, Some(diag));
         }
         Some('\\') => {
@@ -248,10 +242,7 @@ impl<'a> LexCtx<'a> {
         self.advance();
         loop {
           if self.at_end() {
-            let diag = Diagnostic::UnterminatedString {
-              start_offset: start,
-              end_offset: self.offset,
-            };
+            let diag = DiagnosticKind::UnterminatedString.into_error(start, self.offset);
             return self.emit_with(SyntaxKind::Error, Some(diag));
           }
           if self.peek() == Some('\'')
@@ -271,10 +262,7 @@ impl<'a> LexCtx<'a> {
     loop {
       match self.peek() {
         None | Some('\n') => {
-          let diag = Diagnostic::UnterminatedString {
-            start_offset: start,
-            end_offset: self.offset,
-          };
+          let diag = DiagnosticKind::UnterminatedString.into_error(start, self.offset);
           return self.emit_with(SyntaxKind::Error, Some(diag));
         }
         Some('\\') => {
@@ -298,10 +286,7 @@ impl<'a> LexCtx<'a> {
     loop {
       match self.peek() {
         None => {
-          let diag = Diagnostic::UnterminatedString {
-            start_offset: start,
-            end_offset: self.offset,
-          };
+          let diag = DiagnosticKind::UnterminatedString.into_error(start, self.offset);
           return self.emit_with(SyntaxKind::Error, Some(diag));
         }
         Some('\\') if self.peek_nth(1) == Some('`') => {

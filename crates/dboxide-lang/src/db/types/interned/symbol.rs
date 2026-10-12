@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use salsa::interned;
 
 use crate::ast::{AstNode, FuncDeclaration, RedNode};
+use crate::db::prepost::evaluate_node::evaluate_node_pretype;
 use crate::db::types::input::File;
 use crate::db::types::tracked::obj_system::Typ;
 
@@ -24,7 +25,7 @@ pub enum SymbolKind<'db> {
   VirtualFunction(VirtualModuleKind, VirtualFunctionKind),
   UserTyp(File, RedNode),
   UserModule(File, RedNode),
-  /// Implicit schema namespace. Parent is None for top-level schemas.
+  /// Implicit schema namespace. Parent is None for top-level schemas
   UserSchema(File, Option<Symbol<'db>>),
   UserFunction(File, RedNode),
   UserOperator(File, RedNode),
@@ -33,6 +34,9 @@ pub enum SymbolKind<'db> {
   ElementAlias(Symbol<'db>),
   /// `use { table users } from '...'`
   Use(Symbol<'db>, File, RedNode),
+  /// A namespace member of a type with `[on use: expand]`, exposed directly into scope
+  /// Inner symbol is the type, string is the member name
+  NamespaceMember(Symbol<'db>, String),
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
@@ -50,8 +54,25 @@ impl<'db> SymbolKind<'db> {
   }
 
   pub fn is_user_defined(&self) -> bool {
-    !self.is_virtual() && !matches!(self, SymbolKind::ElementAlias(_) | SymbolKind::Use(..))
+    !self.is_virtual()
+      && !matches!(
+        self,
+        SymbolKind::ElementAlias(_) | SymbolKind::Use(..) | SymbolKind::NamespaceMember(..)
+      )
   }
+}
+
+/// Symbol kind for category-filtered scope lookups
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum CategoryKind {
+  Typ,
+  Module,
+  Function,
+  Operator,
+  Schema,
+  Element,
+  Alias,
+  Use,
 }
 
 #[derive(Clone, PartialEq, Eq, Hash, salsa::SalsaValue)]
@@ -83,6 +104,29 @@ impl<'db> StaticScopeMembers<'db> {
     self.0.iter().filter(move |(key, _)| key.0 == name)
   }
 
+  pub fn lookup_symbols<'a>(
+    &'a self,
+    db: &'db dyn salsa::Database,
+    name: &'a str,
+    kind: CategoryKind,
+  ) -> impl Iterator<Item = Symbol<'db>> + 'a
+  where
+    'db: 'a,
+  {
+    self
+      .0
+      .iter()
+      .filter(move |(key, _)| key.0 == name)
+      .map(|(_, sym)| *sym)
+      .filter(move |sym| {
+        let mut current = *sym;
+        while let SymbolKind::Use(inner, _, _) = current.kind(db) {
+          current = *inner;
+        }
+        current.category_kind(db) == kind
+      })
+  }
+
   pub fn insert(&mut self, db: &'db dyn salsa::Database, symbol: Symbol<'db>) {
     self.0.insert(symbol.stable_key(db), symbol);
   }
@@ -97,6 +141,20 @@ impl<'db> StaticScopeMembers<'db> {
 }
 
 impl<'db> Symbol<'db> {
+  pub fn category_kind(&self, db: &'db dyn salsa::Database) -> CategoryKind {
+    match self.kind(db) {
+      SymbolKind::VirtualTyp(..) | SymbolKind::UserTyp(..) => CategoryKind::Typ,
+      SymbolKind::VirtualModule(..) | SymbolKind::UserModule(..) => CategoryKind::Module,
+      SymbolKind::VirtualFunction(..) | SymbolKind::UserFunction(..) => CategoryKind::Function,
+      SymbolKind::UserOperator(..) => CategoryKind::Operator,
+      SymbolKind::UserSchema(..) => CategoryKind::Schema,
+      SymbolKind::UserElement(..) => CategoryKind::Element,
+      SymbolKind::ElementAlias(..) => CategoryKind::Alias,
+      SymbolKind::Use(..) => CategoryKind::Use,
+      SymbolKind::NamespaceMember(..) => CategoryKind::Typ,
+    }
+  }
+
   pub fn category(&self, db: &'db dyn salsa::Database) -> SymbolCategory<'db> {
     match self.kind(db) {
       SymbolKind::VirtualTyp(..) | SymbolKind::UserTyp(..) => SymbolCategory::Typ,
@@ -107,6 +165,7 @@ impl<'db> Symbol<'db> {
       SymbolKind::UserElement(..) => SymbolCategory::Element(*self),
       SymbolKind::ElementAlias(original) => SymbolCategory::Alias(*original),
       SymbolKind::Use(original, _, _) => SymbolCategory::Use(*original),
+      SymbolKind::NamespaceMember(..) => SymbolCategory::Typ,
     }
   }
 
@@ -126,7 +185,7 @@ impl<'db> Symbol<'db> {
     if let Some(params) = func.params() {
       for param in params.params() {
         if let Some(type_expr) = param.type_expr() {
-          let obj = crate::db::pretype::pretype_evaluate_node(db, *file, &type_expr);
+          let obj = evaluate_node_pretype(db, *file, &type_expr);
           if let Some(typ) = obj.and_then(|o| o.as_typ()) {
             param_typs.push(typ);
           }
@@ -135,9 +194,9 @@ impl<'db> Symbol<'db> {
     }
     let return_typ = func
       .return_typ()
-      .and_then(|rt| rt.type_expr())
-      .and_then(|type_expr| crate::db::pretype::pretype_evaluate_node(db, *file, &type_expr))
-      .and_then(|o| o.as_typ());
+      .and_then(|typ| typ.type_expr())
+      .and_then(|typ_expr| evaluate_node_pretype(db, *file, &typ_expr))
+      .and_then(|object| object.as_typ());
     Some((param_typs, return_typ))
   }
 
@@ -179,6 +238,7 @@ impl<'db> Symbol<'db> {
         debug_assert!(false, "original_symbol returned Alias/Use, likely a cycle");
         None
       }
+      SymbolKind::NamespaceMember(inner, _) => inner.original_module(db),
     }
   }
 }

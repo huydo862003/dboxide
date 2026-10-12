@@ -6,6 +6,8 @@
     "doc:build": "pnpm --filter @dboxide/homepage build"
   },
   "devDependencies": {
-    "typerighter": "0.40.4"
+    "typerighter": "0.44.1",
+    "typescript": "^7.0.2",
+    "vue-component-meta": "^3.3.13"
   }
 }

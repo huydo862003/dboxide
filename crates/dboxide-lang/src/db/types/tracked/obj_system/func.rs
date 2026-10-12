@@ -1,6 +1,7 @@
 use salsa::{Database, tracked};
 
 use crate::ast::RedNode;
+use crate::db::prepost::RuntimeScope;
 use crate::db::types::interned::func_signature::FuncSignature;
 use crate::db::types::interned::lazy_typ::LazyTyp;
 
@@ -43,12 +44,17 @@ impl<'db> RuntimeObj<'db> for FuncTyp<'db> {
   }
 }
 
+/// source is the containing AST node:
+/// - for closures: the ClosureExpr node (contains params and body)
+/// - for named functions: the FuncDeclaration node (contains params, return type, body)
 #[tracked]
 pub struct FuncObj<'db> {
   pub name: String,
   #[returns(copy)]
   pub func_typ: FuncTyp<'db>,
-  pub body: Option<RedNode>,
+  pub source: Option<RedNode>,
+  #[returns(copy)]
+  pub captured_scope: Option<RuntimeScope<'db>>,
 }
 
 impl<'db> FuncObj<'db> {

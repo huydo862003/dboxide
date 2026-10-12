@@ -1,0 +1,67 @@
+use salsa::Database;
+
+use crate::db::types::Diagnostics;
+use crate::diagnostics::DiagnosticKind;
+
+use super::super::types::{ArgPosition, EvaluatedTypField};
+
+pub fn validate_contiguous_arg_index<'a>(
+  db: &dyn Database,
+  fields: impl IntoIterator<Item = (&'a str, &'a EvaluatedTypField<'a>)>,
+) {
+  // Collect only fields with [arg: n] or [arg: n..], sorted by index
+  let mut arg_fields: Vec<_> = fields
+    .into_iter()
+    .filter(|(_, field)| field.arg_position.is_some())
+    .collect();
+  arg_fields.sort_by_key(|(_, field)| {
+    field
+      .arg_position
+      .as_ref()
+      .map_or(usize::MAX, |position| position.index())
+  });
+
+  // Walk sorted fields
+  // Check index is contiguous, track variadic to catch anything after it
+  let mut expected = 0usize;
+  let mut seen_variadic = false;
+  for (name, field) in arg_fields {
+    let arg_position = field.arg_position.as_ref().unwrap();
+    let (start, end) = field.span();
+
+    // [arg: n..] captures all remaining positions - anything after it is unreachable
+    if seen_variadic {
+      salsa::Accumulator::accumulate(
+        Diagnostics(
+          DiagnosticKind::ArgAfterVariadicArg {
+            field_name: name.to_string(),
+          }
+          .into_error(start, end),
+        ),
+        db,
+      );
+      continue;
+    }
+
+    let found = arg_position.index();
+    if found != expected {
+      salsa::Accumulator::accumulate(
+        Diagnostics(
+          DiagnosticKind::NonContiguousFieldArgIndex {
+            field_name: name.to_string(),
+            found_index: found,
+            expected_index: expected,
+          }
+          .into_error(start, end),
+        ),
+        db,
+      );
+    }
+
+    if matches!(arg_position, ArgPosition::Variadic(_)) {
+      seen_variadic = true;
+    } else {
+      expected = found + 1;
+    }
+  }
+}

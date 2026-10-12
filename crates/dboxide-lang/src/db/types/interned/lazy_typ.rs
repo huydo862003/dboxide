@@ -1,8 +1,8 @@
 use salsa::Database;
 
+use crate::db::pretype::evaluate_typ::evaluate_typ_symbol;
 use crate::db::types::Symbol;
 use crate::db::types::tracked::obj_system::Typ;
-use crate::pretype_evaluate_typ_symbol;
 
 /// A type reference that may be eagerly resolved or lazily deferred to a symbol
 /// Enables forward references and circular type dependencies
@@ -40,9 +40,7 @@ impl<'db> LazyTyp<'db> {
   pub fn resolve(&self, db: &'db dyn Database) -> Option<Typ<'db>> {
     match self {
       LazyTyp::Eager(typ) => Some(*typ),
-      LazyTyp::Lazy(symbol) => {
-        pretype_evaluate_typ_symbol(db, *symbol).and_then(|obj| obj.as_typ())
-      }
+      LazyTyp::Lazy(symbol) => evaluate_typ_symbol(db, *symbol).and_then(|obj| obj.as_typ()),
     }
   }
 }

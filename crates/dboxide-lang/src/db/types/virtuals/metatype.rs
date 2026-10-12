@@ -3,7 +3,7 @@ use salsa::Database;
 use crate::db::types::Symbol;
 use crate::db::types::interned::symbol::*;
 
-pub(crate) fn pretype_get_metatype_members(db: &dyn Database) -> StaticScopeMembers<'_> {
+pub(crate) fn get_metatype_types_and_schemas(db: &dyn Database) -> StaticScopeMembers<'_> {
   let mut members = StaticScopeMembers::default();
 
   for (name, kind) in [

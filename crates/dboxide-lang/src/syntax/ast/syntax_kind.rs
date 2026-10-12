@@ -83,6 +83,13 @@ pub enum SyntaxKind {
   ForallExpr,
   ExistsExpr,
 
+  // cond ? then : else
+  TernaryExpr,
+
+  // match subject { pattern => result ... }
+  MatchExpr,
+  MatchArm,
+
   /* Tokens */
   Ident = 400,
   DqString,

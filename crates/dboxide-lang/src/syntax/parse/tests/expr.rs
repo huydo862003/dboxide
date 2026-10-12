@@ -551,3 +551,49 @@ fn parse_backtick_expr_no_diagnostic() {
   assert!(diagnostics.is_empty());
   assert!(tree.contains("OqStringExpr"));
 }
+
+#[test]
+fn parse_ternary_expression() {
+  let tree = parse_expr("a ? b : c");
+  let expected = r#"(TernaryExpr
+  (IdentExpr
+    "a")
+  " "
+  "?"
+  (IdentExpr
+    " "
+    "b")
+  " "
+  ":"
+  (IdentExpr
+    " "
+    "c"))"#;
+  assert_eq!(tree, expected);
+}
+
+#[test]
+fn parse_ternary_distinguishes_from_nullable_postfix() {
+  let tree = parse_expr("T?");
+  assert!(tree.contains("PostfixExpr"));
+  assert!(!tree.contains("TernaryExpr"));
+}
+
+#[test]
+fn parse_ternary_nested() {
+  let (tree, _diagnostics) = parse_expr_with_diagnostics("a ? b ? c : d : e");
+  assert!(tree.contains("TernaryExpr"));
+}
+
+#[test]
+fn parse_match_expression() {
+  let tree = parse_expr("match x { 1 => 'one' 2 => 'two' }");
+  assert!(tree.contains("MatchExpr"));
+  assert!(tree.contains("MatchArm"));
+}
+
+#[test]
+fn parse_match_expression_single_arm() {
+  let (tree, diagnostics) = parse_expr_with_diagnostics("match val { true => 1 }");
+  assert!(diagnostics.is_empty());
+  assert!(tree.contains("MatchExpr"));
+}

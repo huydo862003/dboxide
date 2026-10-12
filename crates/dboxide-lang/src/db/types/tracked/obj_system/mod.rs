@@ -75,6 +75,13 @@ impl<'db> Obj<'db> {
       _ => None,
     }
   }
+
+  pub fn as_bool(self, db: &'db dyn Database) -> Option<bool> {
+    match self {
+      Obj::Bool(b) => Some(b.value(db)),
+      _ => None,
+    }
+  }
 }
 
 impl<'db> RuntimeObj<'db> for Obj<'db> {

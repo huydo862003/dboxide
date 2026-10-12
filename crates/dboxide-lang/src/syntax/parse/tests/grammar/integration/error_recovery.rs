@@ -1,16 +1,17 @@
 use crate::syntax::parse::tests::utils::*;
-use crate::types::diagnostics::Diagnostic;
+use crate::types::diagnostics::DiagnosticKind;
 
 #[test]
 fn fn_missing_name_diag() {
   let (tree, diags) = parse_source_with_diagnostics("fn {}");
   assert_eq!(
     diags,
-    vec![Diagnostic::MissingExpectedToken {
-      expected: "function name or 'operator<sym>'",
-      start_offset: 3,
-      end_offset: 4,
-    }]
+    vec![
+      DiagnosticKind::MissingExpectedToken {
+        expected: "function name or 'operator<sym>'"
+      }
+      .into_error(3, 4)
+    ]
   );
   let expected = r#"(SourceFile
   (FuncDeclaration
@@ -29,11 +30,7 @@ fn fn_missing_body_diag() {
   let (tree, diags) = parse_source_with_diagnostics("fn foo()");
   assert_eq!(
     diags,
-    vec![Diagnostic::MissingExpectedToken {
-      expected: "'{'",
-      start_offset: 8,
-      end_offset: 8,
-    }]
+    vec![DiagnosticKind::MissingExpectedToken { expected: "'{'" }.into_error(8, 8)]
   );
   let expected = r#"(SourceFile
   (FuncDeclaration
@@ -54,16 +51,11 @@ fn fn_only_keyword_diag() {
   assert_eq!(
     diags,
     vec![
-      Diagnostic::MissingExpectedToken {
-        expected: "function name or 'operator<sym>'",
-        start_offset: 2,
-        end_offset: 2,
-      },
-      Diagnostic::MissingExpectedToken {
-        expected: "'{'",
-        start_offset: 2,
-        end_offset: 2,
-      },
+      DiagnosticKind::MissingExpectedToken {
+        expected: "function name or 'operator<sym>'"
+      }
+      .into_error(2, 2),
+      DiagnosticKind::MissingExpectedToken { expected: "'{'" }.into_error(2, 2),
     ]
   );
   let expected = r#"(SourceFile
@@ -80,26 +72,19 @@ fn fn_operator_missing_symbol_diag() {
   assert_eq!(
     diags,
     vec![
-      Diagnostic::MissingExpectedToken {
-        expected: "operator symbol after 'operator'",
-        start_offset: 12,
-        end_offset: 15,
-      },
-      Diagnostic::MissingExpectedToken {
-        expected: "'{'",
-        start_offset: 12,
-        end_offset: 15,
-      },
-      Diagnostic::MissingExpectedToken {
-        expected: "'{' or ':'",
-        start_offset: 15,
-        end_offset: 16,
-      },
-      Diagnostic::UnexpectedToken {
-        expected: "element declaration",
-        start_offset: 15,
-        end_offset: 16,
-      },
+      DiagnosticKind::MissingExpectedToken {
+        expected: "operator symbol after 'operator'"
+      }
+      .into_error(12, 15),
+      DiagnosticKind::MissingExpectedToken { expected: "'{'" }.into_error(12, 15),
+      DiagnosticKind::MissingExpectedToken {
+        expected: "'{' or ':'"
+      }
+      .into_error(15, 16),
+      DiagnosticKind::UnexpectedToken {
+        expected: "element declaration"
+      }
+      .into_error(15, 16),
     ]
   );
 }
@@ -111,16 +96,14 @@ fn fn_param_missing_colon_diag() {
   assert_eq!(
     diags,
     vec![
-      Diagnostic::MissingExpectedToken {
-        expected: "':' after parameter name",
-        start_offset: 9,
-        end_offset: 12,
-      },
-      Diagnostic::MissingExpectedToken {
-        expected: "':' after parameter name",
-        start_offset: 12,
-        end_offset: 13,
-      },
+      DiagnosticKind::MissingExpectedToken {
+        expected: "':' after parameter name"
+      }
+      .into_error(9, 12),
+      DiagnosticKind::MissingExpectedToken {
+        expected: "':' after parameter name"
+      }
+      .into_error(12, 13),
     ]
   );
 }
@@ -131,15 +114,8 @@ fn fn_unclosed_params_diag() {
   assert_eq!(
     diags,
     vec![
-      Diagnostic::UnclosedDelimiter {
-        delimiter: "(",
-        open_offset: 6,
-      },
-      Diagnostic::MissingExpectedToken {
-        expected: "'{'",
-        start_offset: 13,
-        end_offset: 13,
-      },
+      DiagnosticKind::UnclosedDelimiter { delimiter: "(" }.into_error(6, 6),
+      DiagnosticKind::MissingExpectedToken { expected: "'{'" }.into_error(13, 13),
     ]
   );
 }
@@ -149,11 +125,12 @@ fn fn_bad_token_in_params_diag() {
   let (_tree, diags) = parse_source_with_diagnostics("fn foo(123): bool {}");
   assert_eq!(
     diags,
-    vec![Diagnostic::UnexpectedToken {
-      expected: "parameter name",
-      start_offset: 7,
-      end_offset: 10,
-    }]
+    vec![
+      DiagnosticKind::UnexpectedToken {
+        expected: "parameter name"
+      }
+      .into_error(7, 10)
+    ]
   );
 }
 
@@ -163,11 +140,7 @@ fn forall_missing_of_diag() {
   let (_tree, diags) = parse_source_with_diagnostics(input);
   assert_eq!(
     diags,
-    vec![Diagnostic::MissingExpectedToken {
-      expected: "'of'",
-      start_offset: 30,
-      end_offset: 37,
-    }]
+    vec![DiagnosticKind::MissingExpectedToken { expected: "'of'" }.into_error(30, 37)]
   );
 }
 
@@ -177,11 +150,7 @@ fn forall_missing_body_diag() {
   let (_tree, diags) = parse_source_with_diagnostics(input);
   assert_eq!(
     diags,
-    vec![Diagnostic::MissingExpectedToken {
-      expected: "'{'",
-      start_offset: 41,
-      end_offset: 42,
-    }]
+    vec![DiagnosticKind::MissingExpectedToken { expected: "'{'" }.into_error(41, 42)]
   );
 }
 
@@ -193,11 +162,7 @@ fn forall_missing_binding_diag() {
   let (_tree, diags) = parse_source_with_diagnostics(input);
   assert_eq!(
     diags,
-    vec![Diagnostic::MissingExpectedToken {
-      expected: "'of'",
-      start_offset: 31,
-      end_offset: 38,
-    }]
+    vec![DiagnosticKind::MissingExpectedToken { expected: "'of'" }.into_error(31, 38)]
   );
 }
 
@@ -206,11 +171,12 @@ fn type_missing_name_diag() {
   let (tree, diags) = parse_source_with_diagnostics("type {}");
   assert_eq!(
     diags,
-    vec![Diagnostic::MissingExpectedToken {
-      expected: "type name",
-      start_offset: 5,
-      end_offset: 6,
-    }]
+    vec![
+      DiagnosticKind::MissingExpectedToken {
+        expected: "type name"
+      }
+      .into_error(5, 6)
+    ]
   );
   let expected = r#"(SourceFile
   (BlockElementDeclaration
@@ -230,11 +196,12 @@ fn type_missing_body_or_eq_diag() {
   let (tree, diags) = parse_source_with_diagnostics("type Foo");
   assert_eq!(
     diags,
-    vec![Diagnostic::MissingExpectedToken {
-      expected: "'{' or '='",
-      start_offset: 8,
-      end_offset: 8,
-    }]
+    vec![
+      DiagnosticKind::MissingExpectedToken {
+        expected: "'{' or '='"
+      }
+      .into_error(8, 8)
+    ]
   );
   let expected = r#"(SourceFile
   (EqualityDeclaration
@@ -253,11 +220,12 @@ fn get_missing_name_diag() {
   let (_tree, diags) = parse_source_with_diagnostics(input);
   assert_eq!(
     diags,
-    vec![Diagnostic::MissingExpectedToken {
-      expected: "getter name",
-      start_offset: 25,
-      end_offset: 26,
-    }]
+    vec![
+      DiagnosticKind::MissingExpectedToken {
+        expected: "getter name"
+      }
+      .into_error(25, 26)
+    ]
   );
 }
 
@@ -267,11 +235,7 @@ fn get_missing_body_diag() {
   let (_tree, diags) = parse_source_with_diagnostics(input);
   assert_eq!(
     diags,
-    vec![Diagnostic::MissingExpectedToken {
-      expected: "'{'",
-      start_offset: 38,
-      end_offset: 39,
-    }]
+    vec![DiagnosticKind::MissingExpectedToken { expected: "'{'" }.into_error(38, 39)]
   );
 }
 
@@ -280,11 +244,12 @@ fn fn_missing_name_then_valid_fn() {
   let (tree, diags) = parse_source_with_diagnostics("fn {}\nfn ok() {}");
   assert_eq!(
     diags,
-    vec![Diagnostic::MissingExpectedToken {
-      expected: "function name or 'operator<sym>'",
-      start_offset: 3,
-      end_offset: 4,
-    }]
+    vec![
+      DiagnosticKind::MissingExpectedToken {
+        expected: "function name or 'operator<sym>'"
+      }
+      .into_error(3, 4)
+    ]
   );
   let expected = r#"(SourceFile
   (FuncDeclaration
@@ -316,11 +281,7 @@ fn fn_missing_body_then_valid_fn() {
   let (tree, diags) = parse_source_with_diagnostics("fn foo()\nfn bar() {}");
   assert_eq!(
     diags,
-    vec![Diagnostic::MissingExpectedToken {
-      expected: "'{'",
-      start_offset: 9,
-      end_offset: 11,
-    }]
+    vec![DiagnosticKind::MissingExpectedToken { expected: "'{'" }.into_error(9, 11)]
   );
   let expected = r#"(SourceFile
   (FuncDeclaration
@@ -353,11 +314,12 @@ fn type_missing_body_then_fn() {
   let (tree, diags) = parse_source_with_diagnostics("type Foo\nfn ok() {}");
   assert_eq!(
     diags,
-    vec![Diagnostic::MissingExpectedToken {
-      expected: "'{' or '='",
-      start_offset: 9,
-      end_offset: 11,
-    }]
+    vec![
+      DiagnosticKind::MissingExpectedToken {
+        expected: "'{' or '='"
+      }
+      .into_error(9, 11)
+    ]
   );
   let expected = r#"(SourceFile
   (EqualityDeclaration
@@ -423,8 +385,8 @@ fn paren_expr_eof_inside() {
 }"#,
   );
   assert!(diags.iter().any(|d| matches!(
-    d,
-    Diagnostic::UnclosedDelimiter { delimiter, .. } if *delimiter == "("
+    &d.kind,
+    DiagnosticKind::UnclosedDelimiter { delimiter } if *delimiter == "("
   )));
 }
 
@@ -433,8 +395,8 @@ fn tuple_eof_inside() {
   // Unclosed tuple paren at EOF
   let (_tree, diags) = parse_source_with_diagnostics("T E {\n  val (1, 2");
   assert!(diags.iter().any(|d| matches!(
-    d,
-    Diagnostic::UnclosedDelimiter { delimiter, .. } if *delimiter == "("
+    &d.kind,
+    DiagnosticKind::UnclosedDelimiter { delimiter } if *delimiter == "("
   )));
 }
 
@@ -443,8 +405,8 @@ fn setting_list_unclosed_at_eof() {
   // `[pk` without closing `]` at EOF
   let (_tree, diags) = parse_source_with_diagnostics("T E {\n  id int [pk");
   assert!(diags.iter().any(|d| matches!(
-    d,
-    Diagnostic::UnclosedDelimiter { delimiter, .. } if *delimiter == "["
+    &d.kind,
+    DiagnosticKind::UnclosedDelimiter { delimiter } if *delimiter == "["
   )));
 }
 
@@ -461,8 +423,8 @@ fn setting_list_unclosed_at_outer_brace() {
 fn block_body_unclosed_at_eof() {
   let (_tree, diags) = parse_source_with_diagnostics("T E {");
   assert!(diags.iter().any(|d| matches!(
-    d,
-    Diagnostic::UnclosedDelimiter { delimiter, .. } if *delimiter == "{"
+    &d.kind,
+    DiagnosticKind::UnclosedDelimiter { delimiter } if *delimiter == "{"
   )));
 }
 
