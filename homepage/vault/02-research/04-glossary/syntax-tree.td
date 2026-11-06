@@ -6,7 +6,7 @@ tags:
   - 'parsing'
   - 'dsl'
 depends_on:
-  - fref("02-research/04-glossary/grammar.td")
+  - fref("./grammar.td")
 ---
 
 A hierarchical representation of a parsed script. Nodes are constructs, children are their parts.

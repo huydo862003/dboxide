@@ -5,7 +5,7 @@ status: 'learning'
 tags:
   - 'dsl design'
 depends_on:
-  - fref("02-research/04-glossary/semantic-model.td")
+  - fref("./semantic-model.td")
 ---
 
 The shared conceptual vocabulary between domain experts and programmers, where code structure mirrors domain structure. In the state machine example, both sides think in states, events, transitions, and commands.

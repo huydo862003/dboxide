@@ -97,7 +97,7 @@ DSL boundaries are blurry. The real tests are **language nature** and **limited 
 
 Examples:
 
-- **Stand-alone**: the state machine custom syntax like in ${fref("02-research/02-resources/05-dsl/domain-specific-languages/01-an-introductory-example.td")}.
+- **Stand-alone**: the state machine custom syntax like in ${fref("./01-an-introductory-example.td")}.
 - **Fragmentary (external)**: regular expressions and SQL embedded in a larger program.
 - **Fragmentary (internal)**: mock object expectation grammars in unit tests. Annotations that add metadata to host code elements.
 

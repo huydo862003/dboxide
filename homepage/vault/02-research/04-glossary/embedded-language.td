@@ -5,7 +5,7 @@ status: 'learning'
 tags:
   - 'dsl classification'
 depends_on:
-  - fref("02-research/04-glossary/embedded-dsl.td")
+  - fref("./embedded-dsl.td")
 ---
 
 A scripting language embedded within an application to provide user extensibility. Distinct from an embedded DSL (internal DSL), though the terminology overlaps. Examples:

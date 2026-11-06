@@ -6,7 +6,7 @@ tags:
   - 'type system'
   - 'evaluation'
 depends_on:
-  - fref("02-research/04-glossary/feature-structure.td")
+  - fref("./feature-structure.td")
 ---
 
 In CUE, field definitions do not need to appear before the fields they reference. All fields are in scope for all other fields, resolved as a fixed point over the whole struct. This is lazy binding: name resolution is deferred until the full structure is assembled.

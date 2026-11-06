@@ -20,7 +20,7 @@ PDF link: https://eelcovisser.org/publications/2015/NeronTVW15.pdf
 
 ## Context: Spoofax
 
-Spoofax is a ${fref("02-research/04-glossary/language-workbench.td")}.
+Spoofax is a ${fref("/02-research/04-glossary/language-workbench.td")}.
 
 A **language workbench** is a tool for defining a DSL together with its editing environment.
 

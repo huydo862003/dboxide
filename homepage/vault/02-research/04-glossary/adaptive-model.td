@@ -5,8 +5,8 @@ status: 'learning'
 tags:
   - 'dsl design'
 depends_on:
-  - fref("02-research/04-glossary/semantic-model.td")
-  - fref("02-research/04-glossary/domain-model.td")
+  - fref("./semantic-model.td")
+  - fref("./domain-model.td")
 ---
 
 A model whose data acts as the program. Changing behavior means altering objects and their wiring, not changing code.

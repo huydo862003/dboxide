@@ -5,7 +5,7 @@ status: 'learning'
 tags:
   - 'dsl classification'
 depends_on:
-  - fref("02-research/04-glossary/standalone-dsl.td")
+  - fref("./standalone-dsl.td")
 ---
 
 A DSL that appears as small snippets embedded within host language code. You cannot follow it without understanding the surrounding host code. Examples:

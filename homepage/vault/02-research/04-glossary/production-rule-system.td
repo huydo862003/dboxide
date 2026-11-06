@@ -6,8 +6,8 @@ tags:
   - 'computational model'
   - 'dsl'
 depends_on:
-  - fref("02-research/04-glossary/adaptive-model.td")
-  - fref("02-research/04-glossary/decision-table.td")
+  - fref("./adaptive-model.td")
+  - fref("./decision-table.td")
 ---
 
 Individual rules each with a condition and an action. The engine decides evaluation order.

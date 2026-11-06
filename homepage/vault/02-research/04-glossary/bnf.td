@@ -6,7 +6,7 @@ tags:
   - 'parsing'
   - 'language theory'
 depends_on:
-  - fref("02-research/04-glossary/grammar.td")
+  - fref("./grammar.td")
 ---
 
 Backus-Naur Form is a notation for writing grammar production rules. Each rule has a name and a definition:

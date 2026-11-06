@@ -6,7 +6,7 @@ tags:
   - 'type system'
   - 'linguistics'
 depends_on:
-  - fref("02-research/04-glossary/feature-structure.td")
+  - fref("./feature-structure.td")
 ---
 
 A shared substructure in a feature structure where two different paths from the root point to the same node. The node is not duplicated - both paths reference the same value.

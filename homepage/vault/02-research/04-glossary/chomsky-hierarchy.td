@@ -6,7 +6,7 @@ tags:
   - 'parsing'
   - 'language theory'
 depends_on:
-  - fref("02-research/04-glossary/grammar.td")
+  - fref("./grammar.td")
 ---
 
 A classification of grammars by their expressive power. Three levels matter for DSLs:

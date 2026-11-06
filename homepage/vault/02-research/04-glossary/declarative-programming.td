@@ -5,8 +5,8 @@ status: 'learning'
 tags:
   - 'dsl design'
 depends_on:
-  - fref("02-research/04-glossary/computational-model.td")
-  - fref("02-research/04-glossary/adaptive-model.td")
+  - fref("./computational-model.td")
+  - fref("./adaptive-model.td")
 ---
 
 A style where you describe what the result should be, not how to compute it. SQL, HTML, CSS, and Makefiles are declarative.

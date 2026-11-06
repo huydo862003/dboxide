@@ -5,7 +5,7 @@ status: 'learning'
 tags:
   - 'dsl classification'
 depends_on:
-  - fref("02-research/04-glossary/fluent-interface.td")
+  - fref("./fluent-interface.td")
 ---
 
 A regular, non-fluent API where you call methods to get things done. Fowler uses this term to contrast with fluent interfaces.

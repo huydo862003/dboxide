@@ -6,7 +6,7 @@ tags:
   - 'type system'
   - 'dsl'
 depends_on:
-  - fref("02-research/04-glossary/feature-structure.td")
+  - fref("./feature-structure.td")
 ---
 
 A named binding to a field value within a struct, written `A=field: constraint`. The alias `A` is a relative reference that resolves contextually wherever the struct is used, not at the point of definition.

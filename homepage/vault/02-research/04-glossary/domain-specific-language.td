@@ -5,7 +5,7 @@ status: 'learning'
 tags:
   - 'dsl classification'
 depends_on:
-  - fref("02-research/04-glossary/semantic-model.td")
+  - fref("./semantic-model.td")
 ---
 
 A computer programming language of limited expressiveness focused on a particular domain (Martin Fowler).

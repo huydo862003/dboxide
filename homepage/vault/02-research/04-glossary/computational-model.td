@@ -5,7 +5,7 @@ status: 'learning'
 tags:
   - 'dsl design'
 depends_on:
-  - fref("02-research/04-glossary/adaptive-model.td")
+  - fref("./adaptive-model.td")
 ---
 
 An alternative to the standard imperative step-by-step approach. Examples:

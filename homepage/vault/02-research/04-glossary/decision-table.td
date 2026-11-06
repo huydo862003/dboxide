@@ -6,7 +6,7 @@ tags:
   - 'computational model'
   - 'dsl'
 depends_on:
-  - fref("02-research/04-glossary/adaptive-model.td")
+  - fref("./adaptive-model.td")
 ---
 
 A table of conditions and consequences. Each column represents one rule: match the conditions in that column, apply its consequences.

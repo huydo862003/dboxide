@@ -6,7 +6,7 @@ tags:
   - 'internal dsl'
   - 'dsl pattern'
 depends_on:
-  - fref("02-research/04-glossary/internal-dsl.td")
+  - fref("./internal-dsl.td")
 ---
 
 Fowler's term for intercepting undefined method calls at runtime to implement dynamic behavior. The pattern moves information from method arguments into method names: `people.find_by_firstname("martin")` instead of `people.find("firstname", "martin")`.

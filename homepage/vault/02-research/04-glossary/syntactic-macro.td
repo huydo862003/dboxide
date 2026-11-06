@@ -6,7 +6,7 @@ tags:
   - 'dsl'
   - 'metaprogramming'
 depends_on:
-  - fref("02-research/04-glossary/macro.td")
+  - fref("./macro.td")
 ---
 
 A macro that operates on syntactically valid expressions, transforming one kind of expression into another. Unlike textual macros, it is aware of the language's structure.

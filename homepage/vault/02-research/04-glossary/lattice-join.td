@@ -6,7 +6,7 @@ tags:
   - 'type system'
   - 'mathematics'
 depends_on:
-  - fref("02-research/04-glossary/lattice.td")
+  - fref("./lattice.td")
 ---
 
 The least upper bound of two elements in a lattice. The join of A and B is the most general element that both A and B are instances of.

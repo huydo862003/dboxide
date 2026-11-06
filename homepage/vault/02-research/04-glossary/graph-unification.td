@@ -6,8 +6,8 @@ tags:
   - 'type system'
   - 'linguistics'
 depends_on:
-  - fref("02-research/04-glossary/typed-feature-structure.td")
-  - fref("02-research/04-glossary/lattice.td")
+  - fref("./typed-feature-structure.td")
+  - fref("./lattice.td")
 ---
 
 Merging two feature structures into the most specific structure consistent with both - the greatest lower bound under subsumption. Conflicting constraints produce bottom.

@@ -532,7 +532,7 @@ type_check: () => typeof(values) <: columns.map((c) => interpret(c@type))
 
 ## Module System
 
-> See also: fref("03-high-level-design/01-original-dbml-language-spec.td") - Module System
+> See also: fref("./01-original-dbml-language-spec.td") - Module System
 
 A dboxide schema may be split across multiple files. All files are merged into one logical schema before analysis. `use` and `reuse` are top-level only.
 

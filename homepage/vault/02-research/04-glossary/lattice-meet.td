@@ -6,7 +6,7 @@ tags:
   - 'type system'
   - 'mathematics'
 depends_on:
-  - fref("02-research/04-glossary/lattice.td")
+  - fref("./lattice.td")
 ---
 
 The greatest lower bound of two elements in a lattice. The meet of A and B is the most specific element that satisfies both A and B simultaneously.

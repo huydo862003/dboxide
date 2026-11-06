@@ -5,7 +5,7 @@ _icon: icon.home
 
 [[directory-index]]
 
-${fref("_assets/dbml.png")}
+${fref("./_assets/dbml.png")}
 
 This repository, [`dboxide`](https://github.com/hdnax/dboxide), is a rewrite of a DBML parser. It is a learning project to explore concepts in language theory, inspired by the work in the [`type-theory`](https://github.com/hdnax/type-theory) repository. The project builds on lessons learned from a previous parser, `@dbml/parse`.
 

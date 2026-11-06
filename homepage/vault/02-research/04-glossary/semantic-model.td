@@ -5,8 +5,8 @@ status: 'learning'
 tags:
   - 'dsl design'
 depends_on:
-  - fref("02-research/04-glossary/domain-model.td")
-  - fref("02-research/04-glossary/adaptive-model.td")
+  - fref("./domain-model.td")
+  - fref("./adaptive-model.td")
 ---
 
 The in-memory model that a DSL populates.

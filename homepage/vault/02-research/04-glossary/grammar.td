@@ -6,7 +6,7 @@ tags:
   - 'parsing'
   - 'dsl'
 depends_on:
-  - fref("02-research/04-glossary/syntax-tree.td")
+  - fref("./syntax-tree.td")
 ---
 
 A set of production rules that describe how a text stream is turned into a syntax tree. Each rule has a term and a definition of how it breaks down:

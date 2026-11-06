@@ -5,7 +5,7 @@ status: 'learning'
 tags:
   - 'parsing'
 depends_on:
-  - fref("02-research/04-glossary/chomsky-hierarchy.td")
+  - fref("./chomsky-hierarchy.td")
 ---
 
 The first stage of Syntax-Directed Translation. A lexer (also called scanner or tokenizer) converts raw text into a stream of tokens, each with a type and content. `state idle` becomes `[{type: state-keyword, content: "state"}, {type: identifier, content: "idle"}]`.
